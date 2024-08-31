@@ -11,6 +11,102 @@ datasource db {
     relationMode = "prisma"
 }
 
+model League {
+    id        String    @id @default(cuid())
+    uuid      String    @unique @default(uuid())
+    ownerId   String
+    name      String
+    public    Boolean   @default(false)
+    createdAt DateTime
+    createdBy String
+    updatedAt DateTime?
+    updatedBy String?
+    deletedAt DateTime?
+    deletedBy String?
+
+    owner        User            @relation("LeagueOwner", fields: [ownerId], references: [id])
+    creator      User            @relation("LeagueCreator", fields: [createdBy], references: [id])
+    updater      User?           @relation("LeagueUpdater", fields: [updatedBy], references: [id])
+    deleter      User?           @relation("LeagueDeleter", fields: [deletedBy], references: [id])
+    sessions     LeagueSession[]
+    LeagueMember LeagueMember[]
+
+    @@index([ownerId])
+    @@index([createdBy])
+    @@index([updatedBy])
+    @@index([deletedBy])
+}
+
+model LeagueMember {
+    id       String  @id @default(cuid())
+    leagueId String
+    userId   String
+    isAdmin  Boolean @default(false)
+
+    league League @relation(fields: [leagueId], references: [id])
+    user   User   @relation(fields: [userId], references: [id])
+
+    @@unique([leagueId, userId])
+    @@index([userId])
+}
+
+model LeagueSession {
+    id        String   @id @default(cuid())
+    leagueId  String
+    slug      String
+    name      String
+    startDate DateTime
+    endDate   DateTime
+    settings  Json // @db.Text
+
+    league  League                @relation(fields: [leagueId], references: [id])
+    studios LeagueSessionStudio[]
+
+    @@unique([leagueId, slug])
+}
+
+model LeagueSessionStudio {
+    id        String    @id @default(cuid())
+    sessionId String
+    ownerId   String
+    name      String
+    image     String?
+    score     Int       @default(0)
+    budget    Int       @default(0)
+    createdAt DateTime
+    updatedAt DateTime?
+    updatedBy String?
+    deletedAt DateTime?
+    deletedBy String?
+
+    session LeagueSession @relation(fields: [sessionId], references: [id])
+    owner   User          @relation("StudioOwner", fields: [ownerId], references: [id])
+    updater User?         @relation("StudioUpdater", fields: [updatedBy], references: [id])
+    deleter User?         @relation("StudioDeleter", fields: [deletedBy], references: [id])
+    films   StudioFilm[]
+
+    @@index([sessionId])
+    @@index([ownerId])
+    @@index([updatedBy])
+    @@index([deletedBy])
+}
+
+model StudioFilm {
+    id            String    @id @default(cuid())
+    studioId      String
+    tmdbId        Int
+    slot          Int
+    score         Int
+    scoreOverride Int?
+    acquiredType  Int?
+    acquiredAt    DateTime?
+    droppedAt     DateTime?
+
+    studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
+
+    @@index([studioId])
+}
+
 // Necessary for Next auth
 model Account {
     id                String  @id @default(cuid())
@@ -28,6 +124,7 @@ model Account {
     user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([provider, providerAccountId])
+    @@index([userId])
 }
 
 model Session {
@@ -35,7 +132,10 @@ model Session {
     sessionToken String   @unique
     userId       String
     expires      DateTime
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
 }
 
 model User {
@@ -44,8 +144,17 @@ model User {
     email         String?   @unique
     emailVerified DateTime?
     image         String?
-    accounts      Account[]
-    sessions      Session[]
+
+    accounts          Account[]
+    sessions          Session[]
+    leaguesOwned      League[]              @relation("LeagueOwner")
+    leagueMemberships LeagueMember[]
+    studiosOwned      LeagueSessionStudio[] @relation("StudioOwner")
+    leaguesCreated    League[]              @relation("LeagueCreator")
+    leaguesUpdated    League[]              @relation("LeagueUpdater")
+    leaguesDeleted    League[]              @relation("LeagueDeleter")
+    studiosUpdated    LeagueSessionStudio[] @relation("StudioUpdater")
+    studiosDeleted    LeagueSessionStudio[] @relation("StudioDeleter")
 }
 
 model VerificationToken {

@@ -1,0 +1,52 @@
+import Link from "next/link";
+
+export default function Footer() {
+  return (
+    <footer className="mt-6 flex h-[120px] w-full justify-center bg-neutral-700 pb-4">
+      <div className="mt-6 flex w-[80%] flex-col">
+        <nav className="flex font-bold">
+          <Link href={"/"} className="mr-2 hover:text-white">
+            About
+          </Link>
+          <Link href={"/"} className="mx-2 hover:text-white">
+            Contact
+          </Link>
+          <Link href={"/"} className="mx-2 hover:text-white">
+            Credits
+          </Link>
+          <Link href={"/"} className="mx-2 hover:text-white">
+            Change Log
+          </Link>
+          <Link href={"/"} className="mx-2 hover:text-white">
+            Help
+          </Link>
+          <Link href={"/"} className="mx-2 hover:text-white">
+            Terms
+          </Link>
+        </nav>
+        <p className="mt-4 text-xs">
+          © Big Movie Bois
+          <span className="mx-2">|</span>
+          <a
+            href="https://letterboxd.com/about/film-data/"
+            target="_blank"
+            className="underline"
+            rel="noreferrer"
+          >
+            Film data
+          </a>{" "}
+          from{" "}
+          <a
+            href="https://www.themoviedb.org/"
+            target="_blank"
+            className="underline"
+            rel="noreferrer"
+          >
+            TMDb
+          </a>
+          .
+        </p>
+      </div>
+    </footer>
+  );
+}

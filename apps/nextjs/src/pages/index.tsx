@@ -1,11 +1,12 @@
 import { api } from "~/utils/api";
+import Layout from "~/layouts/main/Layout";
 
 export default function Home() {
   const { data } = api.example.hello.useQuery();
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center ">
-      {data}
-    </div>
+    <Layout showFooter>
+      <div>{data}</div>
+    </Layout>
   );
 }

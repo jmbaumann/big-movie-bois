@@ -1,11 +1,14 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
+import { ChevronLeft } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
 
 import { api } from "~/utils/api";
+import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,21 +18,26 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import Layout from "~/layouts/main/Layout";
-import NewLeagueDialog from "./NewLeagueDialog";
+import NewSessionDialog from "./NewSessionDialog";
 
 type Leagues = inferRouterOutputs<AppRouter>["ffLeague"]["getMyLeagues"];
 type League = Leagues[number];
 
-export default function FantasyFilmHomePage() {
+export default function LeagueDetailsPage() {
   const { data: sessionData } = useSession();
+  const router = useRouter();
+  const leagueId = router.query.leagueId as string;
 
   const {
-    data: leagues,
+    data: league,
     isLoading,
     refetch,
-  } = api.ffLeague.getMyLeagues.useQuery(undefined, {
-    enabled: !!sessionData?.user,
-  });
+  } = api.ffLeague.getByUuid.useQuery(
+    { uuid: leagueId },
+    {
+      enabled: !!leagueId,
+    },
+  );
   const handleRefetch = () => {
     void refetch();
   };
@@ -37,17 +45,18 @@ export default function FantasyFilmHomePage() {
   return (
     <Layout showFooter>
       <div>
+        <Link href={"/fantasy-film"}>
+          <Button variant="link" className="px-0">
+            <ChevronLeft /> Back to Leagues
+          </Button>
+        </Link>
         <div className="mb-4 flex items-center">
-          <h1 className="text-2xl">My Leagues</h1>
-          <NewLeagueDialog className="ml-auto" />
+          <h1 className="text-2xl">{league?.name}</h1>
+          <NewSessionDialog className="ml-auto" />
         </div>
-        {sessionData?.user ? (
-          leagues?.map((league, i) => <LeagueCard key={i} league={league} />)
-        ) : (
-          <p className="w-full text-center">
-            Sign Up or Login to see your joined leagues
-          </p>
-        )}
+        {
+          // league?.sessions?.map((session, i) => <SessionCard key={i} session={session} />)
+        }
       </div>
     </Layout>
   );

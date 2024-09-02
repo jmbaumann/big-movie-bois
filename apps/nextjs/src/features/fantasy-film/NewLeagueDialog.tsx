@@ -24,6 +24,8 @@ import {
 } from "~/components/ui/form";
 import { useToast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
 
 export default function NewLeagueDialog({ className }: { className: string }) {
   const { data: sessionData } = useSession();
@@ -102,6 +104,24 @@ export default function NewLeagueDialog({ className }: { className: string }) {
                   </FormItem>
                 )}
               />
+              {/* <FormField
+                control={form.control}
+                name="public"
+                render={({ field }) => (
+                  <FormItem className="">
+                    <FormControl>
+                      <div className="mt-6 flex items-center space-x-2">
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="text-black"
+                        />
+                        <Label htmlFor="public">Public</Label>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              /> */}
             </div>
             <Button type="submit" className="float-right" isLoading={isLoading}>
               Create League

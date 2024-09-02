@@ -1,9 +1,9 @@
-import Layout from "~/layouts/main/Layout";
+import FantasyFilmHomePage from "~/features/fantasy-film/FantasyFilmHomePage";
 
-export default function FantasyFilmHomePage() {
+export default function FantasyFilmIndex() {
   return (
-    <Layout showFooter>
-      <div>FANTASY FILM HOME PAGE</div>
-    </Layout>
+    <>
+      <FantasyFilmHomePage />
+    </>
   );
 }

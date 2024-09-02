@@ -14,7 +14,11 @@ import {
 const getMyLeagues = publicProcedure.query(async ({ ctx }) => {
   const user = ctx.session?.user;
   if (user) {
-    const leagues = await getLeaguesForUser(ctx, user.id);
+    // const leagues = await getLeaguesForUser(ctx, user.id);
+    const leagues = await ctx.prisma.league.findMany({
+      where: { ownerId: user.id },
+      include: { owner: { select: { name: true } } },
+    });
     return leagues;
   } else return [];
 });
@@ -24,9 +28,12 @@ const getPublicLeagues = publicProcedure.query(({ ctx }) => {
 });
 
 const getByUuid = protectedProcedure
-  .input(z.object({ uuid: z.string(), year: z.string().optional() }))
+  .input(z.object({ uuid: z.string() }))
   .query(async ({ ctx, input }) => {
-    const league = await getLeagueByUuid(ctx, input.uuid);
+    // const league = await getLeagueByUuid(ctx, input.uuid);
+    const league = await ctx.prisma.league.findFirst({
+      where: { uuid: input.uuid },
+    });
     if (!league) return null;
     return league;
   });
@@ -34,7 +41,6 @@ const getByUuid = protectedProcedure
 const create = protectedProcedure
   .input(
     z.object({
-      ownerId: z.string(),
       name: z.string(),
       public: z.boolean(),
     }),
@@ -42,9 +48,9 @@ const create = protectedProcedure
   .mutation(async ({ ctx, input }) => {
     const league = await ctx.prisma.league.create({
       data: {
-        ownerId: input.ownerId,
         name: input.name,
         public: input.public,
+        ownerId: ctx.session.user.id,
         createdAt: new Date(),
         createdBy: ctx.session.user.id,
       },

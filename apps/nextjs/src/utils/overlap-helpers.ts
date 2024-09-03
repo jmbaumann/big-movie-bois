@@ -2,6 +2,7 @@ import { inferRouterOutputs } from "@trpc/server";
 
 import { AppRouter } from "@repo/api";
 
+import { OverlapGameState } from "~/store/overlap";
 import { toMoney } from ".";
 
 type OverlapMovie = inferRouterOutputs<AppRouter>["overlap"]["todaysMovie"];
@@ -12,7 +13,13 @@ export function findOverlap(
 ) {
   const answer = restructure(answerMovie);
   const guesses = guessMovies.map((e) => restructure(e));
-  console.log(guessMovies.map((e) => e.details.title));
+
+  const titlesArray = guesses.map((e) => e.title);
+  const yearsArray = guesses.map((e) => e.releaseYear);
+  const runtimesArray = guesses.map((e) => e.runtime);
+  const ratingsArray = guesses.map((e) => e.rating!);
+  const budgetsArray = guesses.map((e) => e.budget);
+  const revenuesArray = guesses.map((e) => e.revenue);
 
   const guessedDirectors = new Set(
     guesses.map((e) => e.directors.map((d) => d.name)).flat(),
@@ -26,19 +33,19 @@ export function findOverlap(
   const guessedGenres = new Set(guesses.map((e) => e.genres).flat());
   const guessedKeywords = new Set(guesses.map((e) => e.keywords).flat());
 
-  const yearsArray = guesses.map((e) => e.releaseYear);
-  const guessedYears = new Set(yearsArray);
-
   const directors = answer.directors.map((director) => ({
-    ...director,
+    value: director.name,
+    image: director.image,
     revealed: guessedDirectors.has(director.name),
   }));
   const writers = answer.writers.map((writer) => ({
-    ...writer,
+    value: writer.name,
+    image: writer.image,
     revealed: guessedWriters.has(writer.name),
   }));
   const cast = answer.cast.map((c) => ({
-    ...c,
+    value: c.name,
+    image: c.image,
     revealed: guessedCast.has(c.name),
   }));
   const genres = answer.genres.map((genre) => ({
@@ -53,29 +60,62 @@ export function findOverlap(
   const gameState = {
     title: {
       value: answer.title,
-      revealed: new Set(guesses.map((e) => e.title)).has(answer.title),
+      revealed: new Set(titlesArray).has(answer.title),
+      gt: findClosest(titlesArray, answer.title, {
+        flag: "gt",
+        firstChar: true,
+      }),
+      lt: findClosest(titlesArray, answer.title, {
+        flag: "lt",
+        firstChar: true,
+      }),
+      e: findClosest(titlesArray, answer.title, {
+        flag: "gt",
+        firstChar: true,
+        checkEqual: true,
+      }),
     },
     releaseYear: {
       value: answer.releaseYear,
-      gt: findClosest(yearsArray, answer.releaseYear, "gt"),
-      lt: findClosest(yearsArray, answer.releaseYear, "lt"),
-      revealed: guessedYears.has(answer.releaseYear),
+      revealed: new Set(yearsArray).has(answer.releaseYear),
+      gt: findClosest(yearsArray, answer.releaseYear, { flag: "gt" }),
+      lt: findClosest(yearsArray, answer.releaseYear, { flag: "lt" }),
     },
     runtime: {
       value: `${answer.runtime} mins`,
-      revealed: new Set(guesses.map((e) => e.runtime)).has(answer.runtime),
+      revealed: new Set(runtimesArray).has(answer.runtime),
+      gt: findClosest(runtimesArray, answer.runtime, { flag: "gt" }),
+      lt: findClosest(runtimesArray, answer.runtime, { flag: "lt" }),
     },
     rating: {
       value: answer.rating,
-      revealed: new Set(guesses.map((e) => e.rating)).has(answer.rating),
+      revealed: new Set(ratingsArray).has(answer.rating!),
+      // gt: findClosest(ratingsArray, answer.rating, {flag: "gt"}),
+      // lt: findClosest(ratingsArray, answer.rating, {flag: "lt"}),
     },
     budget: {
       value: toMoney(answer.budget),
-      revealed: new Set(guesses.map((e) => e.budget)).has(answer.budget),
+      revealed: new Set(budgetsArray).has(answer.budget),
+      gt: findClosest(budgetsArray, answer.budget, {
+        flag: "gt",
+        firstChar: true,
+      }),
+      lt: findClosest(budgetsArray, answer.budget, {
+        flag: "lt",
+        firstChar: true,
+      }),
     },
     revenue: {
       value: toMoney(answer.revenue),
-      revealed: new Set(guesses.map((e) => e.revenue)).has(answer.revenue),
+      revealed: new Set(revenuesArray).has(answer.revenue),
+      gt: findClosest(revenuesArray, answer.revenue, {
+        flag: "gt",
+        firstChar: true,
+      }),
+      lt: findClosest(revenuesArray, answer.revenue, {
+        flag: "lt",
+        firstChar: true,
+      }),
     },
     directors,
     writers,
@@ -84,34 +124,57 @@ export function findOverlap(
     keywords,
   };
 
-  return gameState;
+  return gameState as OverlapGameState;
 }
 
 function findClosest(
   guesses: (number | string)[],
   answer: number | string,
-  flag: "gt" | "lt",
+  options: {
+    flag: "gt" | "lt";
+    firstChar?: boolean;
+    checkEqual?: boolean;
+  },
 ): number | string | undefined {
-  const targetValue = typeof answer === "string" ? Date.parse(answer) : answer;
+  const targetValue =
+    typeof answer === "string" && Number.isInteger(answer)
+      ? Number(answer)
+      : answer;
 
   let closestValue: number | string | undefined = undefined;
   let closestDifference = Infinity;
 
   for (const item of guesses) {
-    const currentValue = typeof item === "string" ? Date.parse(item) : item;
+    const currentValue =
+      typeof item === "string" && Number.isInteger(item) ? Number(item) : item;
 
     if (
-      (flag === "gt" && currentValue > targetValue) ||
-      (flag === "lt" && currentValue < targetValue)
+      (options.flag === "gt" && currentValue > targetValue) ||
+      (options.flag === "lt" && currentValue < targetValue)
     ) {
-      const difference = Math.abs(currentValue - targetValue);
+      const d1 =
+        typeof currentValue === "string"
+          ? currentValue[0]!.toLowerCase().charCodeAt(0) - "a".charCodeAt(0) + 1
+          : currentValue;
+      const d2 =
+        typeof targetValue === "string"
+          ? targetValue[0]!.toLowerCase().charCodeAt(0) - "a".charCodeAt(0) + 1
+          : targetValue;
+      const difference = Math.abs(d1 - d2);
 
       if (difference < closestDifference) {
         closestDifference = difference;
-        closestValue = item;
+        closestValue = options.firstChar
+          ? typeof item === "string"
+            ? item[0]
+            : `$${Math.round((item / 1000000) * 10) / 10}M`
+          : item;
       }
     }
   }
+
+  if (options.checkEqual)
+    return closestDifference === 0 ? closestValue : undefined;
 
   return closestValue;
 }

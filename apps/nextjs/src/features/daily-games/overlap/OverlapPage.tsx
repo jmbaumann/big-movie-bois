@@ -1,17 +1,13 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import Image from "next/image";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 import { AppRouter } from "@repo/api";
 
 import { api } from "~/utils/api";
 import { findOverlap } from "~/utils/overlap-helpers";
 import { cn } from "~/utils/shadcn";
-import { Button } from "~/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -19,17 +15,10 @@ import {
   CommandItem,
   CommandList,
 } from "~/components/ui/command";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "~/components/ui/form";
-import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
+import { OverlapAnswerDetails, OverlapGameState } from "~/store/overlap";
 import Logo from "./Logo";
 import Settings from "./Settings";
 import Statistics from "./Statistics";
@@ -37,7 +26,7 @@ import Statistics from "./Statistics";
 type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
 
 export default function OverlapPage() {
-  const [gameState, setGameState] = useState<any>();
+  const [gameState, setGameState] = useState<OverlapGameState>();
   const [guesses, setGuesses] = useState<TMDBMovie[]>([]);
   const [guessId, setGuessId] = useState<number>(0);
   const [searchKeyword, setSearchKeyword] = useState<string>();
@@ -63,7 +52,6 @@ export default function OverlapPage() {
   }, [answer]);
 
   useEffect(() => {
-    console.log("step 1", { guessId });
     if (guessId) getGuessDetails();
   }, [guessId]);
 
@@ -106,7 +94,18 @@ export default function OverlapPage() {
           {gameState && (
             <div className="flex w-full flex-col">
               <div className="flex">
-                <span className="h-[450px] w-[300px] bg-gray-300"></span>
+                {gameState.title.revealed ? (
+                  <div className="max-h-[450px] max-w-[300px]">
+                    <Image
+                      src={answer!.details.poster!}
+                      width={300}
+                      height={450}
+                      alt={`Poster for ${answer?.details.title}`}
+                    />
+                  </div>
+                ) : (
+                  <span className="h-[450px] max-h-[450px] w-[300px] max-w-[300px] bg-gray-300"></span>
+                )}
 
                 <Tabs defaultValue="details" className="w-full px-4">
                   <TabsList className="grid w-full grid-cols-3">
@@ -130,7 +129,7 @@ export default function OverlapPage() {
                     <div className="mb-2 flex">
                       <MovieDetail
                         className="w-1/3"
-                        label="Runtime"
+                        label="Runtime (minutes)"
                         field={gameState.runtime}
                       />
                       <MovieDetail
@@ -147,7 +146,7 @@ export default function OverlapPage() {
                     <div className="mb-2 flex">
                       <MovieDetail
                         className="w-1/3"
-                        label="Revenue"
+                        label="Box Office"
                         field={gameState.revenue}
                       />
                       <MovieDetail
@@ -218,6 +217,7 @@ export default function OverlapPage() {
           <div className="mt-4 flex justify-center">
             {guesses.map((guess, i) => (
               <Image
+                key={i}
                 className="mx-2"
                 src={guess.details.poster}
                 width={100}
@@ -239,19 +239,7 @@ function MovieDetail({
 }: {
   className?: string;
   label: string;
-  field:
-    | {
-        value: string;
-        revealed?: boolean;
-        lt?: string;
-        gt?: string;
-      }
-    | {
-        value: string;
-        revealed?: boolean;
-        lt?: string;
-        gt?: string;
-      }[];
+  field: OverlapAnswerDetails | OverlapAnswerDetails[];
 }) {
   const fields = Array.isArray(field) ? field : [field];
 
@@ -275,14 +263,19 @@ function MovieDetail({
           else
             return (
               <div key={i} className="flex items-center">
-                {field.lt && (
-                  <p className="mt-1 min-w-[70px] text-left text-lg text-white">
+                {field.lt && !field.e && (
+                  <p className="mr-1 mt-1 min-w-max text-left text-lg text-white">
                     {field.lt} &lt;
                   </p>
                 )}
+                {field.e && (
+                  <p className="mr-1 mt-1 min-w-max text-left text-lg text-white">
+                    {field.e}
+                  </p>
+                )}
                 <div className="mt-1 h-8 w-full rounded-3xl bg-gray-400"></div>
-                {field.gt && (
-                  <p className="mt-1 min-w-[70px] text-right text-lg text-white">
+                {field.gt && !field.e && (
+                  <p className="ml-1 mt-1 min-w-max text-right text-lg text-white">
                     &lt; {field.gt}
                   </p>
                 )}
@@ -294,20 +287,16 @@ function MovieDetail({
   );
 }
 
-function CastDetail({
-  cast,
-}: {
-  cast: { name: string; image: string; revealed: boolean };
-}) {
+function CastDetail({ cast }: { cast: OverlapAnswerDetails }) {
   return cast.revealed ? (
     <div className="flex items-center">
       <Image
-        src={cast.image}
+        src={cast.image ?? ""}
         height={50}
         width={50}
-        alt={`Headshot of ${cast.name}`}
+        alt={`Headshot of ${cast.value}`}
       />
-      <p className="ml-4 mt-1 text-2xl text-white">{cast.name}</p>
+      <p className="ml-4 mt-1 text-2xl text-white">{cast.value}</p>
     </div>
   ) : (
     <div className="flex w-full items-center">
@@ -324,9 +313,7 @@ function CrewDetail({
 }: {
   className?: string;
   label: string;
-  field:
-    | { name: string; image: string; revealed: boolean }
-    | { name: string; image: string; revealed: boolean }[];
+  field: OverlapAnswerDetails | OverlapAnswerDetails[];
 }) {
   const fields = Array.isArray(field) ? field : [field];
 
@@ -345,12 +332,12 @@ function CrewDetail({
             return (
               <div key={i} className="flex items-center">
                 <Image
-                  src={crew.image}
+                  src={crew.image ?? ""}
                   height={50}
                   width={50}
-                  alt={`Headshot of ${crew.name}`}
+                  alt={`Headshot of ${crew.value}`}
                 />
-                <p className="ml-4 mt-1 text-2xl text-white">{crew.name}</p>
+                <p className="ml-4 mt-1 text-2xl text-white">{crew.value}</p>
               </div>
             );
           else

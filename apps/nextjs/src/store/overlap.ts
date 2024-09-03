@@ -1,8 +1,37 @@
+import { inferRouterOutputs } from "@trpc/server";
 import { create } from "zustand";
 
+import { AppRouter } from "@repo/api";
+
+type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
+
+export type OverlapAnswerDetails = {
+  value: string;
+  revealed: boolean;
+  gt?: string;
+  lt?: string;
+  e?: boolean;
+  image?: string;
+};
+
 export interface OverlapGameState {
+  title: OverlapAnswerDetails;
+  releaseYear: OverlapAnswerDetails;
+  runtime: OverlapAnswerDetails;
+  rating: OverlapAnswerDetails;
+  budget: OverlapAnswerDetails;
+  revenue: OverlapAnswerDetails;
+  directors: OverlapAnswerDetails[];
+  writers: OverlapAnswerDetails[];
+  cast: OverlapAnswerDetails[];
+  genres: OverlapAnswerDetails[];
+  keywords: OverlapAnswerDetails[];
+}
+
+export interface OverlapGameData {
   game: {
-    choice: "rock" | "paper" | "scissors" | undefined;
+    state: OverlapGameState;
+    guesses: TMDBMovie[];
     gameOver: boolean;
     timestamps: {
       lastCompleted: number;
@@ -19,8 +48,8 @@ export interface OverlapGameState {
   timestamp: number;
 }
 
-interface LocalStore extends OverlapGameState {
-  update: (newState: OverlapGameState) => void;
+interface LocalStore extends OverlapGameData {
+  update: (newState: OverlapGameData) => void;
   newGame: () => void;
   reload: () => void;
   reset: () => void;
@@ -48,20 +77,20 @@ const defaultState = {
     winStreak: 0,
   },
   timestamp: new Date().getTime(),
-} as OverlapGameState;
+} as OverlapGameData;
 
 const getInitialState = () => {
   let gs = { ...defaultState };
   if (typeof window !== "undefined") {
     const ls = localStorage.getItem(LOCAL_STOREAGE_KEY);
-    if (ls) gs = JSON.parse(ls) as OverlapGameState;
+    if (ls) gs = JSON.parse(ls) as OverlapGameData;
   }
   return gs;
 };
 
 export const useLocalStore = create<LocalStore>((set) => ({
   ...getInitialState(),
-  update: (newState: OverlapGameState) =>
+  update: (newState: OverlapGameData) =>
     set(() => {
       saveState(newState);
       return newState;
@@ -123,10 +152,10 @@ export const useTweetStore = create<TweetStore>((set) => ({
   update: (newState: { header: string; stats: string }) => set(() => newState),
 }));
 
-function saveState(state: OverlapGameState) {
+function saveState(state: OverlapGameData) {
   const ls = localStorage.getItem(LOCAL_STOREAGE_KEY);
   if (ls) {
-    const gs = JSON.parse(ls) as OverlapGameState;
+    const gs = JSON.parse(ls) as OverlapGameData;
     if (gs.stats.gamesPlayed > 0 && state.stats.gamesPlayed === 0) return;
   }
 

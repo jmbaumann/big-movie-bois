@@ -22,6 +22,7 @@
     "@radix-ui/react-select": "^2.1.1",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.1",
     "@repo/api": "^0.1.0",
     "@repo/auth": "^0.1.0",
@@ -35,6 +36,7 @@
     "@vercel/analytics": "^1.2.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "cmdk": "1.0.0",
     "date-fns": "^3.3.1",
     "lucide-react": "^0.314.0",
     "next": "^13.4.9",
@@ -46,7 +48,8 @@
     "superjson": "1.9.1",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.21.4"
+    "zod": "^3.21.4",
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
     "@repo/eslint-config": "^0.2.0",

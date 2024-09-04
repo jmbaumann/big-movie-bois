@@ -5,6 +5,7 @@ import {
   SheetContent,
   SheetDescription,
   SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet";
 
@@ -26,28 +27,18 @@ export default function Settings({
       </SheetTrigger>
       <SheetContent
         side="bottom"
-        className="max-h-[90%] bg-[#2d2d2d] text-white"
+        className="max-h-[90%] bg-neutral-900 text-white"
       >
         <SheetHeader>
+          <SheetTitle className="text-lg font-semibold text-white">
+            How To Play
+          </SheetTitle>
           <SheetDescription className="text-white">
             <div className="flex flex-col">
-              <div className="mt-2 text-lg font-semibold">How To Play</div>
-              <div className="mb-2 text-sm">It&apos;s Rock Paper Scissors</div>
-
-              {/* <div className="mt-6 text-lg font-semibold">More Games</div>
-              <div className="mb-2 text-sm">
-                <a href="https://consensu5.com" target="_blank">
-                  <Consensu5Logo />
-                </a>
-              </div> */}
-
-              <div className="mt-16 text-center text-xs">
-                &copy; {new Date().getFullYear()}
-                {"   "}&bull;{"   "}
-                <a href="https://twitter.com/jeremy_baumann">
-                  jeremy made this :)
-                </a>
-              </div>
+              <p className="mb-2 text-sm">
+                Guess a movie to reveal the details that it shares with the
+                answer
+              </p>
             </div>
           </SheetDescription>
         </SheetHeader>

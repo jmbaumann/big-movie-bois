@@ -15,7 +15,7 @@ export function findOverlap(
   const guesses = guessMovies.map((e) => restructure(e));
 
   const titlesArray = guesses.map((e) => e.title);
-  const yearsArray = guesses.map((e) => e.releaseYear);
+  const yearsArray = guesses.map((e) => Number(e.releaseYear));
   const runtimesArray = guesses.map((e) => e.runtime);
   const ratingsArray = guesses.map((e) => e.rating!);
   const budgetsArray = guesses.map((e) => e.budget);
@@ -77,7 +77,7 @@ export function findOverlap(
     },
     releaseYear: {
       value: answer.releaseYear,
-      revealed: new Set(yearsArray).has(answer.releaseYear),
+      revealed: new Set(yearsArray).has(Number(answer.releaseYear)),
       gt: findClosest(yearsArray, answer.releaseYear, { flag: "gt" }),
       lt: findClosest(yearsArray, answer.releaseYear, { flag: "lt" }),
     },
@@ -165,10 +165,10 @@ function findClosest(
       if (difference < closestDifference) {
         closestDifference = difference;
         closestValue = options.firstChar
-          ? typeof item === "string"
-            ? item[0]
-            : `$${Math.round((item / 1000000) * 10) / 10}M`
-          : item;
+          ? typeof currentValue === "string"
+            ? currentValue[0]
+            : `$${Math.round((currentValue / 1000000) * 10) / 10}M`
+          : currentValue;
       }
     }
   }

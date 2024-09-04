@@ -88,7 +88,7 @@ function restructure(movie: {
       ?.release_dates.find((e) => e.type === 3)?.certification,
     budget: movie.details.budget,
     revenue: movie.details.revenue,
-    keywords: movie.keywords.keywords.map((e) => e.name),
+    keywords: movie.keywords.keywords.map((e) => e.name).slice(0, 12),
     poster: `https://image.tmdb.org/t/p/w1280/${movie.details.poster_path}`,
   };
   const cast = movie.credits.cast.map((e) => ({

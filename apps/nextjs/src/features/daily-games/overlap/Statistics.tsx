@@ -31,7 +31,7 @@ export default function Statistics({
       </SheetTrigger>
       <SheetContent
         side="bottom"
-        className="max-h-[90%] items-center bg-[#2d2d2d] text-white"
+        className="max-h-[90%] items-center bg-neutral-900 text-white"
       >
         <SheetHeader>
           <SheetTitle className="text-center text-white">Statistics</SheetTitle>

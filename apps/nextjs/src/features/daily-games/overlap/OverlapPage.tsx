@@ -27,6 +27,11 @@ type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
 
 export default function OverlapPage() {
   const [gameState, setGameState] = useState<OverlapGameState>();
+  const [overlaps, setOverlaps] = useState({
+    details: 0,
+    cast: 0,
+    crew: 0,
+  });
   const [guesses, setGuesses] = useState<TMDBMovie[]>([]);
   const [guessId, setGuessId] = useState<number>(0);
   const [searchKeyword, setSearchKeyword] = useState<string>();
@@ -57,7 +62,6 @@ export default function OverlapPage() {
 
   useEffect(() => {
     if (guessDetails) {
-      console.log(guessDetails);
       setGuesses((s) => {
         return [...s, guessDetails];
       });
@@ -67,8 +71,29 @@ export default function OverlapPage() {
 
   useEffect(() => {
     if (answer) {
-      console.log(findOverlap(answer, guesses));
       setGameState(findOverlap(answer, guesses));
+      console.log(findOverlap(answer, guesses));
+      if (guesses.length) {
+        const latest = findOverlap(answer, [guesses[guesses.length - 1]!]);
+        if (latest.title.revealed)
+          setOverlaps({ details: 0, cast: 0, crew: 0 });
+        else
+          setOverlaps({
+            details: [
+              latest.releaseYear,
+              latest.runtime,
+              latest.rating,
+              ...latest.genres.flat(),
+              latest.revenue,
+              latest.budget,
+              ...latest.keywords.flat(),
+            ].filter((e) => e.revealed).length,
+            cast: latest.cast.filter((e) => e.revealed).length,
+            crew:
+              latest.directors.filter((e) => e.revealed).length +
+              latest.writers.filter((e) => e.revealed).length,
+          });
+      }
     }
   }, [guesses]);
 
@@ -79,18 +104,17 @@ export default function OverlapPage() {
 
   return (
     <Layout>
-      <main className="font-tektur flex h-screen max-h-screen flex-col items-center">
+      <main className="flex h-screen max-h-screen flex-col items-center">
         <div className="mb-1 flex w-full flex-row items-center p-2">
           <Logo />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center">
+            <p className="mr-2 inline">Today's Average Guesses: 4</p>
             <Statistics open={openStatistics} setOpen={setOpenStatistics} />
             <Settings open={openSettings} setOpen={setOpenSettings} />
           </div>
         </div>
 
         <div className="w-full items-center text-center">
-          <p>Today's Average Guesses: 4</p>
-
           {gameState && (
             <div className="flex w-full flex-col">
               <div className="flex">
@@ -109,9 +133,24 @@ export default function OverlapPage() {
 
                 <Tabs defaultValue="details" className="w-full px-4">
                   <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="cast">Cast</TabsTrigger>
-                    <TabsTrigger value="crew">Crew</TabsTrigger>
+                    <TabsTrigger value="details">
+                      Details{" "}
+                      {overlaps.details > 0 && (
+                        <OverlapsIndicator num={overlaps.details} />
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="cast">
+                      Cast{" "}
+                      {overlaps.cast > 0 && (
+                        <OverlapsIndicator num={overlaps.cast} />
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="crew">
+                      Crew{" "}
+                      {overlaps.crew > 0 && (
+                        <OverlapsIndicator num={overlaps.crew} />
+                      )}
+                    </TabsTrigger>
                   </TabsList>
                   <TabsContent value="details">
                     <div className="mb-2 flex">
@@ -350,5 +389,11 @@ function CrewDetail({
         })}
       </div>
     </div>
+  );
+}
+
+function OverlapsIndicator({ num }: { num: number }) {
+  return (
+    <span className="ml-1 w-5 rounded-full bg-red-600 text-white">{num}</span>
   );
 }

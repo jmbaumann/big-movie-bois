@@ -20,7 +20,7 @@ function Layout({
       <main className="flex-grow">
         <div
           className={cn(
-            "mx-auto mb-12 mt-2 flex w-[80%] flex-col lg:mt-8",
+            "mx-auto flex w-[80%] flex-col",
             fullWidth ? "mb-0 mt-0 w-full lg:mt-0" : "",
           )}
         >

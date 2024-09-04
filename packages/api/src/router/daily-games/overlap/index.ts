@@ -27,7 +27,7 @@ const todaysMovie = publicProcedure
         ?.release_dates.find((e) => e.type === 3)?.certification,
       budget: tmdbDetails.budget,
       revenue: tmdbDetails.revenue,
-      keywords: tmdbKeywords.keywords.map((e) => e.name),
+      keywords: tmdbKeywords.keywords.map((e) => e.name).slice(0, 12),
       poster: `https://image.tmdb.org/t/p/w1280/${tmdbDetails.poster_path}`,
     };
     const cast = tmdbCredits.cast.map((e) => ({

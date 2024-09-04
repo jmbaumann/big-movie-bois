@@ -1,5 +1,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
 
@@ -19,6 +21,7 @@ import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 import { OverlapAnswerDetails, OverlapGameState } from "~/store/overlap";
+import Archive from "./Archive";
 import Logo from "./Logo";
 import Settings from "./Settings";
 import Statistics from "./Statistics";
@@ -26,7 +29,10 @@ import Statistics from "./Statistics";
 type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
 
 export default function OverlapPage() {
-  const [gameState, setGameState] = useState<OverlapGameState>();
+  const router = useRouter();
+  const archive = router.query.archive as string | undefined;
+
+  const [gameState, setGameState] = useState<OverlapGameState | undefined>();
   const [overlaps, setOverlaps] = useState({
     details: 0,
     cast: 0,
@@ -36,12 +42,13 @@ export default function OverlapPage() {
   const [guessId, setGuessId] = useState<number>(0);
   const [searchKeyword, setSearchKeyword] = useState<string>();
 
+  const [openArchive, setOpenArchive] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
   const [openStatistics, setOpenStatistics] = useState(false);
 
   const { data: answer } = api.overlap.todaysMovie.useQuery(
     {
-      date: format(new Date(), "yyyy-MM-dd"),
+      date: archive ?? format(new Date(), "yyyy-MM-dd"),
     },
     { staleTime: 60 * 1000 * 30 },
   );
@@ -53,7 +60,7 @@ export default function OverlapPage() {
     api.tmdb.getById.useQuery({ id: guessId }, { enabled: false });
 
   useEffect(() => {
-    if (answer) setGameState(findOverlap(answer, guesses));
+    if (answer) reset();
   }, [answer]);
 
   useEffect(() => {
@@ -102,13 +109,31 @@ export default function OverlapPage() {
     setSearchKeyword("");
   }
 
+  function reset() {
+    setGuesses([]);
+    setGameState(undefined);
+    setOverlaps({
+      details: 0,
+      cast: 0,
+      crew: 0,
+    });
+    setGuessId(0);
+    setSearchKeyword("");
+    setOpenArchive(false);
+    setOpenSettings(false);
+    setOpenStatistics(false);
+  }
+
   return (
     <Layout>
       <main className="flex h-screen max-h-screen flex-col items-center">
         <div className="mb-1 flex w-full flex-row items-center p-2">
-          <Logo />
+          <Link href={"/daily-games/overlap"}>
+            <Logo />
+          </Link>
           <div className="ml-auto flex items-center">
-            <p className="mr-2 inline">Today's Average Guesses: 4</p>
+            <p className="mr-2 inline">Average Guesses: 4</p>
+            <Archive open={openArchive} setOpen={setOpenArchive} />
             <Statistics open={openStatistics} setOpen={setOpenStatistics} />
             <Settings open={openSettings} setOpen={setOpenSettings} />
           </div>
@@ -128,7 +153,7 @@ export default function OverlapPage() {
                     />
                   </div>
                 ) : (
-                  <span className="h-[450px] max-h-[450px] w-[300px] max-w-[300px] bg-gray-300"></span>
+                  <span className="h-[375px] max-h-[450px] w-[250px] max-w-[300px] bg-gray-300"></span>
                 )}
 
                 <Tabs defaultValue="details" className="w-full px-4">
@@ -228,28 +253,30 @@ export default function OverlapPage() {
                 </Tabs>
               </div>
 
-              <Command className="mx-auto mt-2 w-1/2">
-                <CommandInput
-                  placeholder="Guess a movie"
-                  value={searchKeyword}
-                  onChangeCapture={(e: ChangeEvent<HTMLInputElement>) =>
-                    setSearchKeyword(e.target.value)
-                  }
-                />
-                <CommandList>
-                  {!!searchKeyword && (
-                    <CommandEmpty>No results found.</CommandEmpty>
-                  )}
-                  {searchResult?.map((result, i) => (
-                    <CommandItem
-                      key={i}
-                      onSelect={() => handleMovieSelect(result.id)}
-                    >
-                      {result.title}
-                    </CommandItem>
-                  ))}
-                </CommandList>
-              </Command>
+              {!gameState.title?.revealed && (
+                <Command className="mx-auto mt-2 w-1/2">
+                  <CommandInput
+                    placeholder="Guess a movie"
+                    value={searchKeyword}
+                    onChangeCapture={(e: ChangeEvent<HTMLInputElement>) =>
+                      setSearchKeyword(e.target.value)
+                    }
+                  />
+                  <CommandList>
+                    {!!searchKeyword && (
+                      <CommandEmpty>No results found.</CommandEmpty>
+                    )}
+                    {searchResult?.map((result, i) => (
+                      <CommandItem
+                        key={i}
+                        onSelect={() => handleMovieSelect(result.id)}
+                      >
+                        {result.title}
+                      </CommandItem>
+                    ))}
+                  </CommandList>
+                </Command>
+              )}
             </div>
           )}
 

@@ -13,8 +13,18 @@ import {
 const todaysMovie = publicProcedure
   .input(z.object({ date: z.string() }))
   .query(async ({ ctx, input }) => {
+    const idsByDate = {
+      "Sep 4": 27205,
+      "Sep 3": 27581,
+      "Sep 2": 1374,
+      "Sep 1": 603,
+    };
+
+    // @ts-ignore
+    const id = idsByDate[input.date] ?? 27205;
+
     // get movie data from tmdb
-    // return getByTMDBId(9087);
+    return getByTMDBId(id);
 
     const details = {
       id: tmdbDetails.id,

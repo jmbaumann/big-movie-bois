@@ -78,8 +78,8 @@ export function findOverlap(
     releaseYear: {
       value: answer.releaseYear,
       revealed: new Set(yearsArray).has(Number(answer.releaseYear)),
-      gt: findClosest(yearsArray, answer.releaseYear, { flag: "gt" }),
-      lt: findClosest(yearsArray, answer.releaseYear, { flag: "lt" }),
+      gt: findClosest(yearsArray, Number(answer.releaseYear), { flag: "gt" }),
+      lt: findClosest(yearsArray, Number(answer.releaseYear), { flag: "lt" }),
     },
     runtime: {
       value: `${answer.runtime} mins`,

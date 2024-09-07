@@ -65,7 +65,9 @@ function LeagueCard({ league }: { league: League }) {
             {league.name}
           </Link>
         </CardTitle>
-        <CardDescription>Owner: {league.owner.name}</CardDescription>
+        <CardDescription>
+          Owner: {league.owner.name} | Members: {league.members.length}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <p>Active Session(s)</p>

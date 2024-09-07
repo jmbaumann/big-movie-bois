@@ -27,6 +27,8 @@ import {
   CommandItem,
   CommandList,
 } from "~/components/ui/command";
+import { useConfirm } from "~/components/ui/hooks/use-confirm";
+import { toast } from "~/components/ui/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 import NewSessionDialog from "./NewSessionDialog";
@@ -73,6 +75,7 @@ export default function LeagueDetailsPage() {
             <TabsList className="">
               <TabsTrigger value="sessions">Sessions</TabsTrigger>
               <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
             <TabsContent value="sessions">
@@ -83,6 +86,7 @@ export default function LeagueDetailsPage() {
             <TabsContent value="members">
               <Members league={league!} refreshLeague={refreshLeague} />
             </TabsContent>
+            <TabsContent value="history">History</TabsContent>
             <TabsContent value="settings">Settings</TabsContent>
           </Tabs>
         </div>
@@ -122,6 +126,7 @@ function Members({
 }) {
   const [searchKeyword, setSearchKeyword] = useState<string>();
   const [open, setOpen] = useState(false);
+  const confirm = useConfirm();
 
   const { data: searchResult } = api.user.search.useQuery(
     { keyword: searchKeyword ?? "" },
@@ -133,14 +138,26 @@ function Members({
   function handleUserSelected(userId: string) {
     addMember(
       { userId, leagueId: league!.id },
-      { onSettled: () => refreshLeague() },
+      {
+        onSettled: () => refreshLeague(),
+        onError: (error) =>
+          toast({ title: error.message, variant: "destructive" }),
+      },
     );
     setOpen(false);
     setSearchKeyword(undefined);
   }
 
-  function handleRemoveUser(id: string) {
-    removeMember({ id }, { onSettled: () => refreshLeague() });
+  async function handleRemoveUser(id: string) {
+    const ok = await confirm("Are you sure you want to remove this member?");
+    if (ok)
+      removeMember(
+        { id },
+        {
+          onSuccess: () => toast({ title: "Member removed" }),
+          onSettled: () => refreshLeague(),
+        },
+      );
   }
 
   return (

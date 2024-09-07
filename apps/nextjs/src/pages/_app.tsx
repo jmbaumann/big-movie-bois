@@ -6,6 +6,7 @@ import type { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
 
 import { api } from "~/utils/api";
+import { ConfirmProvider } from "~/components/ui/confirm";
 import { Toaster } from "~/components/ui/toaster";
 
 const MyApp: AppType<{ session: Session | null }> = ({
@@ -14,9 +15,11 @@ const MyApp: AppType<{ session: Session | null }> = ({
 }) => {
   return (
     <SessionProvider session={session}>
-      <Component {...pageProps} />
-      <Toaster />
-      <Analytics />
+      <ConfirmProvider>
+        <Component {...pageProps} />
+        <Toaster />
+        <Analytics />
+      </ConfirmProvider>
     </SessionProvider>
   );
 };

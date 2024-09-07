@@ -1,7 +1,9 @@
-export default function FantasyFilmLeagueSessionPage() {
+import SessionDetailsPage from "~/features/fantasy-film/SessionDetailsPage";
+
+export default function FantasyFilmSessionPage() {
   return (
-    <div className="flex h-screen w-screen items-center justify-center ">
-      LEAGUE SESSION PAGE
-    </div>
+    <>
+      <SessionDetailsPage />
+    </>
   );
 }

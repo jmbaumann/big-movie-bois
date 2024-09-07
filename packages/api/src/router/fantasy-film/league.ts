@@ -17,7 +17,7 @@ const getMyLeagues = publicProcedure.query(async ({ ctx }) => {
     // const leagues = await getLeaguesForUser(ctx, user.id);
     const leagues = await ctx.prisma.league.findMany({
       where: { ownerId: user.id },
-      include: { owner: { select: { name: true } } },
+      include: { owner: { select: { name: true } }, sessions: true },
     });
     return leagues;
   } else return [];
@@ -27,12 +27,12 @@ const getPublicLeagues = publicProcedure.query(({ ctx }) => {
   return [];
 });
 
-const getByUuid = protectedProcedure
-  .input(z.object({ uuid: z.string() }))
+const getById = protectedProcedure
+  .input(z.object({ id: z.string() }))
   .query(async ({ ctx, input }) => {
-    // const league = await getLeagueByUuid(ctx, input.uuid);
+    // const league = await getLeagueById(ctx, input.id);
     const league = await ctx.prisma.league.findFirst({
-      where: { uuid: input.uuid },
+      where: { id: input.id },
     });
     if (!league) return null;
     return league;
@@ -101,7 +101,7 @@ const update = protectedProcedure
 export const leagueRouter = createTRPCRouter({
   getMyLeagues,
   getPublicLeagues,
-  getByUuid,
+  getById,
   create,
   update,
   // invite,

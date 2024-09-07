@@ -39,23 +39,19 @@ export default function FantasyFilmHomePage() {
       <div>
         <div className="mb-4 flex items-center">
           <h1 className="text-2xl">My Leagues</h1>
-          <NewLeagueDialog className="ml-auto" />
+          {sessionData?.user && <NewLeagueDialog className="ml-auto" />}
         </div>
         {sessionData?.user ? (
           leagues?.map((league, i) => <LeagueCard key={i} league={league} />)
         ) : (
           <p className="w-full text-center">
-            Sign Up or Login to see your joined leagues
+            Sign In to see your leagues or create a new one
           </p>
         )}
       </div>
     </Layout>
   );
 }
-
-const activeSessions = [
-  { name: "2024 FFL", startDate: "2024-02-01", endDate: "2024-12-31" },
-];
 
 function LeagueCard({ league }: { league: League }) {
   return (
@@ -64,24 +60,29 @@ function LeagueCard({ league }: { league: League }) {
         <CardTitle>
           <Link
             className="hover:text-primary"
-            href={`/fantasy-film/${league.uuid}`}
+            href={`/fantasy-film/${league.id}`}
           >
             {league.name}
           </Link>
         </CardTitle>
-        <CardDescription>
-          Owner: {league.owner.name} Created:{" "}
-          {format(league.createdAt.toString(), "yyyy-MM-dd")}
-        </CardDescription>
+        <CardDescription>Owner: {league.owner.name}</CardDescription>
       </CardHeader>
       <CardContent>
         <p>Active Session(s)</p>
-        {activeSessions.map((session, i) => (
+        {league.sessions.map((session, i) => (
           <Card key={i}>
             <CardHeader>
-              <CardTitle>{session.name}</CardTitle>
+              <CardTitle>
+                <Link
+                  className="hover:text-primary"
+                  href={`/fantasy-film/${league.id}/${session.id}`}
+                >
+                  {session.name}
+                </Link>
+              </CardTitle>
               <CardDescription>
-                {session.startDate} - {session.endDate}
+                {format(session.startDate, "yyyy-MM-dd")} -{" "}
+                {format(session.endDate, "yyyy-MM-dd")}
               </CardDescription>
             </CardHeader>
             <CardContent>TEAM NAME</CardContent>

@@ -32,8 +32,8 @@ export default function LeagueDetailsPage() {
     data: league,
     isLoading,
     refetch,
-  } = api.ffLeague.getByUuid.useQuery(
-    { uuid: leagueId },
+  } = api.ffLeague.getById.useQuery(
+    { id: leagueId },
     {
       enabled: !!leagueId,
     },

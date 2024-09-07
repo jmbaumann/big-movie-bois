@@ -7,8 +7,10 @@ import { useSession } from "next-auth/react";
 import { useFieldArray, useForm, useFormContext } from "react-hook-form";
 import { z } from "zod";
 
+import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "@repo/api/src/enums";
+import { createLeagueSessionInputObj } from "@repo/api/src/zod";
+
 import { api } from "~/utils/api";
-import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "~/utils/enums";
 import { cn } from "~/utils/shadcn";
 import SlotDescriptionDialog from "~/components/SlotDescriptionDialog";
 import {
@@ -64,35 +66,15 @@ export default function NewSessionDialog({ className }: { className: string }) {
 
   const [currentStep, setCurrentStep] = useState<Steps>("details");
 
-  // const { isLoading, mutate: createLeague } = api.ffLeague.create.useMutation();
+  const { isLoading, mutate: createSession } =
+    api.ffLeagueSession.create.useMutation();
 
-  const formSchema = z.object({
-    name: z.string().min(2).max(50),
-    startDate: z.date().optional(),
-    endDate: z.date().optional(),
-    settings: z.object({
-      draft: z.object({
-        date: z.date().optional(),
-        hour: z.string().optional(),
-        min: z.string().optional(),
-        ampm: z.string().optional(),
-        type: z.enum(toZodEnum(DRAFT_TYPES)),
-        order: z.array(z.string()),
-        numRounds: z.coerce.number(),
-        timePerRound: z.coerce.number(),
-      }),
-      teamStructure: z.array(
-        z.object({
-          type: z.enum(toZodEnum(STUDIO_SLOT_TYPES)),
-          pos: z.number(),
-        }),
-      ),
-    }),
-  });
+  const formSchema = createLeagueSessionInputObj;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      leagueId: (router.query.leagueId as string | undefined) ?? "",
       name: "",
       startDate: undefined,
       endDate: undefined,
@@ -120,19 +102,21 @@ export default function NewSessionDialog({ className }: { className: string }) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("on submit");
-    console.log({ values });
-    // createLeague(values, {
-    //   onSuccess: (data) => {
-    //     toast({
-    //       title: "Session Created",
-    //     });
-    //     // void router.push(`/fantasy-film/${data.uuid}`);
-    //   },
-    //   onError: (error) => {
-    //     toast({ title: error.message, variant: "destructive" });
-    //   },
-    // });
+    const leagueId = (router.query.leagueId as string | undefined) ?? "";
+    createSession(
+      { ...values, leagueId },
+      {
+        onSuccess: (data) => {
+          toast({
+            title: "Session Created",
+          });
+          void router.push(`/fantasy-film/${leagueId}/${data.slug}`);
+        },
+        onError: (error) => {
+          toast({ title: error.message, variant: "destructive" });
+        },
+      },
+    );
   }
 
   const onInvalid = (errors: any) => console.log({ errors });
@@ -182,42 +166,38 @@ export default function NewSessionDialog({ className }: { className: string }) {
             className="max-w-2/3 max-h-[90%] w-2/3 overflow-y-auto"
             onPointerDownOutside={(event) => event.preventDefault()} // Prevent closing on outside click
             onEscapeKeyDown={(event) => event.preventDefault()}
+            aria-describedby={undefined}
           >
             <DialogHeader>
               <DialogTitle>Create New Session</DialogTitle>
-              <DialogDescription>
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem>
-                      <BreadcrumbPage
-                        className={
-                          currentStep === "details" ? "text-white" : ""
-                        }
-                      >
-                        Details
-                      </BreadcrumbPage>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage
-                        className={
-                          currentStep === "members" ? "text-white" : ""
-                        }
-                      >
-                        Members
-                      </BreadcrumbPage>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage
-                        className={currentStep === "draft" ? "text-white" : ""}
-                      >
-                        Draft
-                      </BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
-              </DialogDescription>
+
+              <Breadcrumb className="text-gray-400">
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbPage
+                      className={currentStep === "details" ? "text-white" : ""}
+                    >
+                      Details
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage
+                      className={currentStep === "members" ? "text-white" : ""}
+                    >
+                      Members
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage
+                      className={currentStep === "draft" ? "text-white" : ""}
+                    >
+                      Draft
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
             </DialogHeader>
 
             {getCurrentStepForm(currentStep)}
@@ -268,7 +248,7 @@ function DetailsSection() {
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem className="w-1/2">
+            <FormItem className="w-2/3">
               <FormLabel>Session Name</FormLabel>
               <FormControl>
                 <Input {...field} className="text-black" autoComplete="off" />
@@ -297,9 +277,9 @@ function DetailsSection() {
                       {field.value ? (
                         format(field.value, "PPP")
                       ) : (
-                        <span>Pick a date</span>
+                        <span className="text-black">Pick a date</span>
                       )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      <CalendarIcon className="ml-auto h-4 w-4 text-black opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
@@ -335,9 +315,9 @@ function DetailsSection() {
                       {field.value ? (
                         format(field.value, "PPP")
                       ) : (
-                        <span>Pick a date</span>
+                        <span className="text-black">Pick a date</span>
                       )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      <CalendarIcon className="ml-auto h-4 w-4 text-black opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
@@ -357,9 +337,10 @@ function DetailsSection() {
       </div>
 
       <div className="">
-        <Label className="mb-2 flex items-center">
-          Studio Structure <SlotDescriptionDialog className="ml-2" />
-        </Label>
+        <div className="flex items-center">
+          <Label className="flex items-center">Studio Structure</Label>
+          <SlotDescriptionDialog className="ml-2" />
+        </div>
         <div className="space-y-4 px-4">
           {fields.map((field, index) => {
             return (
@@ -376,7 +357,7 @@ function DetailsSection() {
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
-                          <SelectTrigger className="w-[300px] text-black">
+                          <SelectTrigger className="w-1/2 text-black">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -393,7 +374,7 @@ function DetailsSection() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="bg-red-600"
+                          className="bg-white text-black hover:bg-red-600 hover:text-white"
                           onClick={() => remove(index)}
                         >
                           <Trash className="h-4 w-4" />
@@ -483,13 +464,13 @@ function DraftSection() {
                       {field.value ? (
                         format(field.value, "PPP")
                       ) : (
-                        <span>Pick a date</span>
+                        <span className="text-black">Pick a date</span>
                       )}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 text-black" align="start">
                   <Calendar
                     mode="single"
                     selected={field.value}

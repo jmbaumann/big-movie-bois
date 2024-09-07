@@ -46,10 +46,10 @@ export default function Archive({
           <SheetDescription className="text-white">
             <div className="flex flex-col">
               {/* <Button className="mx-auto mb-4 w-1/6">Random</Button> */}
-              <div className="mx-auto grid w-2/3 grid-cols-3 gap-2">
+              <div className="mx-auto grid w-full grid-cols-3 gap-2 lg:w-2/3">
                 {dates.map((date, i) => (
                   <Button
-                    className="bg-primary mx-auto w-2/3 rounded-full text-xl"
+                    className="bg-primary mx-auto w-full rounded-full text-xl lg:w-2/3"
                     key={i}
                     onClick={() => {
                       router.push(`/daily-games/overlap?archive=${date}`);

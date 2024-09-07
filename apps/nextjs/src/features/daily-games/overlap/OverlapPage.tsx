@@ -23,6 +23,7 @@ import Layout from "~/layouts/main/Layout";
 import { OverlapAnswerDetails, OverlapGameState } from "~/store/overlap";
 import Archive from "./Archive";
 import Logo from "./Logo";
+import LogoMini from "./LogoMini";
 import Settings from "./Settings";
 import Statistics from "./Statistics";
 
@@ -126,13 +127,15 @@ export default function OverlapPage() {
 
   return (
     <Layout>
-      <main className="flex h-screen max-h-screen flex-col items-center">
+      <main className="flex flex-col items-center">
         <div className="mb-1 flex w-full flex-row items-center p-2">
-          <Link href={"/daily-games/overlap"}>
+          <Link className="flex lg:hidden" href={"/daily-games/overlap"}>
+            <LogoMini />
+          </Link>
+          <Link className="hidden lg:block" href={"/daily-games/overlap"}>
             <Logo />
           </Link>
           <div className="ml-auto flex items-center">
-            <p className="mr-2 inline">Average Guesses: 4</p>
             <Archive open={openArchive} setOpen={setOpenArchive} />
             <Statistics open={openStatistics} setOpen={setOpenStatistics} />
             <Settings open={openSettings} setOpen={setOpenSettings} />
@@ -142,9 +145,9 @@ export default function OverlapPage() {
         <div className="w-full items-center text-center">
           {gameState && (
             <div className="flex w-full flex-col">
-              <div className="flex">
+              <div className="flex flex-col lg:flex-row">
                 {gameState.title.revealed ? (
-                  <div className="max-h-[450px] max-w-[300px]">
+                  <div className="mx-auto mb-2 max-h-[450px] max-w-[300px] lg:mx-0 lg:mb-0 lg:block">
                     <Image
                       src={answer!.details.poster!}
                       width={300}
@@ -153,7 +156,7 @@ export default function OverlapPage() {
                     />
                   </div>
                 ) : (
-                  <span className="h-[375px] max-h-[450px] w-[250px] max-w-[300px] bg-gray-300"></span>
+                  <span className="hidden h-[375px] max-h-[450px] w-[250px] max-w-[300px] bg-gray-300 lg:block"></span>
                 )}
 
                 <Tabs defaultValue="details" className="w-full px-4">
@@ -180,41 +183,65 @@ export default function OverlapPage() {
                   <TabsContent value="details">
                     <div className="mb-2 flex">
                       <MovieDetail
-                        className="w-2/3"
+                        className="w-full lg:w-2/3"
                         label="Title"
                         field={gameState.title}
                       />
                       <MovieDetail
-                        className="w-1/3"
+                        className="hidden w-1/3 lg:flex"
                         label="Year"
                         field={gameState.releaseYear}
                       />
                     </div>
                     <div className="mb-2 flex">
                       <MovieDetail
-                        className="w-1/3"
-                        label="Runtime (minutes)"
+                        className="w-1/2 lg:hidden"
+                        label="Year"
+                        field={gameState.releaseYear}
+                      />
+                      <MovieDetail
+                        className="w-1/2 lg:w-1/3"
+                        label="Runtime"
                         field={gameState.runtime}
                       />
                       <MovieDetail
-                        className="w-1/6"
+                        className="hidden w-1/6 lg:flex"
                         label="Rating"
                         field={gameState.rating}
                       />
                       <MovieDetail
-                        className="w-1/3"
+                        className="hidden w-1/2 lg:flex"
                         label="Genre(s)"
+                        field={gameState.genres}
+                      />
+                    </div>
+                    <div className="mb-2 flex lg:hidden">
+                      <MovieDetail
+                        className="w-1/3"
+                        label="Rating"
+                        field={gameState.rating}
+                      />
+                      <MovieDetail
+                        className="w-2/3"
+                        label="Genres"
                         field={gameState.genres}
                       />
                     </div>
                     <div className="mb-2 flex">
                       <MovieDetail
-                        className="w-1/3"
+                        className="w-5/6 lg:w-1/2"
                         label="Box Office"
                         field={gameState.revenue}
                       />
                       <MovieDetail
-                        className="w-1/3"
+                        className="hidden w-1/2 lg:flex"
+                        label="Budget"
+                        field={gameState.budget}
+                      />
+                    </div>
+                    <div className="mb-2 flex lg:hidden">
+                      <MovieDetail
+                        className="w-5/6"
                         label="Budget"
                         field={gameState.budget}
                       />
@@ -222,6 +249,7 @@ export default function OverlapPage() {
                     <div className="mb-2 flex">
                       <MovieDetail
                         className="w-full"
+                        textSize="text-lg"
                         label="Keywords"
                         field={gameState.keywords}
                       />
@@ -254,43 +282,47 @@ export default function OverlapPage() {
               </div>
 
               {!gameState.title?.revealed && (
-                <Command className="mx-auto mt-2 w-1/2">
-                  <CommandInput
-                    placeholder="Guess a movie"
-                    value={searchKeyword}
-                    onChangeCapture={(e: ChangeEvent<HTMLInputElement>) =>
-                      setSearchKeyword(e.target.value)
-                    }
-                  />
-                  <CommandList>
-                    {!!searchKeyword && (
-                      <CommandEmpty>No results found.</CommandEmpty>
-                    )}
-                    {searchResult?.map((result, i) => (
-                      <CommandItem
-                        key={i}
-                        onSelect={() => handleMovieSelect(result.id)}
-                      >
-                        {result.title}
-                      </CommandItem>
-                    ))}
-                  </CommandList>
-                </Command>
+                <>
+                  <Command className="mx-auto mt-2 w-1/2">
+                    <CommandInput
+                      placeholder="Guess a movie"
+                      value={searchKeyword}
+                      onChangeCapture={(e: ChangeEvent<HTMLInputElement>) =>
+                        setSearchKeyword(e.target.value)
+                      }
+                    />
+                    <CommandList>
+                      {!!searchKeyword && (
+                        <CommandEmpty>No results found.</CommandEmpty>
+                      )}
+                      {searchResult?.map((result, i) => (
+                        <CommandItem
+                          key={i}
+                          onSelect={() => handleMovieSelect(result.id)}
+                        >
+                          {result.title}
+                        </CommandItem>
+                      ))}
+                    </CommandList>
+                  </Command>
+                  <p className="mr-2 lg:block">Average Guesses: 4</p>
+                </>
               )}
             </div>
           )}
 
-          <div className="mt-4 flex justify-center">
-            {guesses.map((guess, i) => (
-              <Image
-                key={i}
-                className="mx-2"
-                src={guess.details.poster}
-                width={100}
-                height={150}
-                alt={`Poster for ${guess.details.title}`}
-              />
-            ))}
+          <div className="mb-4 mt-4 flex gap-2 overflow-x-auto">
+            <div className="mx-auto">
+              {guesses.map((guess, i) => (
+                <Image
+                  key={i}
+                  src={guess.details.poster}
+                  width={100}
+                  height={150}
+                  alt={`Poster for ${guess.details.title}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </main>
@@ -302,27 +334,33 @@ function MovieDetail({
   className,
   label,
   field,
+  textSize,
 }: {
   className?: string;
   label: string;
   field: OverlapAnswerDetails | OverlapAnswerDetails[];
+  textSize?: string;
 }) {
   const fields = Array.isArray(field) ? field : [field];
+
+  const c =
+    fields.length >= 2
+      ? fields.length <= 3
+        ? "grid w-full grid-cols-2 gap-x-2 gap-y-1"
+        : "grid w-full grid-cols-4 gap-x-4 gap-y-1"
+      : "w-full";
 
   return (
     <div className={cn("flex flex-col items-start px-4", className)}>
       <Label className="float-left">{label}</Label>
-      <div
-        className={
-          fields.length > 3
-            ? "grid w-full grid-cols-4 gap-x-4 gap-y-1"
-            : "w-full"
-        }
-      >
+      <div className={c}>
         {fields.map((field, i) => {
           if (field.revealed)
             return (
-              <p key={i} className="mt-1 text-left text-2xl text-white">
+              <p
+                key={i}
+                className={cn("mt-1 text-left text-2xl text-white", textSize)}
+              >
                 {field.value}
               </p>
             );
@@ -365,7 +403,7 @@ function CastDetail({ cast }: { cast: OverlapAnswerDetails }) {
       <p className="ml-4 mt-1 text-2xl text-white">{cast.value}</p>
     </div>
   ) : (
-    <div className="flex w-full items-center">
+    <div className="mb-1 flex w-full items-center">
       <div className="h-[40px] min-w-[40px] rounded-full bg-gray-400"></div>
       <div className="ml-4 h-8 w-full rounded-3xl bg-gray-400"></div>
     </div>
@@ -389,8 +427,8 @@ function CrewDetail({
       <div
         className={
           fields.length >= 2
-            ? "grid w-full grid-cols-2 gap-x-4 gap-y-2"
-            : "w-1/2"
+            ? "w-full gap-y-2 lg:grid lg:grid-cols-2 lg:gap-x-4"
+            : "w-full lg:w-1/2"
         }
       >
         {fields.map((crew, i) => {

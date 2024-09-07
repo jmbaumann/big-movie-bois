@@ -13,14 +13,14 @@ function Layout({
   showFooter?: boolean;
 }) {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-neutral-900 text-[#9ab]">
+    <div className="min-w-screen flex min-h-screen flex-col bg-neutral-900 text-[#9ab]">
       <SEO />
       <TopBar />
 
       <main className="flex-grow">
         <div
           className={cn(
-            "mx-auto flex w-[80%] flex-col",
+            "mx-auto flex flex-col px-2 lg:w-[80%]",
             fullWidth ? "mb-0 mt-0 w-full lg:mt-0" : "",
           )}
         >

@@ -249,7 +249,7 @@ export default function OverlapPage() {
                     <div className="mb-2 flex">
                       <MovieDetail
                         className="w-full"
-                        textSize="text-lg"
+                        textSize="text-md"
                         label="Keywords"
                         field={gameState.keywords}
                       />
@@ -283,7 +283,7 @@ export default function OverlapPage() {
 
               {!gameState.title?.revealed && (
                 <>
-                  <Command className="mx-auto mt-2 w-1/2">
+                  <Command className="mx-auto mt-2 w-5/6 lg:w-1/2">
                     <CommandInput
                       placeholder="Guess a movie"
                       value={searchKeyword}

@@ -311,8 +311,8 @@ export default function OverlapPage() {
             </div>
           )}
 
-          <div className="mb-4 mt-4 flex gap-2 overflow-x-auto">
-            <div className="mx-auto">
+          <div className="mb-4 mt-4 flex overflow-x-auto">
+            <div className="mx-auto flex gap-2">
               {guesses.map((guess, i) => (
                 <Image
                   key={i}
@@ -368,7 +368,7 @@ function MovieDetail({
             return (
               <div key={i} className="flex items-center">
                 {field.lt && !field.e && (
-                  <p className="mr-1 mt-1 min-w-max text-left text-lg text-white">
+                  <p className="mr-1 mt-1 min-w-max text-left text-lg text-red-600">
                     {field.lt} &lt;
                   </p>
                 )}
@@ -379,7 +379,7 @@ function MovieDetail({
                 )}
                 <div className="mt-1 h-8 w-full rounded-3xl bg-gray-400"></div>
                 {field.gt && !field.e && (
-                  <p className="ml-1 mt-1 min-w-max text-right text-lg text-white">
+                  <p className="ml-1 mt-1 min-w-max text-right text-lg text-cyan-400">
                     &lt; {field.gt}
                   </p>
                 )}

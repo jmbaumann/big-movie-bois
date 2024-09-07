@@ -60,7 +60,7 @@ export default function NewLeagueDialog({ className }: { className: string }) {
         toast({
           title: "League Created",
         });
-        void router.push(`/fantasy-film/${data.uuid}`);
+        void router.push(`/fantasy-film/${data.id}`);
       },
       onError: (error) => {
         toast({ title: error.message, variant: "destructive" });

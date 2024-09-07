@@ -33,6 +33,7 @@ const getById = protectedProcedure
     // const league = await getLeagueById(ctx, input.id);
     const league = await ctx.prisma.league.findFirst({
       where: { id: input.id },
+      include: { sessions: true, members: { include: { user: true } } },
     });
     if (!league) return null;
     return league;
@@ -53,6 +54,12 @@ const create = protectedProcedure
         ownerId: ctx.session.user.id,
         createdAt: new Date(),
         createdBy: ctx.session.user.id,
+      },
+    });
+    await ctx.prisma.leagueMember.create({
+      data: {
+        userId: ctx.session.user.id,
+        leagueId: league.id,
       },
     });
     return league;
@@ -79,24 +86,21 @@ const update = protectedProcedure
     return league;
   });
 
-// const invite = protectedProcedure
-// .input(z.object({ SessionId: z.string(), userEmail: z.string() }))
-// .mutation(async ({ ctx, input }) => {
-//   const user = await ctx.prisma.user.findFirst({
-//     where: { email: input.userEmail },
-//   });
-//   if (!user)
-//     throw new Error("A user with that email address does not exist");
-//   await ctx.prisma.studio.create({
-//     data: {
-//       SessionId: input.SessionId,
-//       ownerId: user.id,
-//       name: `${user.name} Studios`,
-//       image: "film",
-//       score: 0,
-//     },
-//   });
-// })
+const addMember = protectedProcedure
+  .input(z.object({ leagueId: z.string(), userId: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueMember.create({
+      data: input,
+    });
+  });
+
+const removeMember = protectedProcedure
+  .input(z.object({ id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueMember.delete({
+      where: { id: input.id },
+    });
+  });
 
 export const leagueRouter = createTRPCRouter({
   getMyLeagues,
@@ -104,7 +108,8 @@ export const leagueRouter = createTRPCRouter({
   getById,
   create,
   update,
-  // invite,
+  addMember,
+  removeMember,
 });
 
 ////////////////

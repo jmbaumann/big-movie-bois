@@ -24,12 +24,12 @@ model League {
     deletedAt DateTime?
     deletedBy String?
 
-    owner        User            @relation("LeagueOwner", fields: [ownerId], references: [id])
-    creator      User            @relation("LeagueCreator", fields: [createdBy], references: [id])
-    updater      User?           @relation("LeagueUpdater", fields: [updatedBy], references: [id])
-    deleter      User?           @relation("LeagueDeleter", fields: [deletedBy], references: [id])
-    sessions     LeagueSession[]
-    LeagueMember LeagueMember[]
+    owner    User            @relation("LeagueOwner", fields: [ownerId], references: [id])
+    creator  User            @relation("LeagueCreator", fields: [createdBy], references: [id])
+    updater  User?           @relation("LeagueUpdater", fields: [updatedBy], references: [id])
+    deleter  User?           @relation("LeagueDeleter", fields: [deletedBy], references: [id])
+    sessions LeagueSession[]
+    members  LeagueMember[]
 
     @@index([ownerId])
     @@index([createdBy])

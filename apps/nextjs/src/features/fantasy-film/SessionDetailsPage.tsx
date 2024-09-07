@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 
 type Leagues = inferRouterOutputs<AppRouter>["ffLeague"]["getMyLeagues"];
@@ -51,6 +52,27 @@ export default function SessionDetailsPage() {
         </Link>
         <div className="mb-4 flex items-center">
           <h1 className="text-2xl">{session?.name}</h1>
+        </div>
+
+        <div className="">
+          <Tabs defaultValue="my-studio" className="w-full px-2 lg:px-4">
+            <TabsList>
+              <TabsTrigger value="my-studio">My Studio</TabsTrigger>
+              <TabsTrigger value="opposing-studios">
+                Opposing Studios
+              </TabsTrigger>
+              <TabsTrigger value="standings">Standings</TabsTrigger>
+              <TabsTrigger value="films">Films</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+            <TabsContent value="my-studio">my-studio</TabsContent>
+            <TabsContent value="opposing-studios">Opposing-studios</TabsContent>
+            <TabsContent value="standings">Standings</TabsContent>
+            <TabsContent value="films">Films</TabsContent>
+            <TabsContent value="activity">Activity</TabsContent>
+            <TabsContent value="settings">Settings</TabsContent>
+          </Tabs>
         </div>
       </div>
     </Layout>

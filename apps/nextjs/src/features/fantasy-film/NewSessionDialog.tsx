@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { inferRouterOutputs } from "@trpc/server";
 import { format, sub } from "date-fns";
 import { CalendarIcon, Loader2, Trash } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useFieldArray, useForm, useFormContext } from "react-hook-form";
 import { z } from "zod";
 
+import { AppRouter } from "@repo/api";
 import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "@repo/api/src/enums";
 import { createLeagueSessionInputObj } from "@repo/api/src/zod";
 
@@ -58,8 +60,15 @@ import { Switch } from "~/components/ui/switch";
 import { toZodEnum } from "~/utils";
 
 type Steps = "details" | "draft" | "members";
+type League = inferRouterOutputs<AppRouter>["ffLeague"]["getById"];
 
-export default function NewSessionDialog({ className }: { className: string }) {
+export default function NewSessionDialog({
+  className,
+  league,
+}: {
+  className: string;
+  league: League;
+}) {
   const { data: sessionData } = useSession();
   const router = useRouter();
   const { toast } = useToast();
@@ -126,7 +135,7 @@ export default function NewSessionDialog({ className }: { className: string }) {
       case "details":
         return <DetailsSection />;
       case "members":
-        return <MembersSection />;
+        return <MembersSection league={league} />;
       case "draft":
         return <DraftSection />;
     }
@@ -405,32 +414,15 @@ function DetailsSection() {
   );
 }
 
-function MembersSection() {
+function MembersSection({ league }: { league: League }) {
   const form = useFormContext();
-  const members = [
-    {
-      id: "111",
-      username: "jimmyjeans",
-      image: "",
-    },
-    {
-      id: "222",
-      username: "bigmoviebois",
-      image: "",
-    },
-    {
-      id: "333",
-      username: "dannyocean",
-      image: "",
-    },
-  ];
 
   return (
     <div className="mb-4 flex flex-col space-y-4">
-      {members.map((member, i) => (
+      {league?.members.map((member, i) => (
         <div key={i} className="flex items-center">
           <span className="mr-2 h-10 w-10 rounded-full bg-blue-400"></span>
-          <p>{member.username}</p>
+          <p>{member.user.name}</p>
           <Button className="ml-auto" variant="destructive">
             Remove
           </Button>

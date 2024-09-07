@@ -3,7 +3,6 @@ import { Info } from "lucide-react";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -28,19 +27,29 @@ export default function Settings({
       <SheetContent
         side="bottom"
         className="max-h-[90%] bg-neutral-900 text-white"
+        aria-describedby={undefined}
       >
         <SheetHeader>
           <SheetTitle className="text-lg font-semibold text-white">
             How To Play
           </SheetTitle>
-          <SheetDescription className="text-white">
-            <div className="flex flex-col">
-              <p className="mb-2 text-sm">
-                Guess a movie to reveal the details that it shares with the
-                answer
-              </p>
-            </div>
-          </SheetDescription>
+
+          <div className="flex flex-col text-white">
+            <p className="mb-2 text-sm">
+              Guess a movie to reveal the details that it shares with the answer
+            </p>
+            <p className="text-xs">
+              Film data from{" "}
+              <a
+                href="https://www.themoviedb.org/"
+                target="_blank"
+                className="underline"
+                rel="noreferrer"
+              >
+                TMDb
+              </a>
+            </p>
+          </div>
         </SheetHeader>
       </SheetContent>
     </Sheet>

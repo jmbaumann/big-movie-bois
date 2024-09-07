@@ -25,17 +25,9 @@ export default function Footer() {
           </Link>
         </nav>
         <p className="mt-4 text-xs">
-          © Big Movie Bois
+          © 2024 Big Movie Bois
           <span className="mx-2">|</span>
-          <a
-            href="https://letterboxd.com/about/film-data/"
-            target="_blank"
-            className="underline"
-            rel="noreferrer"
-          >
-            Film data
-          </a>{" "}
-          from{" "}
+          Film data from{" "}
           <a
             href="https://www.themoviedb.org/"
             target="_blank"
@@ -44,7 +36,6 @@ export default function Footer() {
           >
             TMDb
           </a>
-          .
         </p>
       </div>
     </footer>

@@ -127,12 +127,9 @@ export default function OverlapPage() {
 
   return (
     <Layout>
-      <main className="flex flex-col items-center">
+      <main className="mb-72 flex flex-col items-center lg:mb-2">
         <div className="mb-1 flex w-full flex-row items-center p-2">
-          <Link className="flex lg:hidden" href={"/daily-games/overlap"}>
-            <LogoMini />
-          </Link>
-          <Link className="hidden lg:block" href={"/daily-games/overlap"}>
+          <Link href={"/daily-games/overlap"}>
             <Logo />
           </Link>
           <div className="ml-auto flex items-center">
@@ -146,10 +143,10 @@ export default function OverlapPage() {
           {gameState && (
             <div className="flex w-full flex-col">
               <div className="flex flex-col lg:flex-row">
-                {gameState.title.revealed ? (
+                {gameState.title.revealed && answer ? (
                   <div className="mx-auto mb-2 max-h-[450px] max-w-[300px] lg:mx-0 lg:mb-0 lg:block">
                     <Image
-                      src={answer!.details.poster!}
+                      src={answer.details.poster!}
                       width={300}
                       height={450}
                       alt={`Poster for ${answer?.details.title}`}
@@ -159,7 +156,7 @@ export default function OverlapPage() {
                   <span className="hidden h-[375px] max-h-[450px] w-[250px] max-w-[300px] bg-gray-300 lg:block"></span>
                 )}
 
-                <Tabs defaultValue="details" className="w-full px-4">
+                <Tabs defaultValue="details" className="w-full px-2 lg:px-4">
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="details">
                       Details{" "}
@@ -283,7 +280,7 @@ export default function OverlapPage() {
 
               {!gameState.title?.revealed && (
                 <>
-                  <Command className="mx-auto mt-2 w-5/6 lg:w-1/2">
+                  <Command className="mx-auto mt-2 w-full lg:w-1/2">
                     <CommandInput
                       placeholder="Guess a movie"
                       value={searchKeyword}
@@ -351,7 +348,7 @@ function MovieDetail({
       : "w-full";
 
   return (
-    <div className={cn("flex flex-col items-start px-4", className)}>
+    <div className={cn("flex flex-col items-start px-2 lg:px-4", className)}>
       <Label className="float-left">{label}</Label>
       <div className={c}>
         {fields.map((field, i) => {

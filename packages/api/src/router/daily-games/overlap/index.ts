@@ -14,10 +14,16 @@ const todaysMovie = publicProcedure
   .input(z.object({ date: z.string() }))
   .query(async ({ ctx, input }) => {
     const idsByDate = {
-      "Sep 4": 27205,
-      "Sep 3": 27581,
-      "Sep 2": 1374,
-      "Sep 1": 603,
+      "Sep 10": 280, // T2
+      "Sep 9": 102899, // ant-man
+      "Sep 8": 920, // cars
+      "Sep 7": 929590, // civil war
+      "Sep 6": 95, // armageddon
+      "Sep 5": 6977, // no country for old men
+      "Sep 4": 27205, // inception
+      "Sep 3": 27581, // the other guys
+      "Sep 2": 1374, // rocky iv
+      "Sep 1": 603, // the matrix
     };
 
     // @ts-ignore

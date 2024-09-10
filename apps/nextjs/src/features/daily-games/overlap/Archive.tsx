@@ -20,13 +20,16 @@ export default function Archive({
   const router = useRouter();
 
   const dates = [
+    "Sep 10",
+    "Sep 9",
+    "Sep 8",
+    "Sep 7",
+    "Sep 6",
+    "Sep 5",
+    "Sep 4",
     "Sep 3",
     "Sep 2",
     "Sep 1",
-    // "Aug 31",
-    // "Aug 30",
-    // "Aug 29",
-    // "Aug 28",
   ];
 
   return (

@@ -13,6 +13,7 @@ import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "@repo/api/src/enums";
 import { createLeagueSessionInputObj } from "@repo/api/src/zod";
 
 import { api } from "~/utils/api";
+import { useArray, type UseArray } from "~/utils/hooks/use-array";
 import { cn } from "~/utils/shadcn";
 import SlotDescriptionDialog from "~/components/SlotDescriptionDialog";
 import {
@@ -57,7 +58,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
-import { toZodEnum } from "~/utils";
 
 type Steps = "details" | "draft" | "members";
 type League = inferRouterOutputs<AppRouter>["ffLeague"]["getById"];
@@ -74,6 +74,9 @@ export default function NewSessionDialog({
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState<Steps>("details");
+  const sessionMembers = useArray<string>(
+    league?.members.map((e) => e.userId) ?? [],
+  );
 
   const { isLoading, mutate: createSession } =
     api.ffLeagueSession.create.useMutation();
@@ -112,6 +115,7 @@ export default function NewSessionDialog({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const leagueId = (router.query.leagueId as string | undefined) ?? "";
+    console.log({ ...values, leagueId, members: sessionMembers });
     createSession(
       { ...values, leagueId },
       {
@@ -135,7 +139,9 @@ export default function NewSessionDialog({
       case "details":
         return <DetailsSection />;
       case "members":
-        return <MembersSection league={league} />;
+        return (
+          <MembersSection league={league} sessionMembers={sessionMembers} />
+        );
       case "draft":
         return <DraftSection />;
     }
@@ -414,8 +420,22 @@ function DetailsSection() {
   );
 }
 
-function MembersSection({ league }: { league: League }) {
+function MembersSection({
+  league,
+  sessionMembers,
+}: {
+  league: League;
+  sessionMembers: UseArray<string>;
+}) {
   const form = useFormContext();
+  console.log(sessionMembers);
+
+  function handleRemove(userId: string) {
+    sessionMembers.removeValue(userId);
+  }
+  function handleAdd(userId: string) {
+    sessionMembers.add(userId);
+  }
 
   return (
     <div className="mb-4 flex flex-col space-y-4">
@@ -423,9 +443,23 @@ function MembersSection({ league }: { league: League }) {
         <div key={i} className="flex items-center">
           <span className="mr-2 h-10 w-10 rounded-full bg-blue-400"></span>
           <p>{member.user.name}</p>
-          <Button className="ml-auto" variant="destructive">
-            Remove
-          </Button>
+          {new Set(sessionMembers.array).has(member.userId) ? (
+            <Button
+              className="ml-auto"
+              variant="destructive"
+              onClick={() => handleRemove(member.userId)}
+            >
+              Remove
+            </Button>
+          ) : (
+            <Button
+              className="ml-auto"
+              variant="destructive"
+              onClick={() => handleAdd(member.userId)}
+            >
+              Add
+            </Button>
+          )}
         </div>
       ))}
     </div>

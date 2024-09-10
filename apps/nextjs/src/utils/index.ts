@@ -1,7 +1,3 @@
-export function toZodEnum<T extends Record<string, string>>(e: T) {
-  return Object.values(e) as unknown as readonly [string, ...string[]];
-}
-
 export function toMoney(num: number) {
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",

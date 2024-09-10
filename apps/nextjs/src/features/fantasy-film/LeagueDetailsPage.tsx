@@ -10,6 +10,7 @@ import { AppRouter } from "@repo/api";
 import { LeagueSession } from "@repo/db";
 
 import { api } from "~/utils/api";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -29,6 +30,14 @@ import {
 } from "~/components/ui/command";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 import NewSessionDialog from "./NewSessionDialog";
@@ -162,23 +171,45 @@ function Members({
 
   return (
     <div>
-      {league?.members.map((member, i) => (
-        <div key={i} className="mb-4 flex w-1/2 items-center">
-          <p>{member.user.name}</p>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="ml-auto bg-red-600 text-white"
-            onClick={() => handleRemoveUser(member.id)}
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[100px]"></TableHead>
+            <TableHead>Username</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {league?.members.map((member, i) => {
+            const isOwner = league?.ownerId === member.userId;
+            return (
+              <TableRow key={i}>
+                <TableCell>
+                  {isOwner && <Badge>Owner</Badge>}
+                  {!isOwner && member.isAdmin && <Badge>Admin</Badge>}
+                </TableCell>
+                <TableCell>{member.user.name}</TableCell>
+                <TableCell>Joined</TableCell>
+                <TableCell>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="ml-auto bg-red-600 text-white"
+                    onClick={() => handleRemoveUser(member.id)}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
 
-      <Button className="" onClick={() => setOpen(true)}>
-        Add Member
+      <Button className="mt-4" onClick={() => setOpen(true)}>
+        + Add Member
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput

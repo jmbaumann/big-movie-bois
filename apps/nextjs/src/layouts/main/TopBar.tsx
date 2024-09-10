@@ -1,9 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from "next-auth/react";
+
+import { cn } from "~/utils/shadcn";
 
 export default function TopBar() {
   const { data: sessionData } = useSession();
+  const router = useRouter();
+
+  const links = [
+    { href: "/fantasy-film", label: "Fantasy Film" },
+    { href: "/daily-games", label: "Daily Games" },
+    // { href: '/forums', label: 'Forums'},
+    // { href: '/podcast', label: 'Podcast'},
+    // { href: '/support', label: 'Suppport'},
+  ];
 
   return (
     <header className="flex h-[72px] items-center justify-around bg-neutral-900 font-sans">
@@ -13,27 +25,20 @@ export default function TopBar() {
         </Link>
 
         <nav className="ml-4 hidden lg:flex">
-          <Link
-            href={"/fantasy-film"}
-            className="hover:text-primary mx-3 uppercase"
-          >
-            Fantasy Film
-          </Link>
-          <Link
-            href={"/daily-games"}
-            className="hover:text-primary mx-3 uppercase"
-          >
-            Daily Games
-          </Link>
-          {/* <Link href={"/forums"} className="mx-3 uppercase hover:text-primary">
-            Forums
-          </Link>
-          <Link href={"/podcast"} className="mx-3 uppercase hover:text-primary">
-            Podcast
-          </Link>
-          <Link href={"/support"} className="mx-3 uppercase hover:text-primary">
-            Support
-          </Link> */}
+          {links.map((link, i) => (
+            <Link
+              key={i}
+              href={link.href}
+              className={cn(
+                "hover:text-primary mx-3 uppercase",
+                router.pathname.startsWith(link.href)
+                  ? "border-primary border-b-2"
+                  : "",
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         <nav className="ml-auto flex">

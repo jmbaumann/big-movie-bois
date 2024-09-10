@@ -282,6 +282,7 @@ export default function OverlapPage() {
                 <>
                   <Command className="mx-auto mt-2 w-full lg:w-1/2">
                     <CommandInput
+                      className="appearance-none"
                       placeholder="Guess a movie"
                       value={searchKeyword}
                       onChangeCapture={(e: ChangeEvent<HTMLInputElement>) =>

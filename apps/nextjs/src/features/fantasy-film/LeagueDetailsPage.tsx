@@ -7,6 +7,7 @@ import { ChevronLeft, Trash } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
+import { LEAGUE_INVITE_STATUSES } from "@repo/api/src/enums";
 import { LeagueSession } from "@repo/db";
 
 import { api } from "~/utils/api";
@@ -59,6 +60,7 @@ export default function LeagueDetailsPage() {
       enabled: !!leagueId,
     },
   );
+  const isOwner = sessionData?.user.id === league?.ownerId;
 
   return (
     <Layout showFooter>
@@ -85,7 +87,7 @@ export default function LeagueDetailsPage() {
               <TabsTrigger value="sessions">Sessions</TabsTrigger>
               <TabsTrigger value="members">Members</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+              {isOwner && <TabsTrigger value="settings">Settings</TabsTrigger>}
             </TabsList>
             <TabsContent value="sessions">
               {league?.sessions.map((session, i) => (
@@ -141,11 +143,12 @@ function Members({
     { keyword: searchKeyword ?? "" },
     { enabled: !!searchKeyword },
   );
-  const { isLoading, mutate: addMember } = api.ffLeague.addMember.useMutation();
+  const { isLoading, mutate: invite } = api.ffLeague.invite.useMutation();
   const { mutate: removeMember } = api.ffLeague.removeMember.useMutation();
+  const { mutate: removeInvite } = api.ffLeague.removeInvite.useMutation();
 
   function handleUserSelected(userId: string) {
-    addMember(
+    invite(
       { userId, leagueId: league!.id },
       {
         onSettled: () => refreshLeague(),
@@ -157,16 +160,29 @@ function Members({
     setSearchKeyword(undefined);
   }
 
-  async function handleRemoveUser(id: string) {
-    const ok = await confirm("Are you sure you want to remove this member?");
+  async function handleRemoveUser(id: string, type: "member" | "invite") {
+    const ok = await confirm(
+      `Are you sure you want to ${
+        type === "member" ? "remove this member" : "revoke this invitation"
+      }?`,
+    );
     if (ok)
-      removeMember(
-        { id },
-        {
-          onSuccess: () => toast({ title: "Member removed" }),
-          onSettled: () => refreshLeague(),
-        },
-      );
+      if (type === "member")
+        removeMember(
+          { id },
+          {
+            onSuccess: () => toast({ title: "Member removed" }),
+            onSettled: () => refreshLeague(),
+          },
+        );
+      else
+        removeInvite(
+          { id },
+          {
+            onSuccess: () => toast({ title: "Invitation revoked" }),
+            onSettled: () => refreshLeague(),
+          },
+        );
   }
 
   return (
@@ -191,13 +207,13 @@ function Members({
                 </TableCell>
                 <TableCell>{member.user.name}</TableCell>
                 <TableCell>Joined</TableCell>
-                <TableCell>
+                <TableCell className="float-right">
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
                     className="ml-auto bg-red-600 text-white"
-                    onClick={() => handleRemoveUser(member.id)}
+                    onClick={() => handleRemoveUser(member.id, "member")}
                   >
                     <Trash className="h-4 w-4" />
                   </Button>
@@ -205,6 +221,28 @@ function Members({
               </TableRow>
             );
           })}
+          {league?.invites
+            .filter((e) => e.status === LEAGUE_INVITE_STATUSES.PENDING)
+            .map((invite, i) => {
+              return (
+                <TableRow key={i}>
+                  <TableCell></TableCell>
+                  <TableCell>{invite.user.name}</TableCell>
+                  <TableCell>Invited</TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="ml-auto bg-red-600 text-white"
+                      onClick={() => handleRemoveUser(invite.id, "invite")}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
         </TableBody>
       </Table>
 

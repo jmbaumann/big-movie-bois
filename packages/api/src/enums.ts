@@ -18,3 +18,9 @@ export const DRAFT_TYPES = {
   SNAKE: "Snake",
   LINEAR: "Linear",
 } as const;
+
+export const LEAGUE_INVITE_STATUSES = {
+  PENDING: "pending",
+  ACCEPTED: "accepted",
+  DECLINED: "declined",
+};

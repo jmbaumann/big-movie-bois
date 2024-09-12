@@ -24,17 +24,33 @@ model League {
     deletedAt DateTime?
     deletedBy String?
 
-    owner    User            @relation("LeagueOwner", fields: [ownerId], references: [id])
-    creator  User            @relation("LeagueCreator", fields: [createdBy], references: [id])
-    updater  User?           @relation("LeagueUpdater", fields: [updatedBy], references: [id])
-    deleter  User?           @relation("LeagueDeleter", fields: [deletedBy], references: [id])
+    owner    User               @relation("LeagueOwner", fields: [ownerId], references: [id])
+    creator  User               @relation("LeagueCreator", fields: [createdBy], references: [id])
+    updater  User?              @relation("LeagueUpdater", fields: [updatedBy], references: [id])
+    deleter  User?              @relation("LeagueDeleter", fields: [deletedBy], references: [id])
     sessions LeagueSession[]
     members  LeagueMember[]
+    invites  LeagueInvitation[]
 
     @@index([ownerId])
     @@index([createdBy])
     @@index([updatedBy])
     @@index([deletedBy])
+}
+
+model LeagueInvitation {
+    id        String   @id @default(cuid())
+    leagueId  String
+    userId    String
+    createdAt DateTime
+    status    String
+    updatedBy String?
+
+    league League @relation(fields: [leagueId], references: [id])
+    user   User   @relation(fields: [userId], references: [id])
+
+    @@index([leagueId])
+    @@index([userId])
 }
 
 model LeagueMember {
@@ -149,6 +165,7 @@ model User {
     sessions          Session[]
     leaguesOwned      League[]              @relation("LeagueOwner")
     leagueMemberships LeagueMember[]
+    leagueInvites     LeagueInvitation[]
     studiosOwned      LeagueSessionStudio[] @relation("StudioOwner")
     leaguesCreated    League[]              @relation("LeagueCreator")
     leaguesUpdated    League[]              @relation("LeagueUpdater")

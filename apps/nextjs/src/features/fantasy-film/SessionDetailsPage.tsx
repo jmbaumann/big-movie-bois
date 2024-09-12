@@ -55,20 +55,26 @@ export default function SessionDetailsPage() {
         </div>
 
         <div className="">
-          <Tabs defaultValue="my-studio" className="w-full px-2 lg:px-4">
+          <Tabs defaultValue="home" className="w-full px-2 lg:px-4">
             <TabsList>
+              <TabsTrigger value="home">Home</TabsTrigger>
               <TabsTrigger value="my-studio">My Studio</TabsTrigger>
               <TabsTrigger value="opposing-studios">
                 Opposing Studios
               </TabsTrigger>
               <TabsTrigger value="standings">Standings</TabsTrigger>
+              <TabsTrigger value="release-calendar">
+                Release Calendar
+              </TabsTrigger>
               <TabsTrigger value="films">Films</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
+            <TabsContent value="home">Home</TabsContent>
             <TabsContent value="my-studio">my-studio</TabsContent>
             <TabsContent value="opposing-studios">Opposing-studios</TabsContent>
             <TabsContent value="standings">Standings</TabsContent>
+            <TabsContent value="release-calendar">Release Calendar</TabsContent>
             <TabsContent value="films">Films</TabsContent>
             <TabsContent value="activity">Activity</TabsContent>
             <TabsContent value="settings">Settings</TabsContent>

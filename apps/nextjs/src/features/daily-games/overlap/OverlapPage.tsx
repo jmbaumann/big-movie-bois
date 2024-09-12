@@ -23,7 +23,6 @@ import Layout from "~/layouts/main/Layout";
 import { OverlapAnswerDetails, OverlapGameState } from "~/store/overlap";
 import Archive from "./Archive";
 import Logo from "./Logo";
-import LogoMini from "./LogoMini";
 import Settings from "./Settings";
 import Statistics from "./Statistics";
 

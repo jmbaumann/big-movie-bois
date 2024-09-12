@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 import { Prisma } from "@repo/db";
-import type { League, Session, Studio } from "@repo/db";
+import type { League, Session } from "@repo/db";
 
+import { LEAGUE_INVITE_STATUSES } from "../../enums";
 // import { movieList } from "../movies";
 import type { TRPCContext } from "../../trpc";
 import {
@@ -16,7 +17,7 @@ const getMyLeagues = publicProcedure.query(async ({ ctx }) => {
   if (user) {
     // const leagues = await getLeaguesForUser(ctx, user.id);
     const leagues = await ctx.prisma.league.findMany({
-      where: { ownerId: user.id },
+      where: { members: { some: { userId: user.id } } },
       include: {
         owner: { select: { name: true } },
         sessions: true,
@@ -34,10 +35,13 @@ const getPublicLeagues = publicProcedure.query(({ ctx }) => {
 const getById = protectedProcedure
   .input(z.object({ id: z.string() }))
   .query(async ({ ctx, input }) => {
-    // const league = await getLeagueById(ctx, input.id);
     const league = await ctx.prisma.league.findFirst({
       where: { id: input.id },
-      include: { sessions: true, members: { include: { user: true } } },
+      include: {
+        sessions: true,
+        members: { include: { user: true } },
+        invites: { include: { user: true } },
+      },
     });
     if (!league) return null;
     return league;
@@ -90,11 +94,66 @@ const update = protectedProcedure
     return league;
   });
 
-const addMember = protectedProcedure
+const getInvitesByUserId = protectedProcedure
+  .input(z.object({ userId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueInvitation.findMany({
+      where: { userId: input.userId, status: LEAGUE_INVITE_STATUSES.PENDING },
+      include: {
+        league: { select: { name: true, owner: true } },
+      },
+    });
+  });
+
+const invite = protectedProcedure
   .input(z.object({ leagueId: z.string(), userId: z.string() }))
   .mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueInvitation.create({
+      data: {
+        leagueId: input.leagueId,
+        userId: input.userId,
+        status: LEAGUE_INVITE_STATUSES.PENDING,
+        createdAt: new Date(),
+      },
+    });
+  });
+
+const updateInvite = protectedProcedure
+  .input(z.object({ id: z.string(), status: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueInvitation.update({
+      data: { status: input.status },
+      where: { id: input.id },
+    });
+  });
+
+const removeInvite = protectedProcedure
+  .input(z.object({ id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueInvitation.delete({
+      where: { id: input.id },
+    });
+  });
+
+const addMember = protectedProcedure
+  .input(
+    z.object({
+      leagueId: z.string(),
+      userId: z.string(),
+      inviteId: z.string().optional(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    if (input.inviteId)
+      await ctx.prisma.leagueInvitation.update({
+        data: { status: LEAGUE_INVITE_STATUSES.ACCEPTED },
+        where: { id: input.inviteId },
+      });
     return await ctx.prisma.leagueMember.create({
-      data: input,
+      data: {
+        leagueId: input.leagueId,
+        userId: input.userId,
+      },
     });
   });
 
@@ -112,6 +171,10 @@ export const leagueRouter = createTRPCRouter({
   getById,
   create,
   update,
+  getInvitesByUserId,
+  invite,
+  updateInvite,
+  removeInvite,
   addMember,
   removeMember,
 });

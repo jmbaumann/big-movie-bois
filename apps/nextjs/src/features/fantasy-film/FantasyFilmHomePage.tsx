@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import Layout from "~/layouts/main/Layout";
+import LeagueInvitesDialog from "./LeagueInvitesDialog";
 import NewLeagueDialog from "./NewLeagueDialog";
 
 type Leagues = inferRouterOutputs<AppRouter>["ffLeague"]["getMyLeagues"];
@@ -30,7 +31,8 @@ export default function FantasyFilmHomePage() {
   } = api.ffLeague.getMyLeagues.useQuery(undefined, {
     enabled: !!sessionData?.user,
   });
-  const handleRefetch = () => {
+
+  const refresh = () => {
     void refetch();
   };
 
@@ -39,7 +41,12 @@ export default function FantasyFilmHomePage() {
       <div>
         <div className="mb-4 flex items-center">
           <h1 className="text-2xl">My Leagues</h1>
-          {sessionData?.user && <NewLeagueDialog className="ml-auto" />}
+          <div className="ml-auto flex items-center">
+            {sessionData?.user && (
+              <LeagueInvitesDialog refreshLeagues={refresh} />
+            )}
+            {sessionData?.user && <NewLeagueDialog className="ml-2" />}
+          </div>
         </div>
         {sessionData?.user ? (
           leagues?.map((league, i) => <LeagueCard key={i} league={league} />)

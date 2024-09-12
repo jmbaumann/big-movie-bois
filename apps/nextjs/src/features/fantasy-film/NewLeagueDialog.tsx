@@ -27,7 +27,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 
-export default function NewLeagueDialog({ className }: { className: string }) {
+export default function NewLeagueDialog({ className }: { className?: string }) {
   const { data: sessionData } = useSession();
   const router = useRouter();
   const { toast } = useToast();

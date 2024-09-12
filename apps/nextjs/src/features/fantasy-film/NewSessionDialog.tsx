@@ -115,9 +115,8 @@ export default function NewSessionDialog({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const leagueId = (router.query.leagueId as string | undefined) ?? "";
-    console.log({ ...values, leagueId, members: sessionMembers });
     createSession(
-      { ...values, leagueId },
+      { ...values, leagueId, memberIds: sessionMembers.array },
       {
         onSuccess: (data) => {
           toast({

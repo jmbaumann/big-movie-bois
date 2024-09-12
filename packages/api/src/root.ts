@@ -1,6 +1,10 @@
 import { overlapRouter } from "./router/daily-games/overlap";
 import { exampleRouter } from "./router/example";
-import { ffLeagueRouter, ffLeagueSessionRouter } from "./router/fantasy-film";
+import {
+  ffLeagueRouter,
+  ffLeagueSessionRouter,
+  ffStudioRouter,
+} from "./router/fantasy-film";
 import { tmdbRouter } from "./router/tmdb";
 import { userRouter } from "./router/user";
 import { createTRPCRouter } from "./trpc";
@@ -9,6 +13,7 @@ export const appRouter = createTRPCRouter({
   example: exampleRouter,
   ffLeague: ffLeagueRouter,
   ffLeagueSession: ffLeagueSessionRouter,
+  ffStudio: ffStudioRouter,
   overlap: overlapRouter,
   tmdb: tmdbRouter,
   user: userRouter,

@@ -1,18 +1,13 @@
 import { format } from "date-fns";
 import { z } from "zod";
 
-import { Prisma } from "@repo/db";
-import type { League, Session, Studio } from "@repo/db";
-
-import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "../../enums";
-// import { movieList } from "../movies";
-import type { TRPCContext } from "../../trpc";
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "../../trpc";
-import { createLeagueSessionInputObj } from "./zod";
+import { createManyStudios } from "./studio";
+import { createLeagueSessionInputObj, LeagueSessionSettings } from "./zod";
 
 const getById = protectedProcedure
   .input(z.object({ id: z.string() }))
@@ -21,7 +16,10 @@ const getById = protectedProcedure
       where: { id: input.id },
     });
     if (!session) return null;
-    return session;
+    return {
+      ...session,
+      settings: JSON.parse(session.settings as string) as LeagueSessionSettings,
+    };
   });
 
 const create = protectedProcedure
@@ -42,13 +40,43 @@ const create = protectedProcedure
     };
 
     const session = await ctx.prisma.leagueSession.create({ data });
-    // TODO: add studios
+
+    if (input.memberIds?.length) {
+      const studios = input.memberIds.map((e) => ({
+        sessionId: session.id,
+        ownerId: e,
+      }));
+      await createManyStudios(ctx, studios);
+    }
+
     return session;
+  });
+
+const getMyStudio = protectedProcedure
+  .input(z.object({ sessionId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueSessionStudio.findFirst({
+      where: { sessionId: input.sessionId, ownerId: ctx.session.user.id },
+      include: { films: true },
+    });
+  });
+
+const getOpposingStudios = protectedProcedure
+  .input(z.object({ sessionId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueSessionStudio.findMany({
+      where: {
+        sessionId: input.sessionId,
+        ownerId: { notIn: [ctx.session.user.id] },
+      },
+    });
   });
 
 export const leagueSessionRouter = createTRPCRouter({
   getById,
   create,
+  getMyStudio,
+  getOpposingStudios,
 });
 
 ////////////////

@@ -1,6 +1,7 @@
 import {
   TMDBCreditsResponse,
   TMDBDetailsResponse,
+  TMDBDiscoverResponse,
   TMDBKeywordsResponse,
   TMDBReleaseDatesResponse,
 } from "./types";
@@ -29,6 +30,16 @@ export async function getKeywordsById(
   id: number,
 ): Promise<TMDBKeywordsResponse | undefined> {
   return await tmdb(`https://api.themoviedb.org/3/movie/${id}/keywords`);
+}
+
+export async function getByDateRange(
+  fromDate: string,
+  toDate: string,
+): Promise<TMDBDiscoverResponse | undefined> {
+  const page = 1;
+  return await tmdb(
+    `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=${page}&primary_release_date.gte=${fromDate}&primary_release_date.lte=${toDate}&sort_by=popularity.desc`,
+  );
 }
 
 export async function tmdb<T>(url: string, method?: "GET" | "POST") {

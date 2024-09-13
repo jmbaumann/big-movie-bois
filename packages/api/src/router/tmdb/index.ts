@@ -9,6 +9,7 @@ import {
   tmdbKeywords,
 } from "../daily-games/overlap/movieDataLL";
 import {
+  getByDateRange,
   getCreditsById,
   getDetailsById,
   getKeywordsById,
@@ -55,9 +56,25 @@ const getById = publicProcedure
     return getByTMDBId(input.id);
   });
 
+const getFilmsForSession = publicProcedure
+  .input(z.object({ sessionId: z.string(), today: z.boolean().optional() }))
+  .query(async ({ ctx, input }) => {
+    const session = await ctx.prisma.leagueSession.findFirst({
+      where: { id: input.sessionId },
+    });
+    if (!session) throw "No session found";
+
+    const fromDate = input.today
+      ? format(new Date(), "yyyy-MM-dd")
+      : format(session.startDate, "yyyy-MM-dd");
+
+    return getByDateRange(fromDate, format(session.endDate, "yyyy-MM-dd"));
+  });
+
 export const tmdbRouter = createTRPCRouter({
   search,
   getById,
+  getFilmsForSession,
 });
 
 export async function getByTMDBId(id: number) {

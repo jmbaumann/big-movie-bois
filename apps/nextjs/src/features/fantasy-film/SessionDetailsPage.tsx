@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
+import AvailableFilms from "./AvailableFilms";
 import DraftCountdown from "./DraftCountdown";
 import StudioSlot from "./StudioSlot";
 
@@ -91,7 +92,9 @@ export default function SessionDetailsPage() {
             </TabsContent>
             <TabsContent value="standings">Standings</TabsContent>
             <TabsContent value="release-calendar">Release Calendar</TabsContent>
-            <TabsContent value="films">Films</TabsContent>
+            <TabsContent value="films">
+              <Films session={session} />
+            </TabsContent>
             <TabsContent value="activity">Activity</TabsContent>
             <TabsContent value="settings">Settings</TabsContent>
           </Tabs>
@@ -109,6 +112,8 @@ function Home({ session }: { session: Session }) {
       <p>Home</p>
 
       <DraftCountdown draftDate={draftDate} />
+
+      <Button className="mx-auto">Go to Draft</Button>
     </>
   );
 }
@@ -177,4 +182,17 @@ function OpposingStudio() {
   );
 
   return studios?.map((studio, i) => <div key={i}>{studio.name}</div>);
+}
+
+function Films({ session }: { session: Session }) {
+  const { data, isLoading } = api.tmdb.getFilmsForSession.useQuery(
+    { sessionId: session?.id ?? "", today: true },
+    { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
+  );
+
+  if (!data?.results) return <p>no films</p>;
+
+  return (
+    <AvailableFilms session={session} films={data.results} canPick={true} />
+  );
 }

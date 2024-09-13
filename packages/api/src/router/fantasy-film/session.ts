@@ -5,6 +5,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
+  TRPCContext,
 } from "../../trpc";
 import { createManyStudios } from "./studio";
 import { createLeagueSessionInputObj, LeagueSessionSettings } from "./zod";
@@ -12,14 +13,7 @@ import { createLeagueSessionInputObj, LeagueSessionSettings } from "./zod";
 const getById = protectedProcedure
   .input(z.object({ id: z.string() }))
   .query(async ({ ctx, input }) => {
-    const session = await ctx.prisma.leagueSession.findFirst({
-      where: { id: input.id },
-    });
-    if (!session) return null;
-    return {
-      ...session,
-      settings: JSON.parse(session.settings as string) as LeagueSessionSettings,
-    };
+    return await getSessionById(ctx, input.id);
   });
 
 const create = protectedProcedure
@@ -80,3 +74,15 @@ export const leagueSessionRouter = createTRPCRouter({
 });
 
 ////////////////
+
+export async function getSessionById(ctx: TRPCContext, id: string) {
+  const session = await ctx.prisma.leagueSession.findFirst({
+    where: { id },
+    include: { studios: true },
+  });
+  if (!session) return null;
+  return {
+    ...session,
+    settings: JSON.parse(session.settings as string) as LeagueSessionSettings,
+  };
+}

@@ -1,3 +1,9 @@
+export function getById<T extends { id: string }>(arr: T[]) {
+  const byId: Record<string, T> = {};
+  arr.forEach((e) => (byId[e.id] = e));
+  return byId;
+}
+
 export function toMoney(num: number) {
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",

@@ -53,86 +53,93 @@ const getState = protectedProcedure
     };
   });
 
-// start: protectedProcedure
-//   .input(
-//     z.object({
-//       leagueUuid: z.string().uuid(),
-//     }),
-//   )
-//   .mutation(async ({ ctx, input }) => {
-//     const league = await getLeagueByUuid(ctx, input.leagueUuid);
-//     const ts = new Date().getTime();
-//     const draftState = {
-//       currentPick: {
-//         num: 1,
-//         startTimestamp: ts,
-//         endTimestamp: ts + (league?.settings.draft.roundTime ?? 0) * 1000,
-//       },
-//       lastPick: undefined,
-//       newActivities: ["The draft has started!"],
-//     };
+const start = protectedProcedure
+  .input(
+    z.object({
+      sessionId: z.string(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const session = await getSessionById(ctx, input.sessionId);
+    if (!session) throw "No session found";
 
-//     await triggerSocket<typeof draftState>(
-//       `draft:${input.leagueUuid}:draft-update`,
-//       draftState,
-//     );
-//     return input.leagueUuid;
-//   }),
+    const ts = new Date().getTime();
+    const draftState = {
+      currentPick: {
+        num: 1,
+        startTimestamp: ts,
+        endTimestamp: ts + session.settings.draft.timePerRound * 1000,
+      },
+      lastPick: undefined,
+      newActivities: ["The draft has started!"],
+    };
 
-// pick: protectedProcedure
-//   .input(
-//     z.object({
-//       leagueUuid: z.string().uuid(),
-//       tmdbId: z.number(),
-//       studioId: z.string(),
-//       pos: z.number(),
-//       draftPick: z.number(),
-//     }),
-//   )
-//   .mutation(async ({ ctx, input }) => {
-//     const movie: Movie = await ctx.prisma.movie.create({
-//       data: {
-//         tmdbId: input.tmdbId,
-//         studioId: input.studioId,
-//         pos: input.pos,
-//         draftPick: input.draftPick,
-//         timestamp: new Date(),
-//       },
-//     });
+    // await triggerSocket<typeof draftState>(
+    //   `draft:${input.leagueUuid}:draft-update`,
+    //   draftState,
+    // );
+    return input.sessionId;
+  });
 
-//     const ts = new Date().getTime();
-//     const league = (await ctx.prisma.leagueYear.findFirst({
-//       where: { studios: { some: { id: movie.studioId } } },
-//       include: { studios: true },
-//     })) as LeagueYear;
-//     const studio = league?.studios.find((e) => e.id === movie.studioId);
-//     const slot = league?.settings.teamStructure.find(
-//       (e) => e.pos === movie.pos,
-//     );
-//     movie.details = movieList.find((e) => e.id === movie.tmdbId);
-//     const draftState = {
-//       currentPick: {
-//         num: movie.draftPick + 1,
-//         startTimestamp: ts,
-//         endTimestamp: ts + league.settings.draft.roundTime * 1000,
-//       },
-//       newActivities: [
-//         `${studio?.name} drafted ${movie.details?.title}${
-//           slot ? " in their " + slotTypes[slot.type] + " slot" : ""
-//         }`,
-//       ],
-//       lastPick: movie,
-//     };
+const pick = protectedProcedure
+  .input(
+    z.object({
+      sessionId: z.string(),
+      studioId: z.string(),
+      tmdbId: z.number(),
+      slot: z.number(),
+      draftPick: z.number(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const film = await ctx.prisma.studioFilm.create({
+      data: {
+        tmdbId: input.tmdbId,
+        studioId: input.studioId,
+        slot: input.slot,
+        acquiredAt: new Date(),
+      },
+    });
 
-//     await triggerSocket<typeof draftState>(
-//       `draft:${input.leagueUuid}:draft-update`,
-//       draftState,
-//     );
-//     return input.leagueUuid;
-//   })
+    const ts = new Date().getTime();
+
+    const session = await getSessionById(ctx, input.sessionId);
+    const sessionFilms = await ctx.prisma.studioFilm.findMany({
+      where: { studio: { sessionId: { equals: input.sessionId } } },
+    });
+    const studio = await ctx.prisma.leagueSessionStudio.findFirst({
+      where: { id: input.studioId },
+    });
+    const slot = session!.settings.teamStructure.find(
+      (e) => e.pos === film.slot,
+    );
+    // film.details = movieList.find((e) => e.id === film.tmdbId);
+    const draftState = {
+      currentPick: {
+        num: sessionFilms.length + 1,
+        startTimestamp: ts,
+        endTimestamp: ts + session!.settings.draft.timePerRound * 1000,
+      },
+      newActivities: [
+        // `${studio?.name} drafted ${film.details?.title}${
+        //   slot ? " in their " + slotTypes[slot.type] + " slot" : ""
+        // }`,
+        "film drafted",
+      ],
+      lastPick: film,
+    };
+
+    // await triggerSocket<typeof draftState>(
+    //   `draft:${input.leagueUuid}:draft-update`,
+    //   draftState,
+    // );
+    return input.sessionId;
+  });
 
 export const draftRouter = createTRPCRouter({
   getState,
+  start,
+  pick,
 });
 
 ////////////////

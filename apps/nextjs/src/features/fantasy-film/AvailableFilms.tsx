@@ -93,7 +93,7 @@ export default function AvailableFilms({
       ></SortChips>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <div className="flex max-h-[calc(100%-30px)] flex-wrap justify-around gap-4 overflow-y-auto">
+        <div className="flex max-h-[calc(100%-40px)] flex-wrap justify-around gap-4 overflow-y-auto">
           {available.map((film, i) => {
             return (
               <DialogTrigger

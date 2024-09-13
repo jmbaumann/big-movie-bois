@@ -5,7 +5,8 @@ import { useRouter } from "next/router";
 import { ExternalLink, HelpCircle, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
-import { LeagueSessionStudio, StudioFilm } from "@repo/db";
+import { LeagueSessionSettings } from "@repo/api/src/zod";
+import { DraftStateUpdate, LeagueSessionStudio, StudioFilm } from "@repo/db";
 
 // import io from "socket.io-client";
 
@@ -31,6 +32,7 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { env } from "~/env.mjs";
 import Layout from "~/layouts/main/Layout";
 import { getById } from "~/utils";
+import AvailableFilms from "./AvailableFilms";
 // import StudioIcon from "~/components/StudioIcon";
 import StudioSlot from "./StudioSlot";
 
@@ -72,10 +74,13 @@ export default function Draft() {
   const myStudio = session?.studios.find(
     (e) => e.ownerId === sessionData?.user.id,
   );
+  console.log(myStudio);
+  console.log(films);
   const myPicks = picks.filter((e) => e.studioId === myStudio?.id);
-  const availableMovies = getAvailableFilms(picks ?? [], movies?.results ?? []);
+  const availableFilms = getAvailableFilms(picks ?? [], films?.results ?? []);
+  console.log(availableFilms);
   const availableSlots = session?.settings.teamStructure.filter(
-    (slot) => !myPicks.map((e) => e.pos).includes(slot.pos),
+    (slot) => !myPicks.map((e) => e.slot).includes(slot.pos),
   );
   const draftOver =
     picks.length ===
@@ -85,14 +90,15 @@ export default function Draft() {
 
   const handleTimeout = () => {
     if (
+      session &&
       getStudioByPick(session?.settings.draft.order ?? [], currentPick.num) ===
-      myStudio?.id
+        myStudio?.id
     )
       makePick.mutate({
-        leagueUuid: uuid,
-        tmdbId: availableMovies?.[0]?.id ?? 0,
+        sessionId: session.id,
+        tmdbId: availableFilms?.[0]?.id ?? 0,
         studioId: myStudio?.id ?? "",
-        pos: availableSlots?.[0]?.pos ?? 0,
+        slot: availableSlots?.[0]?.pos ?? 0,
         draftPick: currentPick.num,
       });
   };
@@ -162,7 +168,7 @@ export default function Draft() {
               href={`/fantasy-film/${session.leagueId}/${session.id}`}
               className="mx-4 hover:underline"
             >
-              League Home
+              Session Home
               <ExternalLink className="inline pb-1" size={20} />
             </Link>
           </div>
@@ -174,9 +180,9 @@ export default function Draft() {
                 leagueSettings={session.settings}
                 handleTimeout={handleTimeout}
               />
-            ) : session.ownerId === sessionData?.user.id ? (
+            ) : session.league.ownerId === sessionData?.user.id ? (
               <Button
-                className="bg-lb-green ml-2 font-sans"
+                className="ml-2 font-sans"
                 onClick={() => startDraft.mutate({ sessionId: session.id })}
               >
                 Start Draft
@@ -210,33 +216,31 @@ export default function Draft() {
           </div>
         )}
 
-        <div className="flex max-h-[calc(100vh-216px)]">
-          <div className="max-h-full w-1/4 border-t-2 border-[#9ac] px-4 py-2">
+        <div className="flex max-h-[calc(100vh-168px)]">
+          <div className="max-h-full w-1/3 border-t-2 border-[#9ac] px-2 py-2">
             <MyStudio
               teamStructure={session.settings.teamStructure}
               myPicks={myPicks}
             />
           </div>
           <div className="w-1/2 border-x-2 border-t-2 border-[#9ac] px-4 py-2">
-            {myStudio && (
-              <AvailableMovies
-                movies={availableMovies ?? []}
-                availableSlots={availableSlots}
-                league={league}
-                myStudio={myStudio}
-                currentPick={currentPick.num}
-                canPick={
-                  started &&
-                  !draftOver &&
-                  getStudioByPick(
-                    session.settings.draft.order,
-                    currentPick.num,
-                  ) === myStudio.id
-                }
+            {myStudio && availableFilms && (
+              <AvailableFilms
+                session={session}
+                films={availableFilms}
+                canPick={true}
+                //   canPick={
+                //   started &&
+                //   !draftOver &&
+                //   getStudioByPick(
+                //     session.settings.draft.order,
+                //     currentPick.num,
+                //   ) === myStudio.id
+                // }
               />
             )}
           </div>
-          <div className="w-1/4 border-t-2 border-[#9ac] px-4 py-2">
+          <div className="w-1/6 border-t-2 border-[#9ac] px-4 py-2">
             <Activity activities={activities} />
           </div>
         </div>
@@ -255,7 +259,7 @@ function Countdown({
     startTimestamp: number;
     endTimestamp: number;
   };
-  leagueSettings: LeagueSettings;
+  leagueSettings: LeagueSessionSettings;
   handleTimeout: () => void;
 }) {
   const [timer, setTimer] = useState("");
@@ -294,8 +298,8 @@ function Countdown({
       <div className="text-3xl tabular-nums">{timer}</div>
       <Progress
         value={
-          ((leagueSettings.draft.roundTime - seconds) /
-            leagueSettings.draft.roundTime) *
+          ((leagueSettings.draft.timePerRound - seconds) /
+            leagueSettings.draft.timePerRound) *
           100
         }
       />
@@ -303,7 +307,13 @@ function Countdown({
   );
 }
 
-function OnTheClock({ pick, studio }: { pick: number; studio?: Studio }) {
+function OnTheClock({
+  pick,
+  studio,
+}: {
+  pick: number;
+  studio?: LeagueSessionStudio;
+}) {
   const { data: sessionData } = useSession();
 
   if (!studio) return <></>;
@@ -314,7 +324,7 @@ function OnTheClock({ pick, studio }: { pick: number; studio?: Studio }) {
         studio.ownerId === sessionData?.user.id ? "bg-lb-green" : "",
       )}
     >
-      <StudioIcon icon={studio.image} />
+      {/* <StudioIcon icon={studio.image} /> */}
       <div className="ml-4 flex flex-col font-sans">
         <div className="text-sm uppercase">On the Clock: Pick {pick}</div>
         <div className="text-2xl">{studio.name}</div>
@@ -323,12 +333,18 @@ function OnTheClock({ pick, studio }: { pick: number; studio?: Studio }) {
   );
 }
 
-function UpcomingPick({ num, studio }: { num: number; studio?: Studio }) {
+function UpcomingPick({
+  num,
+  studio,
+}: {
+  num: number;
+  studio?: LeagueSessionStudio;
+}) {
   if (!studio) return <></>;
   return (
     <div className="border-lb-blue flex w-[104px] max-w-[104px] flex-col items-center self-center border-2 px-2 py-1 font-sans text-white">
       <div className="text-sm uppercase">Pick {num}</div>
-      <StudioIcon icon={studio.image} />
+      {/* <StudioIcon icon={studio.image} /> */}
       <div className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-xs">
         {studio.name}
       </div>
@@ -341,18 +357,18 @@ function MyStudio({
   myPicks,
 }: {
   teamStructure: {
-    type: SlotType;
+    type: string;
     pos: number;
   }[];
-  myPicks: Movie[];
+  myPicks: StudioFilm[];
 }) {
   return (
     <>
       <div>My Studio</div>
-      <div className="flex max-h-[calc(100%-30px)] flex-wrap justify-evenly gap-4 overflow-y-auto">
+      <div className="grid max-h-[calc(100%-20px)] grid-cols-2 gap-y-2 overflow-y-auto">
         {teamStructure.map((slot, i) => {
-          const movie = myPicks.find((e) => e.pos == slot.pos);
-          return <StudioSlot key={i} slot={slot.type} movie={movie} />;
+          const movie = myPicks.find((e) => e.slot === slot.pos);
+          return <StudioSlot key={i} slot={slot.type} />;
         })}
       </div>
     </>

@@ -30,7 +30,7 @@ export default function StudioSlot({
   return (
     <div
       className={cn(
-        "flex h-[194px] w-[160px]",
+        "flex h-[240px] w-[160px]",
         showScore ? "h-[260px] w-[242px]" : "",
       )}
     >

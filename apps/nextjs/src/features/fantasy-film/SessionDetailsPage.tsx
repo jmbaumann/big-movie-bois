@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 import AvailableFilms from "./AvailableFilms";
 import DraftCountdown from "./DraftCountdown";
+import SessionForm from "./forms/Session";
 import StudioSlot from "./StudioSlot";
 
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
@@ -96,7 +97,9 @@ export default function SessionDetailsPage() {
               <Films session={session} />
             </TabsContent>
             <TabsContent value="activity">Activity</TabsContent>
-            <TabsContent value="settings">Settings</TabsContent>
+            <TabsContent value="settings">
+              <Settings session={session} />
+            </TabsContent>
           </Tabs>
         </div>
       </div>
@@ -113,7 +116,7 @@ function Home({ session }: { session: Session }) {
 
       <DraftCountdown draftDate={draftDate} />
 
-      <Button className="mx-auto">Go to Draft</Button>
+      <Link href={`/fantasy-film/draft/${session!.id}`}>Go to Draft</Link>
     </>
   );
 }
@@ -195,4 +198,9 @@ function Films({ session }: { session: Session }) {
   return (
     <AvailableFilms session={session} films={data.results} canPick={true} />
   );
+}
+
+function Settings({ session }: { session: Session }) {
+  if (session)
+    return <SessionForm leagueId={session.leagueId} session={session} />;
 }

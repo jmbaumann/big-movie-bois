@@ -9,7 +9,11 @@ const leagueSessionSettingsDraftObj = z.object({
   min: z.string().optional(),
   ampm: z.string().optional(),
   type: z.enum(toZodEnum(DRAFT_TYPES)),
-  order: z.array(z.string()),
+  order: z
+    .array(z.string())
+    .refine((items) => new Set(items).size === items.length, {
+      message: "Invalid draft order",
+    }),
   numRounds: z.coerce.number(),
   timePerRound: z.coerce.number(),
 });
@@ -29,6 +33,16 @@ const leagueSessionSettingsObj = z.object({
 export type LeagueSessionSettings = z.infer<typeof leagueSessionSettingsObj>;
 
 export const createLeagueSessionInputObj = z.object({
+  leagueId: z.string(),
+  name: z.string().min(2).max(50),
+  startDate: z.date(),
+  endDate: z.date(),
+  settings: leagueSessionSettingsObj,
+  memberIds: z.array(z.string()).optional(),
+});
+
+export const updateLeagueSessionInputObj = z.object({
+  id: z.string(),
   leagueId: z.string(),
   name: z.string().min(2).max(50),
   startDate: z.date(),

@@ -21,7 +21,7 @@ function Layout({
         <div
           className={cn(
             "mx-auto flex flex-col px-2 lg:w-[80%]",
-            fullWidth ? "mb-0 mt-0 w-full lg:mt-0" : "",
+            fullWidth ? "mb-0 mt-0 lg:mt-0 lg:w-full" : "",
           )}
         >
           {children}

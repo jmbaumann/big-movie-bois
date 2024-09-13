@@ -112,7 +112,7 @@ model StudioFilm {
     studioId      String
     tmdbId        Int
     slot          Int
-    score         Int
+    score         Int       @default(0)
     scoreOverride Int?
     acquiredType  Int?
     acquiredAt    DateTime?

@@ -8,7 +8,11 @@ import {
   TRPCContext,
 } from "../../trpc";
 import { createManyStudios } from "./studio";
-import { createLeagueSessionInputObj, LeagueSessionSettings } from "./zod";
+import {
+  createLeagueSessionInputObj,
+  LeagueSessionSettings,
+  updateLeagueSessionInputObj,
+} from "./zod";
 
 const getById = protectedProcedure
   .input(z.object({ id: z.string() }))
@@ -46,6 +50,28 @@ const create = protectedProcedure
     return session;
   });
 
+const update = protectedProcedure
+  .input(updateLeagueSessionInputObj)
+  .mutation(async ({ ctx, input }) => {
+    const data = {
+      leagueId: input.leagueId,
+      slug: `${format(input.startDate, "yyyy-MM-dd")}-${format(
+        input.endDate,
+        "yyyy-MM-dd",
+      )}`,
+      name: input.name,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      settings: JSON.stringify(input.settings),
+    };
+
+    const session = await ctx.prisma.leagueSession.update({
+      data,
+      where: { id: input.id },
+    });
+    return session;
+  });
+
 const getMyStudio = protectedProcedure
   .input(z.object({ sessionId: z.string() }))
   .query(async ({ ctx, input }) => {
@@ -69,6 +95,7 @@ const getOpposingStudios = protectedProcedure
 export const leagueSessionRouter = createTRPCRouter({
   getById,
   create,
+  update,
   getMyStudio,
   getOpposingStudios,
 });
@@ -78,7 +105,7 @@ export const leagueSessionRouter = createTRPCRouter({
 export async function getSessionById(ctx: TRPCContext, id: string) {
   const session = await ctx.prisma.leagueSession.findFirst({
     where: { id },
-    include: { studios: true },
+    include: { studios: true, league: { select: { ownerId: true } } },
   });
   if (!session) return null;
   return {

@@ -26,8 +26,31 @@ const create = protectedProcedure
     });
   });
 
+const addFavorite = protectedProcedure
+  .input(z.object({ studioId: z.string(), tmdbId: z.number() }))
+  .mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.studioFavorite.create({ data: input });
+  });
+
+const removeFavorite = protectedProcedure
+  .input(z.object({ studioId: z.string(), tmdbId: z.number() }))
+  .mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.studioFavorite.delete({
+      where: { studioId_tmdbId: input },
+    });
+  });
+
+const getFavorites = protectedProcedure
+  .input(z.object({ studioId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return await ctx.prisma.studioFavorite.findMany({ where: input });
+  });
+
 export const studioRouter = createTRPCRouter({
   create,
+  addFavorite,
+  removeFavorite,
+  getFavorites,
 });
 
 ////////////////

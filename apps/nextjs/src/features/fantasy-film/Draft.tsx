@@ -74,8 +74,6 @@ export default function Draft() {
   const myStudio = session?.studios.find(
     (e) => e.ownerId === sessionData?.user.id,
   );
-  console.log(myStudio);
-  console.log(films);
   const myPicks = picks.filter((e) => e.studioId === myStudio?.id);
   const availableFilms = getAvailableFilms(picks ?? [], films?.results ?? []);
   console.log(availableFilms);
@@ -228,6 +226,7 @@ export default function Draft() {
               <AvailableFilms
                 session={session}
                 films={availableFilms}
+                studioId={myStudio.id}
                 canPick={true}
                 //   canPick={
                 //   started &&

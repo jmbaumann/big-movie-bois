@@ -26,7 +26,7 @@ export default function SortChips<T>({
   }, []);
 
   return (
-    <div className="mb-4 flex w-full flex-row">
+    <div className="flex w-full flex-row">
       {options.map((e, i) => (
         <SortChip
           key={i}

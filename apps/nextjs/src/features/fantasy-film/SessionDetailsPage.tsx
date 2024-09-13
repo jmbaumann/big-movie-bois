@@ -80,7 +80,9 @@ export default function SessionDetailsPage() {
               )}
               <TabsTrigger value="films">Films</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+              {session.league.ownerId === sessionData?.user.id && (
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="home">
               <Home session={session} />
@@ -188,15 +190,26 @@ function OpposingStudio() {
 }
 
 function Films({ session }: { session: Session }) {
+  const { data: sessionData } = useSession();
+
   const { data, isLoading } = api.tmdb.getFilmsForSession.useQuery(
     { sessionId: session?.id ?? "", today: true },
     { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
   );
 
-  if (!data?.results) return <p>no films</p>;
+  const myStudio = session?.studios.find(
+    (e) => e.ownerId === sessionData?.user.id,
+  );
+
+  if (!data?.results || !myStudio) return <p>no films</p>;
 
   return (
-    <AvailableFilms session={session} films={data.results} canPick={true} />
+    <AvailableFilms
+      session={session}
+      films={data.results}
+      studioId={myStudio.id}
+      canPick={true}
+    />
   );
 }
 

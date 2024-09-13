@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { inferRouterOutputs } from "@trpc/server";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Star } from "lucide-react";
 
 import { AppRouter } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
@@ -10,6 +10,7 @@ import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { api } from "~/utils/api";
 import { cn } from "~/utils/shadcn";
 import SortChips from "~/components/SortChips";
+import { Button } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -28,13 +29,16 @@ type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
 export default function AvailableFilms({
   session,
   films,
+  studioId,
   canPick,
 }: {
   session: Session;
   films: Film[];
+  studioId: string;
   canPick: boolean;
 }) {
-  const [available, setAvailable] = useState(films);
+  const [filmList, setFilmList] = useState(films);
+  const [showWatchlist, setShowWatchlist] = useState(false);
   const [open, setOpen] = useState(false);
   const [selectedFilm, setSelectedFilm] = useState<Film>();
   const [selectedSlot, setSelectedSlot] = useState<string>();
@@ -72,29 +76,77 @@ export default function AvailableFilms({
       enabled: !!session?.id,
     },
   );
+  const { data: favorites, refetch: refreshFavorites } =
+    api.ffStudio.getFavorites.useQuery(
+      { studioId },
+      {
+        enabled: !!studioId,
+      },
+    );
+  const { mutate: addFavorite } = api.ffStudio.addFavorite.useMutation();
+  const { mutate: removeFavorite } = api.ffStudio.removeFavorite.useMutation();
 
   const sessionSlots = session?.settings.teamStructure;
   const availableSlots =
     sessionSlots?.filter(
       (e) => !myStudio?.films.map((e) => e.slot).includes(e.pos),
     ) ?? [];
+  const isFavorite = selectedFilm
+    ? favorites?.map((e) => e.tmdbId).includes(selectedFilm.id)
+    : false;
+
+  useEffect(() => {
+    if (showWatchlist) {
+      const favoriteIds = favorites?.map((e) => e.tmdbId);
+      setFilmList(films.filter((e) => favoriteIds?.includes(e.id)));
+    } else setFilmList(films);
+  }, [showWatchlist, favorites]);
 
   useEffect(() => {
     setSelectedSlot(undefined);
   }, [open]);
 
+  function handleFavorite() {
+    if (selectedFilm)
+      if (isFavorite)
+        removeFavorite(
+          { studioId, tmdbId: selectedFilm.id },
+          { onSuccess: () => refreshFavorites() },
+        );
+      else
+        addFavorite(
+          { studioId, tmdbId: selectedFilm.id },
+          { onSuccess: () => refreshFavorites() },
+        );
+  }
+
   return (
     <>
-      <SortChips
-        setItems={setAvailable}
-        options={sortOptions}
-        sortFunc={sort}
-        def={{ value: "popularity", desc: true }}
-      ></SortChips>
+      <div className="flex items-center">
+        <SortChips
+          setItems={setFilmList}
+          options={sortOptions}
+          sortFunc={sort}
+          def={{ value: "popularity", desc: true }}
+        ></SortChips>
+
+        <Button
+          className="text-lg"
+          variant="ghost"
+          onClick={() => setShowWatchlist((s) => !s)}
+        >
+          <Star
+            className="mr-1"
+            color="#fbbf24"
+            fill={showWatchlist ? "#fbbf24" : ""}
+          />
+          Watchlist
+        </Button>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <div className="flex max-h-[calc(100%-40px)] flex-wrap justify-around gap-4 overflow-y-auto">
-          {available.map((film, i) => {
+          {filmList.map((film, i) => {
             return (
               <DialogTrigger
                 key={i}
@@ -171,14 +223,6 @@ export default function AvailableFilms({
                           );
                         })}
                       </RadioGroup>
-
-                      {/* <Button
-                        className="bg-lb-green absolute bottom-5 right-5"
-                        disabled={!selectedFilm && !selectedSlot}
-                        onClick={draftFilm}
-                      >
-                        Draft
-                      </Button> */}
                     </div>
                   </div>
                 )}
@@ -192,6 +236,20 @@ export default function AvailableFilms({
               >
                 More Info <ExternalLink className="mx-1" size={16} />
               </Link>
+
+              <div className="ml-auto">
+                <Button onClick={() => handleFavorite()} variant="ghost">
+                  <Star color="#fbbf24" fill={isFavorite ? "#fbbf24" : ""} />
+                </Button>
+              </div>
+
+              {/* <Button
+                  className="bg-lb-green absolute bottom-5 right-5"
+                  disabled={!selectedFilm && !selectedSlot}
+                  onClick={draftFilm}
+                >
+                  Draft
+                </Button> */}
             </DialogFooter>
           </DialogContent>
         </div>

@@ -95,11 +95,12 @@ model LeagueSessionStudio {
     deletedAt DateTime?
     deletedBy String?
 
-    session LeagueSession @relation(fields: [sessionId], references: [id])
-    owner   User          @relation("StudioOwner", fields: [ownerId], references: [id])
-    updater User?         @relation("StudioUpdater", fields: [updatedBy], references: [id])
-    deleter User?         @relation("StudioDeleter", fields: [deletedBy], references: [id])
-    films   StudioFilm[]
+    session   LeagueSession    @relation(fields: [sessionId], references: [id])
+    owner     User             @relation("StudioOwner", fields: [ownerId], references: [id])
+    updater   User?            @relation("StudioUpdater", fields: [updatedBy], references: [id])
+    deleter   User?            @relation("StudioDeleter", fields: [deletedBy], references: [id])
+    films     StudioFilm[]
+    favorites StudioFavorite[]
 
     @@index([sessionId])
     @@index([ownerId])
@@ -120,6 +121,17 @@ model StudioFilm {
 
     studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
 
+    @@index([studioId])
+}
+
+model StudioFavorite {
+    id       String @id @default(cuid())
+    studioId String
+    tmdbId   Int
+
+    studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
+
+    @@unique([studioId, tmdbId])
     @@index([studioId])
 }
 

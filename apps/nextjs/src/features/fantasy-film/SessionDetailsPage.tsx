@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
@@ -20,6 +21,7 @@ import {
 } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
+import Loading from "~/layouts/main/Loading";
 import AvailableFilms from "./AvailableFilms";
 import DraftCountdown from "./DraftCountdown";
 import SessionForm from "./forms/Session";
@@ -31,6 +33,17 @@ export default function SessionDetailsPage() {
   const { data: sessionData } = useSession();
   const router = useRouter();
   const sessionId = router.query.sessionId as string;
+
+  const [activeTab, setActiveTab] = useState("home");
+  const handleTab = (tab: string) => {
+    void router.push({
+      pathname: `/fantasy-film/${router.query.leagueId}/${router.query.sessionId}`,
+      query: { tab },
+    });
+  };
+  useEffect(() => {
+    if (router.query.tab) setActiveTab(router.query.tab as string);
+  }, [router.query.tab]);
 
   const {
     data: session,
@@ -48,7 +61,7 @@ export default function SessionDetailsPage() {
   //   ? getDraftDate(session.settings.draft) < new Date()
   //   : false;
 
-  if (!session) return <p>loading...</p>;
+  if (!session) return <Loading />;
 
   return (
     <Layout showFooter>
@@ -63,25 +76,59 @@ export default function SessionDetailsPage() {
         </div>
 
         <div className="">
-          <Tabs defaultValue="home" className="w-full px-2 lg:px-4">
+          <Tabs
+            className="w-full px-2 lg:px-4"
+            value={activeTab}
+            onValueChange={setActiveTab}
+          >
             <TabsList>
-              <TabsTrigger value="home">Home</TabsTrigger>
-              <TabsTrigger value="my-studio">My Studio</TabsTrigger>
-              <TabsTrigger value="opposing-studios">
+              <TabsTrigger value="home" onClick={() => handleTab("home")}>
+                Home
+              </TabsTrigger>
+              <TabsTrigger
+                value="my-studio"
+                onClick={() => handleTab("my-studio")}
+              >
+                My Studio
+              </TabsTrigger>
+              <TabsTrigger
+                value="opposing-studios"
+                onClick={() => handleTab("opposing-studios")}
+              >
                 Opposing Studios
               </TabsTrigger>
               {draftComplete && (
-                <TabsTrigger value="standings">Standings</TabsTrigger>
+                <TabsTrigger
+                  value="standings"
+                  onClick={() => handleTab("standings")}
+                >
+                  Standings
+                </TabsTrigger>
               )}
               {draftComplete && (
-                <TabsTrigger value="release-calendar">
+                <TabsTrigger
+                  value="release-calendar"
+                  onClick={() => handleTab("release-calendar")}
+                >
                   Release Calendar
                 </TabsTrigger>
               )}
-              <TabsTrigger value="films">Films</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="films" onClick={() => handleTab("films")}>
+                Films
+              </TabsTrigger>
+              <TabsTrigger
+                value="activity"
+                onClick={() => handleTab("activity")}
+              >
+                Activity
+              </TabsTrigger>
               {session.league.ownerId === sessionData?.user.id && (
-                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger
+                  value="settings"
+                  onClick={() => handleTab("settings")}
+                >
+                  Settings
+                </TabsTrigger>
               )}
             </TabsList>
             <TabsContent value="home">

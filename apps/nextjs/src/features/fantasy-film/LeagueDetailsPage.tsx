@@ -1,4 +1,4 @@
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
@@ -50,6 +50,17 @@ export default function LeagueDetailsPage() {
   const router = useRouter();
   const leagueId = router.query.leagueId as string;
 
+  const [activeTab, setActiveTab] = useState("sessions");
+  const handleTab = (tab: string) => {
+    void router.push({
+      pathname: `/fantasy-film/${router.query.leagueId}`,
+      query: { tab },
+    });
+  };
+  useEffect(() => {
+    if (router.query.tab) setActiveTab(router.query.tab as string);
+  }, [router.query.tab]);
+
   const {
     data: league,
     isLoading,
@@ -82,12 +93,32 @@ export default function LeagueDetailsPage() {
         )}
 
         <div className="">
-          <Tabs defaultValue="sessions" className="w-full px-2 lg:px-4">
+          <Tabs
+            className="w-full px-2 lg:px-4"
+            value={activeTab}
+            onValueChange={setActiveTab}
+          >
             <TabsList className="">
-              <TabsTrigger value="sessions">Sessions</TabsTrigger>
-              <TabsTrigger value="members">Members</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
-              {isOwner && <TabsTrigger value="settings">Settings</TabsTrigger>}
+              <TabsTrigger
+                value="sessions"
+                onClick={() => handleTab("sessions")}
+              >
+                Sessions
+              </TabsTrigger>
+              <TabsTrigger value="members" onClick={() => handleTab("members")}>
+                Members
+              </TabsTrigger>
+              <TabsTrigger value="history" onClick={() => handleTab("history")}>
+                History
+              </TabsTrigger>
+              {isOwner && (
+                <TabsTrigger
+                  value="settings"
+                  onClick={() => handleTab("settings")}
+                >
+                  Settings
+                </TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="sessions">
               {league?.sessions.map((session, i) => (

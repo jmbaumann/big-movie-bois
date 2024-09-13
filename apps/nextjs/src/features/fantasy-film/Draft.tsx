@@ -143,7 +143,7 @@ export default function Draft() {
   if (!session || isLoading)
     return (
       <Layout showFooter={true}>
-        <Loader2 size={48} className="mx-auto my-2 animate-spin" />{" "}
+        <Loader2 size={48} className="mx-auto my-2 animate-spin" />
       </Layout>
     );
 

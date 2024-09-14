@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { ExternalLink, HelpCircle, Loader2 } from "lucide-react";
+import {
+  ArrowLeftFromLine,
+  ArrowRightFromLine,
+  ExternalLink,
+  HelpCircle,
+  Loader2,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import io from "socket.io-client";
 
@@ -50,6 +56,7 @@ export default function Draft() {
   });
   const [picks, setPicks] = useState<StudioFilm[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
+  const [expand, setExpand] = useState(false);
 
   const { data: session, isLoading } = api.ffLeagueSession.getById.useQuery(
     {
@@ -219,13 +226,25 @@ export default function Draft() {
         )}
 
         <div className="flex max-h-[calc(100vh-168px)]">
-          <div className="max-h-full w-1/3 border-t-2 border-[#9ac] px-2 py-2">
+          <div
+            className={cn(
+              "max-h-full border-t-2 border-[#9ac] px-2 py-2",
+              expand ? "w-[436px]" : "w-[218px]",
+            )}
+          >
             <MyStudio
               teamStructure={session.settings.teamStructure}
               myPicks={myPicks}
+              expand={expand}
+              setExpand={setExpand}
             />
           </div>
-          <div className="w-1/2 border-x-2 border-t-2 border-[#9ac] px-4 py-2">
+          <div
+            className={cn(
+              "border-x-2 border-t-2 border-[#9ac] px-4 py-2",
+              expand ? "w-[calc(100vw-736px)]" : "w-[calc(100vw-518px)]",
+            )}
+          >
             {myStudio && availableFilms && (
               <AvailableFilms
                 session={session}
@@ -243,7 +262,7 @@ export default function Draft() {
               />
             )}
           </div>
-          <div className="w-1/6 border-t-2 border-[#9ac] px-4 py-2">
+          <div className="w-[300px] border-t-2 border-[#9ac] px-4 py-2">
             <Activity activities={activities} />
           </div>
         </div>
@@ -359,17 +378,35 @@ function UpcomingPick({
 function MyStudio({
   teamStructure,
   myPicks,
+  expand,
+  setExpand,
 }: {
   teamStructure: {
     type: string;
     pos: number;
   }[];
   myPicks: StudioFilm[];
+  expand: boolean;
+  setExpand: Dispatch<SetStateAction<boolean>>;
 }) {
   return (
     <>
-      <div>My Studio</div>
-      <div className="grid max-h-[calc(100%-20px)] grid-cols-2 gap-y-2 overflow-y-auto">
+      <div className="flex items-center">
+        <p>My Studio</p>
+        <Button
+          className="ml-auto"
+          variant="ghost"
+          onClick={() => setExpand((s) => !s)}
+        >
+          {expand ? <ArrowLeftFromLine /> : <ArrowRightFromLine />}
+        </Button>
+      </div>
+      <div
+        className={cn(
+          "grid max-h-[calc(100%-40px)] gap-y-2 overflow-y-auto",
+          expand ? "grid-cols-2" : "grid-cols-1",
+        )}
+      >
         {teamStructure.map((slot, i) => {
           const movie = myPicks.find((e) => e.slot === slot.pos);
           return <StudioSlot key={i} slot={slot.type} />;

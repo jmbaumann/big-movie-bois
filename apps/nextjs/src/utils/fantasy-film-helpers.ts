@@ -1,14 +1,45 @@
+import { inferRouterOutputs } from "@trpc/server";
+
+import { AppRouter } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { LeagueSessionSettingsDraft } from "@repo/api/src/zod";
 import { StudioFilm } from "@repo/db";
 
 type Film = TMDBDiscoverResult;
+type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
+type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
 
 export function getAvailableFilms(picks: StudioFilm[], films: Film[]) {
-  console.log(picks);
-  console.log(films);
   const takenIds = picks.map((e) => e.tmdbId);
   return films.filter((e) => !takenIds.includes(e.id));
+}
+
+export function getMostRecentAndUpcoming(
+  films: StudioFilmDetails[] | undefined,
+) {
+  let mostRecent: StudioFilmDetails | undefined;
+  let upcoming: StudioFilmDetails | undefined;
+  if (!films) return { mostRecent, upcoming };
+
+  const now = new Date();
+
+  const sortedFilms = films.sort(
+    (a, b) =>
+      new Date(a.tmdb.details.releaseDate).getTime() -
+      new Date(b.tmdb.details.releaseDate).getTime(),
+  );
+
+  for (const film of sortedFilms) {
+    const filmDate = new Date(film.tmdb.details.releaseDate);
+
+    if (filmDate <= now) mostRecent = film;
+    else if (!upcoming && filmDate > now) {
+      upcoming = film;
+      break;
+    }
+  }
+
+  return { mostRecent, upcoming };
 }
 
 export function getStudioByPick(draftOrder: string[], pick: number) {

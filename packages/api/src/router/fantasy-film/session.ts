@@ -1,18 +1,26 @@
+import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
 import { z } from "zod";
 
+import { StudioFilm } from "@repo/db";
+
+import { AppRouter } from "../../root";
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
   TRPCContext,
 } from "../../trpc";
+import { getByTMDBId } from "../tmdb";
 import { createManyStudios } from "./studio";
 import {
   createLeagueSessionInputObj,
   LeagueSessionSettings,
   updateLeagueSessionInputObj,
 } from "./zod";
+
+type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
+type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
 
 const getById = protectedProcedure
   .input(z.object({ id: z.string() }))
@@ -73,11 +81,19 @@ const update = protectedProcedure
   });
 
 const getAcquiredFilms = protectedProcedure
-  .input(z.object({ sessionId: z.string() }))
+  .input(
+    z.object({ sessionId: z.string(), includeDetails: z.boolean().optional() }),
+  )
   .query(async ({ ctx, input }) => {
-    return await ctx.prisma.studioFilm.findMany({
+    const list = await ctx.prisma.studioFilm.findMany({
       where: { studio: { sessionId: { equals: input.sessionId } } },
     });
+    if (!input.includeDetails) return list;
+
+    for (const film of list as StudioFilmDetails[])
+      film.tmdb = await getByTMDBId(film.tmdbId);
+
+    return list;
   });
 
 export const leagueSessionRouter = createTRPCRouter({

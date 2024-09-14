@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
@@ -8,9 +9,10 @@ import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
 import { LEAGUE_INVITE_STATUSES } from "@repo/api/src/enums";
-import { LeagueSession } from "@repo/db";
+import { LeagueSession, StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
+import { getMostRecentAndUpcoming } from "~/utils/fantasy-film-helpers";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -44,6 +46,8 @@ import Layout from "~/layouts/main/Layout";
 import NewSessionDialog from "./NewSessionDialog";
 
 type League = inferRouterOutputs<AppRouter>["ffLeague"]["getById"];
+type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
+type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
 
 export default function LeagueDetailsPage() {
   const { data: sessionData } = useSession();
@@ -138,8 +142,17 @@ export default function LeagueDetailsPage() {
 }
 
 function SessionCard({ session }: { session: LeagueSession }) {
+  const { data: films } = api.ffLeagueSession.getAcquiredFilms.useQuery({
+    sessionId: session.id,
+    includeDetails: true,
+  });
+
+  const { mostRecent, upcoming } = getMostRecentAndUpcoming(
+    films as StudioFilmDetails[],
+  );
+
   return (
-    <Card>
+    <Card className="my-2">
       <CardHeader>
         <CardTitle>
           <Link
@@ -148,13 +161,51 @@ function SessionCard({ session }: { session: LeagueSession }) {
           >
             {session.name}
           </Link>
+          <p className="ml-4 inline-block text-sm">
+            {format(session.startDate, "LLL d, yyyy")} -{" "}
+            {format(session.endDate, "LLL d, yyyy")}
+          </p>
         </CardTitle>
-        <CardDescription>
-          {format(session.startDate, "yyyy-MM-dd")} -{" "}
-          {format(session.endDate, "yyyy-MM-dd")}
-        </CardDescription>
+        <CardDescription></CardDescription>
       </CardHeader>
-      <CardContent>TEAM NAME</CardContent>
+      <CardContent>
+        <div className="">
+          <div className="w-1/3">
+            {mostRecent && (
+              <div className="flex w-min flex-col items-center">
+                <p className="text-lg">Most Recent</p>
+                <Image
+                  className="min-w-[125px]"
+                  src={`https://image.tmdb.org/t/p/w1280/${mostRecent.tmdb.details.poster}`}
+                  alt={`${mostRecent.tmdb.details.title} poster`}
+                  width={150}
+                  height={225}
+                />
+                <p className="text-center">{mostRecent.tmdb.details.title}</p>
+                <p className="text-center text-xs">
+                  {format(mostRecent.tmdb.details.releaseDate, "LLL d, yyyy")}
+                </p>
+              </div>
+            )}
+            {upcoming && (
+              <div className="flex w-min flex-col items-center">
+                <p className="text-lg">Upcoming</p>
+                <Image
+                  className="min-w-[125px]"
+                  src={`https://image.tmdb.org/t/p/w1280/${upcoming.tmdb.details.poster}`}
+                  alt={`${upcoming.tmdb.details.title} poster`}
+                  width={150}
+                  height={225}
+                />
+                <p className="text-center">{upcoming.tmdb.details.title}</p>
+                <p className="text-center text-xs">
+                  {format(upcoming.tmdb.details.releaseDate, "LLL d, yyyy")}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
     </Card>
   );
 }

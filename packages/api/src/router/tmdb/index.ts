@@ -97,6 +97,7 @@ function restructure(movie: {
   const details = {
     id: movie.details.id,
     title: movie.details.title,
+    releaseDate: movie.details.release_date,
     releaseYear: format(movie.details.release_date, "yyyy"),
     genres: movie.details.genres.map((e) => e.name),
     runtime: movie.details.runtime,

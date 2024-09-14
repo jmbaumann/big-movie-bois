@@ -3,15 +3,14 @@ export const STUDIO_SLOT_TYPES = {
   OPENING_WEEKEND_BOX_OFFICE: "Opening Weekend Box Office",
   IMDB_RATING: "IMDb Rating",
   REVERSE_IMDB_RATING: "Reverse IMDb Rating",
-  RT_CRITIC_SCORE: "Rotten Tomatoes Critic Score",
-  RT_AUDIENCE_SCORE: "Rotten Tomatoes Audience Score",
+  RT_TOMATOMETER: "Rotten Tomatoes Tomatometer",
+  RT_POPCORNMETER: "Rotten Tomatoes Popcornmeter",
+  REVERSE_RT_TOMATOMETER: "Reverse Rotten Tomatoes Tomatometer",
+  REVERSE_RT_POPCORNMETER: "Reverse Rotten Tomatoes Popcornmeter",
   RT_DISPARITY: "Rotten Tomatoes Score Disparity",
-  REVERSE_RT_CRITIC_SCORE: "Reverse Rotten Tomatoes Critic Score",
-  REVERSE_RT_AUDIENCE_SCORE: "Reverse Rotten Tomatoes Audience Score",
   LETTERBOXD_RATING: "Letterboxd Rating",
   REVERSE_LETTERBOXD_RATING: "Reverse Letterboxd Rating",
   LETTERBOXD_NUM_WATCHED: "Letterboxd # Watched",
-  NUM_OSCAR_WINS: "# Oscar Wins",
 } as const;
 
 export const DRAFT_TYPES = {

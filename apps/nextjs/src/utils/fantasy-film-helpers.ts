@@ -1,7 +1,12 @@
+import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { LeagueSessionSettingsDraft } from "@repo/api/src/zod";
 import { StudioFilm } from "@repo/db";
 
-export function getAvailableFilms(picks: StudioFilm[], films: any[]) {
+type Film = TMDBDiscoverResult;
+
+export function getAvailableFilms(picks: StudioFilm[], films: Film[]) {
+  console.log(picks);
+  console.log(films);
   const takenIds = picks.map((e) => e.tmdbId);
   return films.filter((e) => !takenIds.includes(e.id));
 }

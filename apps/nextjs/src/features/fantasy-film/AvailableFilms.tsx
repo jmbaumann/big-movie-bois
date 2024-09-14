@@ -31,11 +31,13 @@ export default function AvailableFilms({
   films,
   studioId,
   canPick,
+  isDraft,
 }: {
   session: Session;
   films: Film[];
   studioId: string;
   canPick: boolean;
+  isDraft?: boolean;
 }) {
   const [filmList, setFilmList] = useState(films);
   const [showWatchlist, setShowWatchlist] = useState(false);
@@ -70,7 +72,7 @@ export default function AvailableFilms({
     } else return 1;
   };
 
-  const { data: myStudio } = api.ffLeagueSession.getMyStudio.useQuery(
+  const { data: myStudio } = api.ffStudio.getMyStudio.useQuery(
     { sessionId: session?.id ?? "" },
     {
       enabled: !!session?.id,
@@ -85,6 +87,7 @@ export default function AvailableFilms({
     );
   const { mutate: addFavorite } = api.ffStudio.addFavorite.useMutation();
   const { mutate: removeFavorite } = api.ffStudio.removeFavorite.useMutation();
+  const { mutate: makePick } = api.ffDraft.pick.useMutation();
 
   const sessionSlots = session?.settings.teamStructure;
   const availableSlots =
@@ -100,7 +103,7 @@ export default function AvailableFilms({
       const favoriteIds = favorites?.map((e) => e.tmdbId);
       setFilmList(films.filter((e) => favoriteIds?.includes(e.id)));
     } else setFilmList(films);
-  }, [showWatchlist, favorites]);
+  }, [showWatchlist, favorites, films]);
 
   useEffect(() => {
     setSelectedSlot(undefined);
@@ -118,6 +121,20 @@ export default function AvailableFilms({
           { studioId, tmdbId: selectedFilm.id },
           { onSuccess: () => refreshFavorites() },
         );
+  }
+
+  function handleDraft() {
+    console.log("here");
+    if (session && selectedFilm && myStudio && selectedSlot) {
+      makePick({
+        sessionId: session.id,
+        tmdbId: selectedFilm.id,
+        title: selectedFilm.title,
+        studioId: myStudio.id,
+        slot: Number(selectedSlot),
+      });
+      setOpen(false);
+    }
   }
 
   return (
@@ -150,24 +167,16 @@ export default function AvailableFilms({
             return (
               <DialogTrigger
                 key={i}
-                className={cn(
-                  "group flex w-[150px] flex-col p-2 hover:cursor-default",
-                  canPick ? "hover:text-primary hover:cursor-pointer" : "",
-                )}
+                className="hover:text-primary group flex w-[150px] flex-col p-2 hover:cursor-pointer"
               >
                 <div
                   onClick={() => {
-                    if (canPick) {
-                      setSelectedFilm(film);
-                      setOpen(true);
-                    }
+                    setSelectedFilm(film);
+                    setOpen(true);
                   }}
                 >
                   <Image
-                    className={cn(
-                      "inset-0 border-4 border-transparent",
-                      canPick ? "group-hover:border-primary" : "",
-                    )}
+                    className="group-hover:border-primary inset-0 border-4 border-transparent"
                     src={`https://image.tmdb.org/t/p/w1280${film.poster_path}`}
                     alt={`${film.title} poster`}
                     width={200}
@@ -201,55 +210,59 @@ export default function AvailableFilms({
                       </p>
                       <p className="mb-2">{selectedFilm.overview}</p>
 
-                      <RadioGroup
-                        className="ml-6 mt-1 text-white"
-                        value={selectedSlot}
-                        onValueChange={setSelectedSlot}
-                      >
-                        {availableSlots.map((slot, i) => {
-                          return (
-                            <div
-                              key={i}
-                              className="flex items-center space-x-2"
-                            >
-                              <RadioGroupItem
-                                value={String(slot.pos)}
-                                id={String(slot.pos)}
-                              />
-                              <Label htmlFor={String(slot.pos)}>
-                                {slot.type}
-                              </Label>
-                            </div>
-                          );
-                        })}
-                      </RadioGroup>
+                      {canPick && (
+                        <RadioGroup
+                          className="ml-6 mt-1 text-white"
+                          value={selectedSlot}
+                          onValueChange={setSelectedSlot}
+                        >
+                          {availableSlots.map((slot, i) => {
+                            return (
+                              <div
+                                key={i}
+                                className="flex items-center space-x-2"
+                              >
+                                <RadioGroupItem
+                                  value={String(slot.pos)}
+                                  id={String(slot.pos)}
+                                />
+                                <Label htmlFor={String(slot.pos)}>
+                                  {slot.type}
+                                </Label>
+                              </div>
+                            );
+                          })}
+                        </RadioGroup>
+                      )}
                     </div>
                   </div>
                 )}
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="flex-col sm:justify-start">
-              <Link
-                className="flex items-center"
-                href={`https://www.themoviedb.org/movie/${selectedFilm?.id}`}
-                target="_blank"
-              >
-                More Info <ExternalLink className="mx-1" size={16} />
-              </Link>
-
-              <div className="ml-auto">
+            <DialogFooter className="flex-col sm:justify-between">
+              <div className="flex items-center">
+                <Link
+                  className="flex items-center"
+                  href={`https://www.themoviedb.org/movie/${selectedFilm?.id}`}
+                  target="_blank"
+                >
+                  More Info <ExternalLink className="mx-1" size={16} />
+                </Link>
                 <Button onClick={() => handleFavorite()} variant="ghost">
                   <Star color="#fbbf24" fill={isFavorite ? "#fbbf24" : ""} />
                 </Button>
               </div>
 
-              {/* <Button
-                  className="bg-lb-green absolute bottom-5 right-5"
-                  disabled={!selectedFilm && !selectedSlot}
-                  onClick={draftFilm}
-                >
-                  Draft
-                </Button> */}
+              <div className="ml-auto">
+                {isDraft && (
+                  <Button
+                    disabled={!selectedFilm || !selectedSlot || !canPick}
+                    onClick={handleDraft}
+                  >
+                    Draft
+                  </Button>
+                )}
+              </div>
             </DialogFooter>
           </DialogContent>
         </div>

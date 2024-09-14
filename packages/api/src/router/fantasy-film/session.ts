@@ -72,23 +72,11 @@ const update = protectedProcedure
     return session;
   });
 
-const getMyStudio = protectedProcedure
+const getAcquiredFilms = protectedProcedure
   .input(z.object({ sessionId: z.string() }))
   .query(async ({ ctx, input }) => {
-    return await ctx.prisma.leagueSessionStudio.findFirst({
-      where: { sessionId: input.sessionId, ownerId: ctx.session.user.id },
-      include: { films: true },
-    });
-  });
-
-const getOpposingStudios = protectedProcedure
-  .input(z.object({ sessionId: z.string() }))
-  .query(async ({ ctx, input }) => {
-    return await ctx.prisma.leagueSessionStudio.findMany({
-      where: {
-        sessionId: input.sessionId,
-        ownerId: { notIn: [ctx.session.user.id] },
-      },
+    return await ctx.prisma.studioFilm.findMany({
+      where: { studio: { sessionId: { equals: input.sessionId } } },
     });
   });
 
@@ -96,8 +84,7 @@ export const leagueSessionRouter = createTRPCRouter({
   getById,
   create,
   update,
-  getMyStudio,
-  getOpposingStudios,
+  getAcquiredFilms,
 });
 
 ////////////////

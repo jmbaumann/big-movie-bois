@@ -2,6 +2,7 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { inferRouterOutputs } from "@trpc/server";
 import {
   ArrowLeftFromLine,
   ArrowRightFromLine,
@@ -12,6 +13,7 @@ import {
 import { useSession } from "next-auth/react";
 import io from "socket.io-client";
 
+import { AppRouter } from "@repo/api";
 import { LeagueSessionSettings } from "@repo/api/src/zod";
 import { DraftStateUpdate, LeagueSessionStudio, StudioFilm } from "@repo/db";
 
@@ -43,6 +45,9 @@ import AvailableFilms from "./AvailableFilms";
 // import StudioIcon from "~/components/StudioIcon";
 import StudioSlot from "./StudioSlot";
 
+type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
+type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
+
 export default function Draft() {
   const { data: sessionData } = useSession();
   const router = useRouter();
@@ -64,6 +69,13 @@ export default function Draft() {
     },
     { enabled: !!sessionId },
   );
+  const { data: myStudio, refetch: refreshStudio } =
+    api.ffStudio.getMyStudio.useQuery(
+      {
+        sessionId: sessionId,
+      },
+      { enabled: !!sessionId },
+    );
   const { data: draftState } = api.ffDraft.getState.useQuery(
     {
       sessionId,
@@ -82,14 +94,9 @@ export default function Draft() {
     session?.studios ?? [],
     "ownerId",
   );
-  console.log(studiosById);
-  const myStudio = session?.studios.find(
-    (e) => e.ownerId === sessionData?.user.id,
-  );
-  const myPicks = picks.filter((e) => e.studioId === myStudio?.id);
   const availableFilms = getAvailableFilms(picks ?? [], films?.results ?? []);
   const availableSlots = session?.settings.teamStructure.filter(
-    (slot) => !myPicks.map((e) => e.slot).includes(slot.pos),
+    (slot) => !myStudio?.films.map((e) => e.slot).includes(slot.pos),
   );
   const draftOver =
     picks.length ===
@@ -106,9 +113,9 @@ export default function Draft() {
       makePick.mutate({
         sessionId: session.id,
         tmdbId: availableFilms?.[0]?.id ?? 0,
+        title: availableFilms?.[0]?.title ?? "",
         studioId: myStudio?.id ?? "",
         slot: availableSlots?.[0]?.pos ?? 0,
-        draftPick: currentPick.num,
       });
   };
 
@@ -139,6 +146,7 @@ export default function Draft() {
       return s;
     });
     setActivities((s) => [...s, ...state.newActivities]);
+    refreshStudio();
   };
 
   useEffect(() => {
@@ -232,12 +240,14 @@ export default function Draft() {
               expand ? "w-[436px]" : "w-[218px]",
             )}
           >
-            <MyStudio
-              teamStructure={session.settings.teamStructure}
-              myPicks={myPicks}
-              expand={expand}
-              setExpand={setExpand}
-            />
+            {myStudio && (
+              <MyStudio
+                teamStructure={session.settings.teamStructure}
+                films={myStudio.films as StudioFilmDetails[]}
+                expand={expand}
+                setExpand={setExpand}
+              />
+            )}
           </div>
           <div
             className={cn(
@@ -250,15 +260,15 @@ export default function Draft() {
                 session={session}
                 films={availableFilms}
                 studioId={myStudio.id}
-                canPick={true}
-                //   canPick={
-                //   started &&
-                //   !draftOver &&
-                //   getStudioByPick(
-                //     session.settings.draft.order,
-                //     currentPick.num,
-                //   ) === myStudio.id
-                // }
+                canPick={
+                  started &&
+                  !draftOver &&
+                  getStudioByPick(
+                    session.settings.draft.order,
+                    currentPick.num,
+                  ) === myStudio.ownerId
+                }
+                isDraft={true}
               />
             )}
           </div>
@@ -377,7 +387,7 @@ function UpcomingPick({
 
 function MyStudio({
   teamStructure,
-  myPicks,
+  films,
   expand,
   setExpand,
 }: {
@@ -385,7 +395,7 @@ function MyStudio({
     type: string;
     pos: number;
   }[];
-  myPicks: StudioFilm[];
+  films: StudioFilmDetails[];
   expand: boolean;
   setExpand: Dispatch<SetStateAction<boolean>>;
 }) {
@@ -408,8 +418,8 @@ function MyStudio({
         )}
       >
         {teamStructure.map((slot, i) => {
-          const movie = myPicks.find((e) => e.slot === slot.pos);
-          return <StudioSlot key={i} slot={slot.type} />;
+          const film = films.find((e) => e.slot === slot.pos);
+          return <StudioSlot key={i} slot={slot.type} film={film} />;
         })}
       </div>
     </>

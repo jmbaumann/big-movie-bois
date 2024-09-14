@@ -1,13 +1,47 @@
+import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
 import { z } from "zod";
 
+import { StudioFilm } from "@repo/db";
+
+import { AppRouter } from "../../root";
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
   TRPCContext,
 } from "../../trpc";
+import { getByTMDBId } from "../tmdb";
 import { createLeagueSessionStudioObj } from "./zod";
+
+type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
+type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
+
+const getMyStudio = protectedProcedure
+  .input(z.object({ sessionId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    const studio = await ctx.prisma.leagueSessionStudio.findFirst({
+      where: { sessionId: input.sessionId, ownerId: ctx.session.user.id },
+      include: { films: true },
+    });
+    if (!studio) throw "No studio found";
+
+    for (const film of studio.films as StudioFilmDetails[])
+      film.tmdb = await getByTMDBId(film.tmdbId);
+
+    return studio;
+  });
+
+const getOpposingStudios = protectedProcedure
+  .input(z.object({ sessionId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueSessionStudio.findMany({
+      where: {
+        sessionId: input.sessionId,
+        ownerId: { notIn: [ctx.session.user.id] },
+      },
+    });
+  });
 
 const create = protectedProcedure
   .input(createLeagueSessionStudioObj)
@@ -47,6 +81,8 @@ const getFavorites = protectedProcedure
   });
 
 export const studioRouter = createTRPCRouter({
+  getMyStudio,
+  getOpposingStudios,
   create,
   addFavorite,
   removeFavorite,

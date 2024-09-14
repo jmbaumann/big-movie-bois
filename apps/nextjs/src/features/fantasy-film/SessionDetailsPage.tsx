@@ -7,6 +7,7 @@ import { ChevronLeft } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
+import { StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getDraftDate } from "~/utils/fantasy-film-helpers";
@@ -28,6 +29,8 @@ import SessionForm from "./forms/Session";
 import StudioSlot from "./StudioSlot";
 
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
+type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
+type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
 
 export default function SessionDetailsPage() {
   const { data: sessionData } = useSession();
@@ -177,7 +180,7 @@ function MyStudio({ session }: { session: Session }) {
     data: studio,
     isLoading,
     refetch,
-  } = api.ffLeagueSession.getMyStudio.useQuery(
+  } = api.ffStudio.getMyStudio.useQuery(
     { sessionId: session?.id ?? "" },
     {
       enabled: !!session?.id,
@@ -201,13 +204,13 @@ function MyStudio({ session }: { session: Session }) {
       </div>
       <div className="grid grid-cols-3 gap-x-2 gap-y-4">
         {session?.settings.teamStructure.map((slot, i) => {
-          const movie = studio.films.find((e) => e.slot === slot.pos);
-          const locked = false; // movie ? isSlotLocked(slot, movie) : true;
+          const film = studio.films.find((e) => e.slot === slot.pos);
+          const locked = false; // film ? isSlotLocked(slot, film) : true;
           return (
             <StudioSlot
               key={i}
               slot={slot.type}
-              // movie={movie}
+              film={film as StudioFilmDetails}
               showScore
               locked={locked}
             />
@@ -222,11 +225,7 @@ function OpposingStudio() {
   const router = useRouter();
   const sessionId = router.query.sessionId as string;
 
-  const {
-    data: studios,
-    isLoading,
-    refetch,
-  } = api.ffLeagueSession.getOpposingStudios.useQuery(
+  const { data: studios } = api.ffStudio.getOpposingStudios.useQuery(
     { sessionId },
     {
       enabled: !!sessionId,
@@ -243,17 +242,24 @@ function Films({ session }: { session: Session }) {
     { sessionId: session?.id ?? "", today: true },
     { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
   );
+  const { data: acquiredFilms } = api.ffLeagueSession.getAcquiredFilms.useQuery(
+    { sessionId: session?.id ?? "" },
+    { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
+  );
+
+  const acquiredIds = acquiredFilms?.map((e) => e.tmdbId);
+  const films = data?.results.filter((e) => !acquiredIds?.includes(e.id));
 
   const myStudio = session?.studios.find(
     (e) => e.ownerId === sessionData?.user.id,
   );
 
-  if (!data?.results || !myStudio) return <p>no films</p>;
+  if (!data?.results || !myStudio || !films) return <p>no films</p>;
 
   return (
     <AvailableFilms
       session={session}
-      films={data.results}
+      films={films}
       studioId={myStudio.id}
       canPick={true}
     />

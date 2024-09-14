@@ -1,6 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
 import Image from "next/image";
+import { inferRouterOutputs } from "@trpc/server";
 import { ArrowRightLeft, Lock } from "lucide-react";
+
+import { AppRouter } from "@repo/api";
+import { StudioFilm } from "@repo/db";
 
 import { cn } from "~/utils/shadcn";
 import { Label } from "~/components/ui/label";
@@ -11,16 +15,19 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 
+type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
+type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
+
 export default function StudioSlot({
   slot,
-  // movie,
+  film,
   showScore,
   locked,
   showManageTools, // selectedToSwap,
 } // setSelectedToSwap,
 : {
   slot: string;
-  // movie?: StudioFilm;
+  film?: StudioFilmDetails;
   showScore?: boolean;
   locked?: boolean;
   showManageTools?: boolean;
@@ -39,25 +46,23 @@ export default function StudioSlot({
           {locked && <Lock size={16} className="mb-2 inline-block rotate-90" />}
           {slot}
         </p>
-        <div className="flex aspect-[2/3] flex-col p-2">
-          {false ? (
+        <div className="flex aspect-[2/3] flex-col justify-center p-2">
+          {film ? (
             <TooltipProvider>
               <Tooltip>
-                {/* <TooltipTrigger className="">
+                <TooltipTrigger className="">
                   <Image
-                    src={`https://image.tmdb.org/t/p/w1280/${movie.details?.poster_path}`}
-                    alt={`${movie.details?.title} poster`}
+                    src={`https://image.tmdb.org/t/p/w1280/${film.tmdb.details.poster}`}
+                    alt={`${film.tmdb.details.title} poster`}
                     width={200}
                     height={300}
                   />
                 </TooltipTrigger>
                 <TooltipContent className="bg-[#456]">
                   <p className="text-xs">
-                    {`${movie.details?.title} (${new Date(
-                      movie.details?.release_date ?? "",
-                    ).getFullYear()})` ?? ""}
+                    {`${film.tmdb.details.title} (${film.tmdb.details.releaseYear})`}
                   </p>
-                </TooltipContent> */}
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           ) : (

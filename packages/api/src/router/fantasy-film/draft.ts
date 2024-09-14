@@ -88,8 +88,8 @@ const pick = protectedProcedure
       sessionId: z.string(),
       studioId: z.string(),
       tmdbId: z.number(),
+      title: z.string(),
       slot: z.number(),
-      draftPick: z.number(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -114,7 +114,6 @@ const pick = protectedProcedure
     const slot = session!.settings.teamStructure.find(
       (e) => e.pos === film.slot,
     );
-    // film.details = movieList.find((e) => e.id === film.tmdbId);
     const draftState = {
       currentPick: {
         num: sessionFilms.length + 1,
@@ -122,18 +121,17 @@ const pick = protectedProcedure
         endTimestamp: ts + session!.settings.draft.timePerRound * 1000,
       },
       newActivities: [
-        // `${studio?.name} drafted ${film.details?.title}${
-        //   slot ? " in their " + slotTypes[slot.type] + " slot" : ""
-        // }`,
-        "film drafted",
+        `${studio?.name} drafted ${input.title}${
+          slot ? " in their " + slot.type + " slot" : ""
+        }`,
       ],
       lastPick: film,
     };
 
-    // await triggerSocket<typeof draftState>(
-    //   `draft:${input.leagueUuid}:draft-update`,
-    //   draftState,
-    // );
+    await socket<typeof draftState>(
+      `draft:${input.sessionId}:draft-update`,
+      draftState,
+    );
     return input.sessionId;
   });
 

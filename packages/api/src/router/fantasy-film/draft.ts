@@ -7,6 +7,7 @@ import {
   publicProcedure,
   TRPCContext,
 } from "../../trpc";
+import { socket } from "../../wss";
 import { getSessionById } from "./session";
 
 const getState = protectedProcedure
@@ -74,10 +75,10 @@ const start = protectedProcedure
       newActivities: ["The draft has started!"],
     };
 
-    // await triggerSocket<typeof draftState>(
-    //   `draft:${input.leagueUuid}:draft-update`,
-    //   draftState,
-    // );
+    socket<typeof draftState>(
+      `draft:${input.sessionId}:draft-update`,
+      draftState,
+    );
     return input.sessionId;
   });
 

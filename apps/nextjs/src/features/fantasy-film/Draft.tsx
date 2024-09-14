@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { ExternalLink, HelpCircle, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import io from "socket.io-client";
 
 import { LeagueSessionSettings } from "@repo/api/src/zod";
 import { DraftStateUpdate, LeagueSessionStudio, StudioFilm } from "@repo/db";
@@ -70,13 +71,16 @@ export default function Draft() {
   const startDraft = api.ffDraft.start.useMutation();
   const makePick = api.ffDraft.pick.useMutation();
 
-  const studiosById = getById<LeagueSessionStudio>(session?.studios ?? []);
+  const studiosById = getById<LeagueSessionStudio>(
+    session?.studios ?? [],
+    "ownerId",
+  );
+  console.log(studiosById);
   const myStudio = session?.studios.find(
     (e) => e.ownerId === sessionData?.user.id,
   );
   const myPicks = picks.filter((e) => e.studioId === myStudio?.id);
   const availableFilms = getAvailableFilms(picks ?? [], films?.results ?? []);
-  console.log(availableFilms);
   const availableSlots = session?.settings.teamStructure.filter(
     (slot) => !myPicks.map((e) => e.slot).includes(slot.pos),
   );
@@ -101,23 +105,23 @@ export default function Draft() {
       });
   };
 
-  // useEffect(() => {
-  //   const socket = io(env.NEXT_PUBLIC_WEBSOCKET_SERVER, {
-  //     // withCredentials: true,
-  //   });
+  useEffect(() => {
+    const socket = io("ws://localhost:8080", {
+      // withCredentials: true,
+    });
 
-  //   socket.on("connect", () => {
-  //     console.log("Connected to the WebSocket server");
-  //   });
+    socket.on("connect", () => {
+      console.log("Connected to the WebSocket server");
+    });
 
-  //   socket.on(`draft:${uuid}:draft-update`, (data: DraftStateUpdate) => {
-  //     handleDraftUpdate(data);
-  //   });
+    socket.on(`draft:${sessionId}:draft-update`, (data: DraftStateUpdate) => {
+      handleDraftUpdate(data);
+    });
 
-  //   return () => {
-  //     socket.disconnect();
-  //   };
-  // }, [sessionId]);
+    return () => {
+      socket.disconnect();
+    };
+  }, [sessionId]);
 
   const handleDraftUpdate = (state: DraftStateUpdate) => {
     console.log("UPDATE", state);
@@ -178,10 +182,10 @@ export default function Draft() {
                 leagueSettings={session.settings}
                 handleTimeout={handleTimeout}
               />
-            ) : session.league.ownerId === sessionData?.user.id ? (
+            ) : session?.league.ownerId === sessionData?.user.id ? (
               <Button
                 className="ml-2 font-sans"
-                onClick={() => startDraft.mutate({ sessionId: session.id })}
+                onClick={() => startDraft.mutate({ sessionId: session!.id })}
               >
                 Start Draft
               </Button>
@@ -296,6 +300,7 @@ function Countdown({
       </div>
       <div className="text-3xl tabular-nums">{timer}</div>
       <Progress
+        className="h-2"
         value={
           ((leagueSettings.draft.timePerRound - seconds) /
             leagueSettings.draft.timePerRound) *
@@ -319,12 +324,12 @@ function OnTheClock({
   return (
     <div
       className={cn(
-        "bg-lb-blue ml-2 mr-4 flex h-[88px] min-w-max items-center px-6 py-2 text-white",
-        studio.ownerId === sessionData?.user.id ? "bg-lb-green" : "",
+        "bg-primary ml-2 mr-4 flex h-[88px] min-w-max items-center px-2 py-2 text-white",
+        studio.ownerId === sessionData?.user.id ? "bg-green-500" : "",
       )}
     >
       {/* <StudioIcon icon={studio.image} /> */}
-      <div className="ml-4 flex flex-col font-sans">
+      <div className="flex flex-col font-sans">
         <div className="text-sm uppercase">On the Clock: Pick {pick}</div>
         <div className="text-2xl">{studio.name}</div>
       </div>

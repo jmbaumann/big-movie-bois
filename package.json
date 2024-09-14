@@ -1,5 +1,5 @@
 {
-  "name": "letterboxd-fantasy",
+  "name": "big-movie-bois",
   "private": true,
   "engines": {
     "node": ">=v18.16.0"
@@ -15,6 +15,7 @@
     "dev": "turbo dev --parallel",
     "dev:next": "turbo dev --filter=nextjs",
     "dev:expo": "turbo dev --filter=expo",
+    "dev:wss": "turbo start --filter=wss",
     "format": "prettier --write \"**/*.{js,cjs,mjs,ts,tsx,md,json}\" --ignore-path .gitignore",
     "lint": "turbo lint && manypkg check",
     "lint:fix": "turbo lint:fix && manypkg fix",

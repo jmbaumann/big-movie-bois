@@ -1,6 +1,7 @@
-export function getById<T extends { id: string }>(arr: T[]) {
-  const byId: Record<string, T> = {};
-  arr.forEach((e) => (byId[e.id] = e));
+export function getById<T extends { id: string }>(arr: T[], key?: string) {
+  const byId = {} as Record<string, T>;
+  if (key) arr.forEach((e) => (byId[e[key]] = e));
+  else arr.forEach((e) => (byId[e.id] = e));
   return byId;
 }
 

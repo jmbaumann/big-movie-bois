@@ -22,7 +22,7 @@ import { DraftStateUpdate, LeagueSessionStudio, StudioFilm } from "@repo/db";
 import { api } from "~/utils/api";
 import {
   getAvailableFilms,
-  getStudioByPick,
+  getStudioOwnerByPick,
   getUpcomingPicks,
 } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
@@ -100,15 +100,16 @@ export default function Draft() {
   );
   const draftOver =
     picks.length ===
-    (session?.settings.teamStructure.length ?? 0) *
-      (session?.settings.draft.order.length ?? 0);
+    (session?.settings.draft.numRounds ?? 0) * (session?.studios.length ?? 0);
   const draftCannotStart = session?.settings.draft.order.length === 0;
 
   const handleTimeout = () => {
     if (
       session &&
-      getStudioByPick(session?.settings.draft.order ?? [], currentPick.num) ===
-        myStudio?.id
+      getStudioOwnerByPick(
+        session?.settings.draft.order ?? [],
+        currentPick.num,
+      ) === myStudio?.id
     )
       makePick.mutate({
         sessionId: session.id,
@@ -211,14 +212,17 @@ export default function Draft() {
               pick={currentPick.num}
               studio={
                 studiosById[
-                  getStudioByPick(session.settings.draft.order, currentPick.num)
+                  getStudioOwnerByPick(
+                    session.settings.draft.order,
+                    currentPick.num,
+                  )
                 ]
               }
             />
             <div className="flex space-x-4 overflow-hidden">
               {getUpcomingPicks(
                 currentPick.num,
-                session.settings.teamStructure.length,
+                session.settings.draft.numRounds,
                 session.settings.draft.order,
               ).map((pick, i) => {
                 return (
@@ -263,7 +267,7 @@ export default function Draft() {
                 canPick={
                   started &&
                   !draftOver &&
-                  getStudioByPick(
+                  getStudioOwnerByPick(
                     session.settings.draft.order,
                     currentPick.num,
                   ) === myStudio.ownerId
@@ -297,7 +301,7 @@ function Countdown({
   const [timer, setTimer] = useState("");
   const [seconds, setSeconds] = useState(1);
   const [round, setRound] = useState(
-    Math.ceil(currentPick.num / leagueSettings.teamStructure.length),
+    Math.ceil(currentPick.num / leagueSettings.draft.numRounds),
   );
 
   const updateTimer = () => {
@@ -325,7 +329,7 @@ function Countdown({
   return (
     <div className="ml-4 mr-2 flex min-w-max flex-col items-center font-sans">
       <div className="text-sm">
-        Round {round} of {leagueSettings.teamStructure.length}
+        Round {round} of {leagueSettings.draft.numRounds}
       </div>
       <div className="text-3xl tabular-nums">{timer}</div>
       <Progress

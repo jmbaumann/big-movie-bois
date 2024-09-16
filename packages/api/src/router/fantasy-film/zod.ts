@@ -56,3 +56,11 @@ export const createLeagueSessionStudioObj = z.object({
   ownerId: z.string(),
   name: z.string().optional(),
 });
+
+export const makePickObj = z.object({
+  sessionId: z.string(),
+  studioId: z.string(),
+  tmdbId: z.number(),
+  title: z.string(),
+  slot: z.number(),
+});

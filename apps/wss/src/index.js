@@ -1,4 +1,5 @@
 import { createServer } from "http";
+import axios from "axios";
 import bodyParser from "body-parser";
 import express from "express";
 import { Server } from "socket.io";
@@ -13,9 +14,28 @@ const io = new Server(server, {
   },
 });
 
-app.post("/trigger-event", (req, res) => {
-  console.log(req.body);
+app.post("/trigger-event", (req) => {
   io.emit(req.body.eventName, req.body.eventData);
+});
+
+app.post("/draft-event", async (req) => {
+  const data = req.body.eventData;
+  console.log(data);
+  io.emit(req.body.eventName, data);
+
+  setTimeout(async () => {
+    const url = "http://localhost:3000";
+
+    try {
+      await axios.post(`${url}/api/auto-draft`, {
+        sessionId: data.sessionId,
+        studioId: data.currentPick.studioId,
+        pick: data.currentPick.num,
+      });
+    } catch (e) {
+      // console.log(e);
+    }
+  }, data.currentPick.endTimestamp - data.currentPick.startTimestamp);
 });
 
 io.on("connect", (socket) => {

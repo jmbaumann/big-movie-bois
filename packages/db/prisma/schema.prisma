@@ -95,12 +95,15 @@ model LeagueSessionStudio {
     deletedAt DateTime?
     deletedBy String?
 
-    session   LeagueSession    @relation(fields: [sessionId], references: [id])
-    owner     User             @relation("StudioOwner", fields: [ownerId], references: [id])
-    updater   User?            @relation("StudioUpdater", fields: [updatedBy], references: [id])
-    deleter   User?            @relation("StudioDeleter", fields: [deletedBy], references: [id])
-    films     StudioFilm[]
-    favorites StudioFavorite[]
+    session        LeagueSession       @relation(fields: [sessionId], references: [id])
+    owner          User                @relation("StudioOwner", fields: [ownerId], references: [id])
+    updater        User?               @relation("StudioUpdater", fields: [updatedBy], references: [id])
+    deleter        User?               @relation("StudioDeleter", fields: [deletedBy], references: [id])
+    films          StudioFilm[]
+    favorites      StudioFavorite[]
+    bids           FilmBid[]
+    tradesOffered  FilmTradeProposal[] @relation("OfferingStudio")
+    tradesReceived FilmTradeProposal[] @relation("ReceivingStudio")
 
     @@index([sessionId])
     @@index([ownerId])
@@ -119,7 +122,9 @@ model StudioFilm {
     acquiredAt    DateTime?
     droppedAt     DateTime?
 
-    studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
+    studio         LeagueSessionStudio @relation(fields: [studioId], references: [id])
+    tradesOffered  FilmTradeProposal[] @relation("OfferingFilm")
+    tradesReceived FilmTradeProposal[] @relation("ReceivingFilm")
 
     @@index([studioId])
 }
@@ -133,6 +138,44 @@ model StudioFavorite {
 
     @@unique([studioId, tmdbId])
     @@index([studioId])
+}
+
+model FilmBid {
+    id        String   @id @default(cuid())
+    studioId  String
+    tmdbId    Int
+    amount    Int
+    status    String
+    createdAt DateTime
+
+    studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
+
+    @@unique([studioId, tmdbId])
+    @@index([studioId])
+}
+
+model FilmTradeProposal {
+    id                String    @id @default(cuid())
+    offeringStudioId  String
+    offeringFilmId    String
+    offeringCash      Int
+    receivingStudioId String
+    receivingFilmId   String
+    receivingCash     Int
+    status            String
+    createdAt         DateTime
+    updatedAt         DateTime?
+    updateBy          String
+
+    offeringStudio  LeagueSessionStudio @relation("OfferingStudio", fields: [offeringStudioId], references: [id])
+    offeringFilm    StudioFilm          @relation("OfferingFilm", fields: [offeringFilmId], references: [id])
+    receivingStudio LeagueSessionStudio @relation("ReceivingStudio", fields: [receivingStudioId], references: [id])
+    receivingFilm   StudioFilm          @relation("ReceivingFilm", fields: [receivingFilmId], references: [id])
+
+    @@index([offeringStudioId])
+    @@index([offeringFilmId])
+    @@index([receivingStudioId])
+    @@index([receivingFilmId])
 }
 
 // Necessary for Next auth

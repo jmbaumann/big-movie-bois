@@ -49,13 +49,13 @@ export default function StudioSlot({
   locked,
   refreshStudio,
 }: {
-  session: Session;
+  session?: Session;
   slot: string;
   film?: StudioFilmDetails;
   showScore?: boolean;
   locked?: boolean;
   showManageTools?: boolean;
-  refreshStudio: () => void;
+  refreshStudio?: () => void;
 }) {
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
@@ -79,7 +79,7 @@ export default function StudioSlot({
         {
           onSuccess: () => {
             toast({ title: "Film slots swapped" });
-            refreshStudio();
+            if (refreshStudio) refreshStudio();
             setOpen(false);
           },
         },
@@ -98,7 +98,7 @@ export default function StudioSlot({
           {
             onSuccess: () => {
               toast({ title: "Film dropped" });
-              refreshStudio();
+              if (refreshStudio) refreshStudio();
               setOpen(false);
             },
           },

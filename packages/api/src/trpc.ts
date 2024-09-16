@@ -7,14 +7,16 @@
  * The pieces you will need to use are documented accordingly near the end
  */
 import type { NextApiRequest, NextApiResponse } from "next";
+import { initTRPC, TRPCError } from "@trpc/server";
+import type { CreateNextContextOptions } from "@trpc/server/adapters/next";
+import superjson from "superjson";
+import { OpenApiMeta } from "trpc-openapi";
+import { ZodError } from "zod";
+
 import { getServerSession } from "@repo/auth";
 import type { Session } from "@repo/auth";
 import type { Prisma, PrismaClient } from "@repo/db";
 import { prisma } from "@repo/db";
-import { initTRPC, TRPCError } from "@trpc/server";
-import type { CreateNextContextOptions } from "@trpc/server/adapters/next";
-import superjson from "superjson";
-import { ZodError } from "zod";
 
 /**
  * 1. CONTEXT
@@ -78,19 +80,22 @@ export interface TRPCContext {
  * This is where the trpc api is initialized, connecting the context and
  * transformer
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
-  transformer: superjson,
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
-      },
-    };
-  },
-});
+const t = initTRPC
+  .meta<OpenApiMeta>()
+  .context<typeof createTRPCContext>()
+  .create({
+    transformer: superjson,
+    errorFormatter({ shape, error }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          zodError:
+            error.cause instanceof ZodError ? error.cause.flatten() : null,
+        },
+      };
+    },
+  });
 
 /**
  * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)

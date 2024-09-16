@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "../../trpc";
+import { createTRPCRouter, publicProcedure, TRPCContext } from "../../trpc";
 import {
   tmdbCertifications,
   tmdbCredits,
@@ -59,16 +59,7 @@ const getById = publicProcedure
 const getFilmsForSession = publicProcedure
   .input(z.object({ sessionId: z.string(), today: z.boolean().optional() }))
   .query(async ({ ctx, input }) => {
-    const session = await ctx.prisma.leagueSession.findFirst({
-      where: { id: input.sessionId },
-    });
-    if (!session) throw "No session found";
-
-    const fromDate = input.today
-      ? format(new Date(), "yyyy-MM-dd")
-      : format(session.startDate, "yyyy-MM-dd");
-
-    return getByDateRange(fromDate, format(session.endDate, "yyyy-MM-dd"));
+    return await getFilmsBySessionId(ctx, input.sessionId, input.today);
   });
 
 export const tmdbRouter = createTRPCRouter({
@@ -76,6 +67,8 @@ export const tmdbRouter = createTRPCRouter({
   getById,
   getFilmsForSession,
 });
+
+////////////////
 
 export async function getByTMDBId(id: number) {
   const details = await getDetailsById(id);
@@ -86,6 +79,23 @@ export async function getByTMDBId(id: number) {
   if (!details || !credits || !releases || !keywords) throw "Bad TMDB call";
 
   return restructure({ details, credits, releases, keywords });
+}
+
+export async function getFilmsBySessionId(
+  ctx: TRPCContext,
+  sessionId: string,
+  today?: boolean,
+) {
+  const session = await ctx.prisma.leagueSession.findFirst({
+    where: { id: sessionId },
+  });
+  if (!session) throw "No session found";
+
+  const fromDate = today
+    ? format(new Date(), "yyyy-MM-dd")
+    : format(session.startDate, "yyyy-MM-dd");
+
+  return getByDateRange(fromDate, format(session.endDate, "yyyy-MM-dd"));
 }
 
 function restructure(movie: {

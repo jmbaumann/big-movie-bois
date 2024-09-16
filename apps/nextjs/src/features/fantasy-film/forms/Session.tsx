@@ -120,14 +120,14 @@ export default function SessionForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onInvalid)}>
         <Button
-          className=""
+          className="float-right block"
           type="submit"
           onClick={() => onSubmit(form.getValues())}
         >
           Save
         </Button>
 
-        <Accordion type="single" collapsible>
+        <Accordion className="w-5/6" type="single" collapsible>
           <AccordionItem value="settings">
             <AccordionTrigger>General</AccordionTrigger>
             <AccordionContent className="mt-2 space-y-8 px-4">
@@ -391,7 +391,7 @@ export function DraftSection({
 
   return (
     <>
-      <div className="flex items-end space-x-4">
+      <div className="flex items-end space-x-4 px-4">
         <FormField
           control={form.control}
           name="settings.draft.date"
@@ -540,11 +540,30 @@ export function DraftSection({
             </FormItem>
           )}
         />
+      </div>
+      <div className="flex gap-x-8 px-4">
+        <FormField
+          control={form.control}
+          name="settings.draft.numRounds"
+          render={({ field }) => (
+            <FormItem className="">
+              <FormLabel>Number of Rounds</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  className="w-[120px] text-black"
+                  type="number"
+                  min={0}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="settings.draft.timePerRound"
           render={({ field }) => (
-            <FormItem className="w-1/2">
+            <FormItem className="">
               <FormLabel>Time per Round (seconds)</FormLabel>
               <FormControl>
                 <Input

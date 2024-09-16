@@ -52,6 +52,7 @@
     "superjson": "1.9.1",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
+    "trpc-openapi": "^1.2.0",
     "zod": "^3.21.4",
     "zustand": "^4.5.5"
   },

@@ -99,7 +99,7 @@ export default function NewSessionDialog({
           ampm: "",
           type: DRAFT_TYPES.SNAKE,
           order: [],
-          numRounds: 0,
+          numRounds: 6,
           timePerRound: 120,
         },
         teamStructure: [
@@ -123,7 +123,7 @@ export default function NewSessionDialog({
           toast({
             title: "Session Created",
           });
-          void router.push(`/fantasy-film/${leagueId}/${data.slug}`);
+          void router.push(`/fantasy-film/${leagueId}/${data.id}`);
         },
         onError: (error) => {
           toast({ title: error.message, variant: "destructive" });

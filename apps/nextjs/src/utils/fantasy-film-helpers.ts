@@ -42,7 +42,7 @@ export function getMostRecentAndUpcoming(
   return { mostRecent, upcoming };
 }
 
-export function getStudioByPick(draftOrder: string[], pick: number) {
+export function getStudioOwnerByPick(draftOrder: string[], pick: number) {
   const round = Math.ceil(pick / draftOrder.length);
   const studioIndex = round * draftOrder.length - pick;
   const studio =
@@ -54,14 +54,14 @@ export function getStudioByPick(draftOrder: string[], pick: number) {
 
 export function getUpcomingPicks(
   numPicks: number,
-  teamSlots: number,
+  numRounds: number,
   draftOrder: string[],
 ) {
   const pickArray: { num: number; studio: string }[] = [];
-  for (let i = 0; i < teamSlots * draftOrder.length; i++)
+  for (let i = 0; i < numRounds * draftOrder.length; i++)
     pickArray.push({
       num: i + 1,
-      studio: getStudioByPick(draftOrder, i + 1) ?? "",
+      studio: getStudioOwnerByPick(draftOrder, i + 1) ?? "",
     });
   return pickArray.slice(numPicks);
 }
@@ -71,7 +71,9 @@ export function getDraftDate(draftSettings: LeagueSessionSettingsDraft) {
   draftDate.setHours(
     draftSettings.ampm === "am"
       ? Number(draftSettings.hour!)
-      : Number(draftSettings.hour!) + 12,
+      : Number(draftSettings.hour!) !== 12
+      ? Number(draftSettings.hour!) + 12
+      : Number(draftSettings.hour!),
   );
   draftDate.setMinutes(Number(draftSettings.min!));
   return draftDate;

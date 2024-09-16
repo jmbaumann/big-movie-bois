@@ -1,39 +1,111 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { inferRouterOutputs } from "@trpc/server";
-import { ArrowRightLeft, Lock } from "lucide-react";
+import { format } from "date-fns";
+import {
+  ArrowRightLeft,
+  ExternalLink,
+  Lock,
+  Shuffle,
+  XCircle,
+} from "lucide-react";
 
 import { AppRouter } from "@repo/api";
 import { StudioFilm } from "@repo/db";
 
+import { api } from "~/utils/api";
 import { cn } from "~/utils/shadcn";
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { useConfirm } from "~/components/ui/hooks/use-confirm";
+import { toast } from "~/components/ui/hooks/use-toast";
 import { Label } from "~/components/ui/label";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
+type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
 type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
 type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
 
 export default function StudioSlot({
+  session,
   slot,
   film,
   showScore,
   locked,
-  showManageTools, // selectedToSwap,
-} // setSelectedToSwap,
-: {
+  refreshStudio,
+}: {
+  session: Session;
   slot: string;
   film?: StudioFilmDetails;
   showScore?: boolean;
   locked?: boolean;
   showManageTools?: boolean;
-  // selectedToSwap?: boolean;
-  // setSelectedToSwap?: Dispatch<SetStateAction<StudioFilm[] | undefined>>;
+  refreshStudio: () => void;
 }) {
+  const confirm = useConfirm();
+  const [open, setOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<string>(
+    String(session?.settings.teamStructure.find((e) => e.type === slot)?.pos),
+  );
+  const canEdit = !locked;
+
+  const { mutate: swap } = api.ffFilm.swap.useMutation();
+  const { mutate: trade } = api.ffFilm.trade.useMutation();
+  const { mutate: drop } = api.ffFilm.drop.useMutation();
+
+  function handleSwap() {
+    if (film) {
+      swap(
+        {
+          studioId: film.studioId,
+          fromPos: film.slot,
+          toPos: Number(selectedSlot),
+        },
+        {
+          onSuccess: () => {
+            toast({ title: "Film slots swapped" });
+            refreshStudio();
+            setOpen(false);
+          },
+        },
+      );
+    }
+  }
+
+  async function handleDrop() {
+    if (film) {
+      const ok = await confirm(
+        "Are you sure you want to drop this film from your studio?",
+      );
+      if (ok)
+        drop(
+          { id: film.id },
+          {
+            onSuccess: () => {
+              toast({ title: "Film dropped" });
+              refreshStudio();
+              setOpen(false);
+            },
+          },
+        );
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -48,23 +120,105 @@ export default function StudioSlot({
         </p>
         <div className="flex aspect-[2/3] flex-col justify-center p-2">
           {film ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger className="">
-                  <Image
-                    src={`https://image.tmdb.org/t/p/w1280/${film.tmdb.details.poster}`}
-                    alt={`${film.tmdb.details.title} poster`}
-                    width={200}
-                    height={300}
-                  />
-                </TooltipTrigger>
-                <TooltipContent className="bg-[#456]">
-                  <p className="text-xs">
-                    {`${film.tmdb.details.title} (${film.tmdb.details.releaseYear})`}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger className="flex">
+                <Image
+                  src={`https://image.tmdb.org/t/p/w1280${film.tmdb.details.poster}`}
+                  alt={`${film.tmdb.details.title} poster`}
+                  width={200}
+                  height={300}
+                />
+              </DialogTrigger>
+              <DialogContent className="max-w-2/3 w-1/2 rounded-sm" forceMount>
+                <DialogHeader>
+                  <DialogTitle className="text-white">
+                    {film.tmdb.details.title}
+                  </DialogTitle>
+                  <DialogDescription>
+                    <div className="flex">
+                      <div className="flex flex-col">
+                        <Image
+                          className="group-hover:border-primary inset-0 min-w-[200px] border-4 border-transparent"
+                          src={`https://image.tmdb.org/t/p/w1280${film.tmdb.details.poster}`}
+                          alt={`${film.tmdb.details.title} poster`}
+                          width={200}
+                          height={300}
+                        />
+                      </div>
+                      <div className="ml-4 w-full text-white">
+                        <p className="mb-2 text-lg">
+                          Release Date:{" "}
+                          {format(
+                            film.tmdb.details.releaseDate,
+                            "LLL dd, yyyy",
+                          )}
+                        </p>
+                        <p className="mb-4">{film.tmdb.details.overview}</p>
+
+                        <div className="flex items-center">
+                          <Select
+                            value={selectedSlot}
+                            onValueChange={setSelectedSlot}
+                          >
+                            <SelectTrigger className="w-2/3 text-black">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {session?.settings.teamStructure.map(
+                                (slot, i) => (
+                                  <SelectItem key={i} value={String(slot.pos)}>
+                                    {slot.type}
+                                  </SelectItem>
+                                ),
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            className="ml-2"
+                            disabled={
+                              slot ===
+                              session?.settings.teamStructure[
+                                Number(selectedSlot) - 1
+                              ]?.type
+                            }
+                            onClick={handleSwap}
+                          >
+                            <Shuffle className="mr-1" />
+                            Swap
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="flex-col sm:justify-between">
+                  <div className="flex items-center">
+                    <Link
+                      className="flex items-center"
+                      href={`https://www.themoviedb.org/movie/${film.tmdb.details?.id}`}
+                      target="_blank"
+                    >
+                      More Info <ExternalLink className="mx-1" size={16} />
+                    </Link>
+                  </div>
+
+                  <div className="ml-auto">
+                    <Button className="mx-1">
+                      <ArrowRightLeft className="mr-1" />
+                      Trade
+                    </Button>
+                    <Button
+                      className="mx-1"
+                      variant="destructive"
+                      onClick={handleDrop}
+                    >
+                      <XCircle className="mr-1" />
+                      Drop
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           ) : (
             <div className="flex h-full max-h-[300px] max-w-[200px] items-center justify-center bg-[#9ac] font-sans text-black">
               <Label>Empty Slot</Label>
@@ -79,31 +233,6 @@ export default function StudioSlot({
             <p className="text-md">pts</p>
           </div>
         )}
-        {/* {showManageTools && (
-          <div
-            className={cn(
-              "hover:bg-lb-blue flex h-min max-w-[40px] flex-col rounded-sm rounded-l-none bg-[#9ac] p-2 text-center text-black hover:cursor-pointer hover:text-white",
-              selectedToSwap ? "bg-lb-orange text-white" : "",
-            )}
-            onClick={() => {
-              if (setSelectedToSwap)
-                setSelectedToSwap((s) => {
-                  if (movie && s?.map((e) => e.id).includes(movie.id))
-                    return s.filter((e) => e.id !== movie.id);
-                  else
-                    return s && movie
-                      ? [...s, movie]
-                      : movie
-                      ? [movie]
-                      : undefined;
-                });
-            }}
-          >
-            <p className="mx-auto">
-              <ArrowRightLeft />
-            </p>
-          </div>
-        )} */}
       </div>
     </div>
   );

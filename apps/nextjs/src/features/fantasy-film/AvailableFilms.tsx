@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { inferRouterOutputs } from "@trpc/server";
+import { format } from "date-fns";
 import { ExternalLink, Star } from "lucide-react";
 
 import { AppRouter } from "@repo/api";
@@ -206,7 +207,8 @@ export default function AvailableFilms({
                     </div>
                     <div className="ml-4 w-full text-white">
                       <p className="mb-2 text-lg">
-                        Release Date: {selectedFilm.release_date}
+                        Release Date:{" "}
+                        {format(selectedFilm.release_date, "LLL dd, yyyy")}
                       </p>
                       <p className="mb-2">{selectedFilm.overview}</p>
 

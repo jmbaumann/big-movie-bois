@@ -209,10 +209,12 @@ function MyStudio({ session }: { session: Session }) {
           return (
             <StudioSlot
               key={i}
+              session={session}
               slot={slot.type}
               film={film as StudioFilmDetails}
               showScore
               locked={locked}
+              refreshStudio={refetch}
             />
           );
         })}

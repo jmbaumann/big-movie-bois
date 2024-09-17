@@ -18,6 +18,7 @@ import { StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getDraftDate } from "~/utils/fantasy-film-helpers";
+import AdminMenu from "~/components/AdminMenu";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -27,6 +28,11 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+} from "~/components/ui/dropdown-menu";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
 import {
@@ -331,6 +337,19 @@ function Bids({ session }: { session: Session }) {
 
   return (
     <>
+      {session?.league.ownerId === sessionData?.user.id && (
+        <AdminMenu className="float-right">
+          <DropdownMenuContent side="bottom">
+            <DropdownMenuItem
+              onClick={handleProcessBids}
+              // disabled={!bids?.length}
+            >
+              Process Bids Now
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </AdminMenu>
+      )}
+
       <div className="my-4 flex items-center justify-center">
         <Info className="mr-2" />
         <p>
@@ -338,12 +357,6 @@ function Bids({ session }: { session: Session }) {
           {format(nextTuesday(new Date()), "LLL d, yyyy")} at 12:00pm ET
         </p>
       </div>
-
-      {session?.league.ownerId === sessionData?.user.id && (
-        <Button onClick={handleProcessBids} disabled={!bids?.length}>
-          Process Bids Now
-        </Button>
-      )}
 
       {bids?.map((bid, i) => (
         <div key={i}>

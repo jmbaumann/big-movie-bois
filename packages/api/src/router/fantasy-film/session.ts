@@ -17,6 +17,7 @@ import { createManyStudios } from "./studio";
 import {
   createLeagueSessionInputObj,
   LeagueSessionSettings,
+  logActivityObj,
   updateLeagueSessionInputObj,
 } from "./zod";
 
@@ -116,12 +117,22 @@ const getBids = protectedProcedure
     );
   });
 
+const getLogs = protectedProcedure
+  .input(z.object({ sessionId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return ctx.prisma.leagueSessionActivity.findMany({
+      where: input,
+      orderBy: { timestamp: "desc" },
+    });
+  });
+
 export const leagueSessionRouter = createTRPCRouter({
   getById,
   create,
   update,
   getAcquiredFilms,
   getBids,
+  getLogs,
 });
 
 ////////////////
@@ -136,4 +147,12 @@ export async function getSessionById(ctx: TRPCContext, id: string) {
     ...session,
     settings: JSON.parse(session.settings as string) as LeagueSessionSettings,
   };
+}
+
+export async function logSessionActivity(
+  ctx: TRPCContext,
+  input: z.infer<typeof logActivityObj>,
+) {
+  const data = { ...input, timestamp: new Date() };
+  return await ctx.prisma.leagueSessionActivity.create({ data });
 }

@@ -22,11 +22,18 @@ export const LEAGUE_INVITE_STATUSES = {
   PENDING: "pending",
   ACCEPTED: "accepted",
   DECLINED: "declined",
-};
+} as const;
 
 export const BID_STATUSES = {
   PENDING: "pending",
   WON: "won",
   LOST: "lost",
   INVALID: "invalid",
-};
+} as const;
+
+export const SESSION_ACTIVITY_TYPES = {
+  FILM_SWAP: "film-swap",
+  FILM_DROP: "film-drop",
+  BID_WON: "bid-won",
+  STUDIO_NAME_CHANGE: "studio-name-change",
+} as const;

@@ -64,3 +64,10 @@ export const makePickObj = z.object({
   title: z.string(),
   slot: z.number(),
 });
+
+export const logActivityObj = z.object({
+  sessionId: z.string(),
+  studioId: z.string().optional(),
+  type: z.string(),
+  message: z.string(),
+});

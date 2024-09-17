@@ -3,10 +3,11 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
 import { format, nextTuesday } from "date-fns";
-import { ChevronLeft, Info } from "lucide-react";
+import { ChevronLeft, Info, Shuffle, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
+import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
 import { StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
@@ -20,6 +21,14 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 import Loading from "~/layouts/main/Loading";
@@ -155,7 +164,9 @@ export default function SessionDetailsPage() {
             <TabsContent value="bids">
               <Bids session={session} />
             </TabsContent>
-            <TabsContent value="activity">Activity</TabsContent>
+            <TabsContent value="activity">
+              <Activity session={session} />
+            </TabsContent>
             <TabsContent value="settings">
               <Settings session={session} />
             </TabsContent>
@@ -296,6 +307,57 @@ function Bids({ session }: { session: Session }) {
           {bid.studio.name} - {bid.film.details.title} - ${bid.amount}
         </div>
       ))}
+    </>
+  );
+}
+
+function Activity({ session }: { session: Session }) {
+  const { data: activity } = api.ffLeagueSession.getLogs.useQuery(
+    { sessionId: session?.id ?? "" },
+    { enabled: !!session, staleTime: ONE_DAY_IN_SECONDS },
+  );
+
+  const getType = (type: string) => {
+    switch (type) {
+      case SESSION_ACTIVITY_TYPES.FILM_SWAP:
+        return (
+          <div className="flex items-center">
+            <Shuffle className="mr-1 text-white" /> Film Swapped
+          </div>
+        );
+      case SESSION_ACTIVITY_TYPES.FILM_DROP:
+        return (
+          <div className="flex items-center">
+            <XCircle className="mr-1 text-red-600" /> Film Dropped
+          </div>
+        );
+    }
+
+    return "";
+  };
+
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[120px]">Date</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Details</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {activity?.map((a, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium">
+                {format(a.timestamp, "E LLL dd h:mm aaa")}
+              </TableCell>
+              <TableCell>{getType(a.type)}</TableCell>
+              <TableCell>{a.message}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </>
   );
 }

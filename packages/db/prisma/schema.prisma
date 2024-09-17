@@ -75,10 +75,24 @@ model LeagueSession {
     endDate   DateTime
     settings  Json // @db.Text
 
-    league  League                @relation(fields: [leagueId], references: [id])
-    studios LeagueSessionStudio[]
+    league   League                  @relation(fields: [leagueId], references: [id])
+    studios  LeagueSessionStudio[]
+    activity LeagueSessionActivity[]
 
     @@unique([leagueId, slug])
+}
+
+model LeagueSessionActivity {
+    id        String   @id @default(cuid())
+    sessionId String
+    studioId  String?
+    type      String
+    message   String
+    timestamp DateTime
+
+    session LeagueSession @relation(fields: [sessionId], references: [id])
+
+    @@index([sessionId])
 }
 
 model LeagueSessionStudio {

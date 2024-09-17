@@ -23,3 +23,10 @@ export const LEAGUE_INVITE_STATUSES = {
   ACCEPTED: "accepted",
   DECLINED: "declined",
 };
+
+export const BID_STATUSES = {
+  PENDING: "pending",
+  WON: "won",
+  LOST: "lost",
+  INVALID: "invalid",
+};

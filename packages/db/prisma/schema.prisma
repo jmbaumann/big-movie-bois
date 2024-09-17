@@ -125,6 +125,7 @@ model StudioFilm {
     studio         LeagueSessionStudio @relation(fields: [studioId], references: [id])
     tradesOffered  FilmTradeProposal[] @relation("OfferingFilm")
     tradesReceived FilmTradeProposal[] @relation("ReceivingFilm")
+    bidDrops       FilmBid[]
 
     @@index([studioId])
 }
@@ -141,17 +142,20 @@ model StudioFavorite {
 }
 
 model FilmBid {
-    id        String   @id @default(cuid())
-    studioId  String
-    tmdbId    Int
-    amount    Int
-    status    String
-    createdAt DateTime
+    id         String   @id @default(cuid())
+    studioId   String
+    tmdbId     Int
+    amount     Int
+    dropFilmId String?
+    status     String
+    createdAt  DateTime
 
-    studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
+    studio   LeagueSessionStudio @relation(fields: [studioId], references: [id])
+    dropFilm StudioFilm?         @relation(fields: [dropFilmId], references: [id])
 
     @@unique([studioId, tmdbId])
     @@index([studioId])
+    @@index([dropFilmId])
 }
 
 model FilmTradeProposal {

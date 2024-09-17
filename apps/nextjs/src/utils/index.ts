@@ -1,3 +1,5 @@
+export const ONE_DAY_IN_SECONDS = 1000 * 60 * 60 * 24;
+
 export function getById<T extends { id: string }>(arr: T[], key?: string) {
   const byId = {} as Record<string, T>;
   if (key) arr.forEach((e) => (byId[e[key]] = e));

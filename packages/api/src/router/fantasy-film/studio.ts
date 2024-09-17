@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { StudioFilm } from "@repo/db";
 
+import { BID_STATUSES } from "../../enums";
 import { AppRouter } from "../../root";
 import {
   createTRPCRouter,
@@ -60,6 +61,12 @@ const create = protectedProcedure
     });
   });
 
+const getFavorites = protectedProcedure
+  .input(z.object({ studioId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return await ctx.prisma.studioFavorite.findMany({ where: input });
+  });
+
 const addFavorite = protectedProcedure
   .input(z.object({ studioId: z.string(), tmdbId: z.number() }))
   .mutation(async ({ ctx, input }) => {
@@ -74,19 +81,68 @@ const removeFavorite = protectedProcedure
     });
   });
 
-const getFavorites = protectedProcedure
+const getBids = protectedProcedure
   .input(z.object({ studioId: z.string() }))
   .query(async ({ ctx, input }) => {
-    return await ctx.prisma.studioFavorite.findMany({ where: input });
+    return await ctx.prisma.filmBid.findMany({
+      where: { studioId: input.studioId, status: BID_STATUSES.PENDING },
+    });
+  });
+
+const bid = protectedProcedure
+  .input(
+    z.object({
+      studioId: z.string(),
+      tmdbId: z.number(),
+      amount: z.number(),
+      dropFilmId: z.string().optional(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const data = {
+      ...input,
+      status: BID_STATUSES.PENDING,
+      createdAt: new Date(),
+    };
+    return await ctx.prisma.filmBid.create({ data });
+  });
+
+const updateBid = protectedProcedure
+  .input(
+    z.object({
+      id: z.string(),
+      studioId: z.string(),
+      tmdbId: z.number(),
+      amount: z.number(),
+      dropFilmId: z.string().optional(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const data = {
+      ...input,
+      status: BID_STATUSES.PENDING,
+      createdAt: new Date(),
+    };
+    return await ctx.prisma.filmBid.update({ data, where: { id: input.id } });
+  });
+
+const deleteBid = protectedProcedure
+  .input(z.object({ id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.filmBid.delete({ where: { id: input.id } });
   });
 
 export const studioRouter = createTRPCRouter({
   getMyStudio,
   getOpposingStudios,
   create,
+  getFavorites,
   addFavorite,
   removeFavorite,
-  getFavorites,
+  getBids,
+  bid,
+  updateBid,
+  deleteBid,
 });
 
 ////////////////

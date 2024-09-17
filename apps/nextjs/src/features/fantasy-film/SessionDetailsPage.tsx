@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
-import { format } from "date-fns";
-import { ChevronLeft } from "lucide-react";
+import { format, nextTuesday } from "date-fns";
+import { ChevronLeft, Info } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
@@ -23,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 import Loading from "~/layouts/main/Loading";
+import { ONE_DAY_IN_SECONDS } from "~/utils";
 import AvailableFilms from "./AvailableFilms";
 import DraftCountdown from "./DraftCountdown";
 import SessionForm from "./forms/Session";
@@ -108,16 +109,19 @@ export default function SessionDetailsPage() {
                   Standings
                 </TabsTrigger>
               )}
-              {draftComplete && (
+              {/* {draftComplete && (
                 <TabsTrigger
                   value="release-calendar"
                   onClick={() => handleTab("release-calendar")}
                 >
                   Release Calendar
                 </TabsTrigger>
-              )}
+              )} */}
               <TabsTrigger value="films" onClick={() => handleTab("films")}>
                 Films
+              </TabsTrigger>
+              <TabsTrigger value="bids" onClick={() => handleTab("bids")}>
+                Bids
               </TabsTrigger>
               <TabsTrigger
                 value="activity"
@@ -147,6 +151,9 @@ export default function SessionDetailsPage() {
             <TabsContent value="release-calendar">Release Calendar</TabsContent>
             <TabsContent value="films">
               <Films session={session} />
+            </TabsContent>
+            <TabsContent value="bids">
+              <Bids session={session} />
             </TabsContent>
             <TabsContent value="activity">Activity</TabsContent>
             <TabsContent value="settings">
@@ -265,6 +272,31 @@ function Films({ session }: { session: Session }) {
       studioId={myStudio.id}
       canPick={true}
     />
+  );
+}
+
+function Bids({ session }: { session: Session }) {
+  const { data: bids } = api.ffLeagueSession.getBids.useQuery(
+    { sessionId: session?.id ?? "" },
+    { enabled: !!session, staleTime: ONE_DAY_IN_SECONDS },
+  );
+
+  return (
+    <>
+      <div className="my-4 flex items-center justify-center">
+        <Info className="mr-2" />
+        <p>
+          Current bids will be processed on{" "}
+          {format(nextTuesday(new Date()), "LLL d, yyyy")} at 12:00pm ET
+        </p>
+      </div>
+
+      {bids?.map((bid, i) => (
+        <div key={i}>
+          {bid.studio.name} - {bid.film.details.title} - ${bid.amount}
+        </div>
+      ))}
+    </>
   );
 }
 

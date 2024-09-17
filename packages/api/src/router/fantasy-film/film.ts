@@ -24,10 +24,11 @@ const swap = protectedProcedure
       data: { slot: input.toPos },
       where: { id: inFromPos?.id },
     });
-    await ctx.prisma.studioFilm.update({
-      data: { slot: input.fromPos },
-      where: { id: inToPos?.id },
-    });
+    if (inToPos)
+      await ctx.prisma.studioFilm.update({
+        data: { slot: input.fromPos },
+        where: { id: inToPos.id },
+      });
   });
 
 const trade = protectedProcedure

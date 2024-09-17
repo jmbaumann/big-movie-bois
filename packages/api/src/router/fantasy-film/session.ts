@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { StudioFilm } from "@repo/db";
 
+import { BID_STATUSES } from "../../enums";
 import { AppRouter } from "../../root";
 import {
   createTRPCRouter,
@@ -96,11 +97,31 @@ const getAcquiredFilms = protectedProcedure
     return list;
   });
 
+const getBids = protectedProcedure
+  .input(z.object({ sessionId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return await Promise.all(
+      (
+        await ctx.prisma.filmBid.findMany({
+          where: {
+            studio: { sessionId: input.sessionId },
+            status: BID_STATUSES.PENDING,
+          },
+          include: { studio: { select: { name: true } } },
+        })
+      ).map(async (bid) => ({
+        ...bid,
+        film: await getByTMDBId(bid.tmdbId),
+      })),
+    );
+  });
+
 export const leagueSessionRouter = createTRPCRouter({
   getById,
   create,
   update,
   getAcquiredFilms,
+  getBids,
 });
 
 ////////////////

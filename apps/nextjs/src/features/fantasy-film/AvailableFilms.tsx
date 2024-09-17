@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
-import { ExternalLink, Star } from "lucide-react";
+import { CircleDollarSign, DollarSign, ExternalLink, Star } from "lucide-react";
 
 import { AppRouter } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
@@ -11,6 +11,7 @@ import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { api } from "~/utils/api";
 import { cn } from "~/utils/shadcn";
 import SortChips from "~/components/SortChips";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -21,8 +22,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { toast } from "~/components/ui/hooks/use-toast";
+import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { ONE_DAY_IN_SECONDS } from "~/utils";
 
 type Film = TMDBDiscoverResult;
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
@@ -45,6 +56,7 @@ export default function AvailableFilms({
   const [open, setOpen] = useState(false);
   const [selectedFilm, setSelectedFilm] = useState<Film>();
   const [selectedSlot, setSelectedSlot] = useState<string>();
+  const [bidAmount, setBidAmount] = useState("0");
 
   const sortOptions = [
     { label: "Popularity", value: "popularity" },
@@ -77,6 +89,7 @@ export default function AvailableFilms({
     { sessionId: session?.id ?? "" },
     {
       enabled: !!session?.id,
+      staleTime: ONE_DAY_IN_SECONDS,
     },
   );
   const { data: favorites, refetch: refreshFavorites } =
@@ -84,10 +97,19 @@ export default function AvailableFilms({
       { studioId },
       {
         enabled: !!studioId,
+        staleTime: ONE_DAY_IN_SECONDS,
       },
     );
+  const { data: bids, refetch: refreshBids } = api.ffStudio.getBids.useQuery(
+    { studioId },
+    {
+      enabled: !!studioId,
+      staleTime: ONE_DAY_IN_SECONDS,
+    },
+  );
   const { mutate: addFavorite } = api.ffStudio.addFavorite.useMutation();
   const { mutate: removeFavorite } = api.ffStudio.removeFavorite.useMutation();
+  const { mutate: makeBid } = api.ffStudio.bid.useMutation();
   const { mutate: makePick } = api.ffDraft.pick.useMutation();
 
   const sessionSlots = session?.settings.teamStructure;
@@ -97,6 +119,9 @@ export default function AvailableFilms({
     ) ?? [];
   const isFavorite = selectedFilm
     ? favorites?.map((e) => e.tmdbId).includes(selectedFilm.id)
+    : false;
+  const bidPlaced = selectedFilm
+    ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id)
     : false;
 
   useEffect(() => {
@@ -124,8 +149,20 @@ export default function AvailableFilms({
         );
   }
 
+  function handleBid() {
+    if (selectedFilm)
+      makeBid(
+        { studioId, tmdbId: selectedFilm.id, amount: Number(bidAmount) },
+        {
+          onSuccess: () => {
+            toast({ title: "Bid submitted" });
+            setOpen(false);
+          },
+        },
+      );
+  }
+
   function handleDraft() {
-    console.log("here");
     if (session && selectedFilm && myStudio && selectedSlot) {
       makePick({
         sessionId: session.id,
@@ -212,29 +249,50 @@ export default function AvailableFilms({
                       </p>
                       <p className="mb-2">{selectedFilm.overview}</p>
 
-                      {canPick && (
-                        <RadioGroup
-                          className="ml-6 mt-1 text-white"
-                          value={selectedSlot}
-                          onValueChange={setSelectedSlot}
-                        >
-                          {availableSlots.map((slot, i) => {
-                            return (
-                              <div
-                                key={i}
-                                className="flex items-center space-x-2"
-                              >
-                                <RadioGroupItem
-                                  value={String(slot.pos)}
-                                  id={String(slot.pos)}
-                                />
-                                <Label htmlFor={String(slot.pos)}>
-                                  {slot.type}
-                                </Label>
-                              </div>
-                            );
-                          })}
-                        </RadioGroup>
+                      {canPick && !bidPlaced && (
+                        <>
+                          <div className="mt-4">
+                            <Label>Slot</Label>
+                            <Select
+                              value={selectedSlot}
+                              onValueChange={setSelectedSlot}
+                            >
+                              <SelectTrigger className="w-2/3 text-black">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableSlots.map((slot, i) => (
+                                  <SelectItem key={i} value={String(slot.pos)}>
+                                    {slot.type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="mt-4">
+                            <Label>Amount</Label>
+                            <Input
+                              className="w-2/3 text-black"
+                              value={bidAmount}
+                              onChange={(e) => setBidAmount(e.target.value)}
+                              type="number"
+                              min={0}
+                              startIcon={DollarSign}
+                            ></Input>
+                          </div>
+                        </>
+                      )}
+
+                      {bidPlaced && (
+                        <Alert className="mt-4">
+                          <CircleDollarSign className="h-4 w-4" />
+                          <AlertTitle>Bid placed</AlertTitle>
+                          <AlertDescription>
+                            You have an active bid for this film. Manage your
+                            bids in the Bids tab.
+                          </AlertDescription>
+                        </Alert>
                       )}
                     </div>
                   </div>
@@ -256,12 +314,21 @@ export default function AvailableFilms({
               </div>
 
               <div className="ml-auto">
-                {isDraft && (
+                {isDraft ? (
                   <Button
                     disabled={!selectedFilm || !selectedSlot || !canPick}
                     onClick={handleDraft}
                   >
                     Draft
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={
+                      !selectedFilm || !canPick || !selectedSlot || bidPlaced
+                    }
+                    onClick={handleBid}
+                  >
+                    Place Bid
                   </Button>
                 )}
               </div>

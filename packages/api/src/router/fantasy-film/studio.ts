@@ -56,6 +56,7 @@ const create = protectedProcedure
         sessionId: input.sessionId,
         ownerId: input.ownerId,
         name,
+        budget: 100,
         createdAt: new Date(),
       },
     });
@@ -95,6 +96,7 @@ const bid = protectedProcedure
       studioId: z.string(),
       tmdbId: z.number(),
       amount: z.number(),
+      slot: z.number(),
       dropFilmId: z.string().optional(),
     }),
   )
@@ -157,6 +159,7 @@ export async function createManyStudios(
   const data = input.map((e) => ({
     ...createLeagueSessionStudioObj.parse(e),
     name: `${users.find((u) => u.id === e.ownerId)?.name}'s Studio`,
+    budget: 100,
     createdAt: new Date(),
   }));
   return await ctx.prisma.leagueSessionStudio.createMany({

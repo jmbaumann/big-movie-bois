@@ -1,9 +1,23 @@
 export const ONE_DAY_IN_SECONDS = 1000 * 60 * 60 * 24;
 
-export function getById<T extends { id: string }>(arr: T[], key?: string) {
-  const byId = {} as Record<string, T>;
-  if (key) arr.forEach((e) => (byId[e[key]] = e));
-  else arr.forEach((e) => (byId[e.id] = e));
+export function getById<T extends Record<string, any>>(
+  arr: T[],
+  key?: keyof T,
+): Record<string, T> {
+  const byId: Record<string, T> = {};
+
+  if (key)
+    arr.forEach((e) => {
+      const value = e[key];
+      if (typeof value === "string") {
+        byId[value] = e;
+      }
+    });
+  else
+    arr.forEach((e) => {
+      byId[e.id] = e;
+    });
+
   return byId;
 }
 

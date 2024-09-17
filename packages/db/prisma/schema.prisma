@@ -132,14 +132,13 @@ model StudioFilm {
     slot          Int
     score         Int       @default(0)
     scoreOverride Int?
-    acquiredType  Int?
+    acquiredType  String?
     acquiredAt    DateTime?
     droppedAt     DateTime?
 
     studio         LeagueSessionStudio @relation(fields: [studioId], references: [id])
     tradesOffered  FilmTradeProposal[] @relation("OfferingFilm")
     tradesReceived FilmTradeProposal[] @relation("ReceivingFilm")
-    bidDrops       FilmBid[]
 
     @@index([studioId])
 }
@@ -156,20 +155,18 @@ model StudioFavorite {
 }
 
 model FilmBid {
-    id         String   @id @default(cuid())
-    studioId   String
-    tmdbId     Int
-    amount     Int
-    dropFilmId String?
-    status     String
-    createdAt  DateTime
+    id        String   @id @default(cuid())
+    studioId  String
+    tmdbId    Int
+    amount    Int
+    slot      Int
+    status    String
+    createdAt DateTime
 
-    studio   LeagueSessionStudio @relation(fields: [studioId], references: [id])
-    dropFilm StudioFilm?         @relation(fields: [dropFilmId], references: [id])
+    studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
 
     @@unique([studioId, tmdbId])
     @@index([studioId])
-    @@index([dropFilmId])
 }
 
 model FilmTradeProposal {

@@ -3,7 +3,13 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
 import { format, nextTuesday } from "date-fns";
-import { ChevronLeft, Info, Shuffle, XCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  CircleDollarSign,
+  Info,
+  Shuffle,
+  XCircle,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
@@ -21,6 +27,8 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { useConfirm } from "~/components/ui/hooks/use-confirm";
+import { toast } from "~/components/ui/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -218,6 +226,7 @@ function MyStudio({ session }: { session: Session }) {
           )} */}
         </p>
         <p className="ml-4 text-lg">(1st of 6)</p>
+        <p className="ml-4 text-lg">${studio.budget}</p>
         <p className="ml-auto">0 pts</p>
       </div>
       <div className="grid grid-cols-3 gap-x-2 gap-y-4">
@@ -287,10 +296,38 @@ function Films({ session }: { session: Session }) {
 }
 
 function Bids({ session }: { session: Session }) {
-  const { data: bids } = api.ffLeagueSession.getBids.useQuery(
-    { sessionId: session?.id ?? "" },
-    { enabled: !!session, staleTime: ONE_DAY_IN_SECONDS },
-  );
+  const { data: sessionData } = useSession();
+  const confirm = useConfirm();
+
+  const { data: bids, refetch: refreshBids } =
+    api.ffLeagueSession.getBids.useQuery(
+      { sessionId: session?.id ?? "" },
+      { enabled: !!session, staleTime: ONE_DAY_IN_SECONDS },
+    );
+  const { mutate: processBids } = api.ffAdmin.processBids.useMutation();
+
+  async function handleProcessBids() {
+    if (session) {
+      const ok = await confirm(
+        `Are you sure you want to process these bids now? Any active bids will process again automatically on ${format(
+          nextTuesday(new Date()),
+          "LLL d, yyyy",
+        )} at 12:00pm ET`,
+      );
+      if (ok) {
+        toast({ title: "Bids processing..." });
+        processBids(
+          { sessionId: session.id },
+          {
+            onSuccess: () => {
+              refreshBids();
+              toast({ title: "Bids processed" });
+            },
+          },
+        );
+      }
+    }
+  }
 
   return (
     <>
@@ -301,6 +338,12 @@ function Bids({ session }: { session: Session }) {
           {format(nextTuesday(new Date()), "LLL d, yyyy")} at 12:00pm ET
         </p>
       </div>
+
+      {session?.league.ownerId === sessionData?.user.id && (
+        <Button onClick={handleProcessBids} disabled={!bids?.length}>
+          Process Bids Now
+        </Button>
+      )}
 
       {bids?.map((bid, i) => (
         <div key={i}>
@@ -323,6 +366,12 @@ function Activity({ session }: { session: Session }) {
         return (
           <div className="flex items-center">
             <Shuffle className="mr-1 text-white" /> Film Swapped
+          </div>
+        );
+      case SESSION_ACTIVITY_TYPES.BID_WON:
+        return (
+          <div className="flex items-center">
+            <CircleDollarSign className="mr-1 text-green-500" /> Bid Won
           </div>
         );
       case SESSION_ACTIVITY_TYPES.FILM_DROP:

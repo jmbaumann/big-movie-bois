@@ -2,9 +2,13 @@ import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
 import { z } from "zod";
 
-import { StudioFilm } from "@repo/db";
+import { FilmBid, StudioFilm } from "@repo/db";
 
-import { BID_STATUSES } from "../../enums";
+import {
+  BID_STATUSES,
+  FILM_ACQUISITION_TYPES,
+  SESSION_ACTIVITY_TYPES,
+} from "../../enums";
 import { AppRouter } from "../../root";
 import {
   createTRPCRouter,
@@ -13,6 +17,7 @@ import {
   TRPCContext,
 } from "../../trpc";
 import { getByTMDBId } from "../tmdb";
+import { dropStudioFilmById } from "./film";
 import { createManyStudios } from "./studio";
 import {
   createLeagueSessionInputObj,
@@ -155,4 +160,91 @@ export async function logSessionActivity(
 ) {
   const data = { ...input, timestamp: new Date() };
   return await ctx.prisma.leagueSessionActivity.create({ data });
+}
+
+export async function processSessionBids(
+  ctx: TRPCContext,
+  sessionId: string,
+  timestamp: Date,
+) {
+  const bids = await ctx.prisma.filmBid.findMany({
+    where: {
+      studio: { sessionId },
+      status: BID_STATUSES.PENDING,
+      createdAt: { lte: timestamp },
+    },
+    orderBy: [{ amount: "desc" }, { createdAt: "asc" }],
+  });
+
+  const byTMDBId: Record<number, typeof bids> = {};
+  bids.forEach((e) => {
+    if (!byTMDBId[e.tmdbId]) byTMDBId[e.tmdbId] = [];
+    byTMDBId[e.tmdbId]?.push(e);
+  });
+
+  for (const tmdbId in byTMDBId) {
+    const { winner, losers } = await getWinnerAndLosers(ctx, byTMDBId[tmdbId]!);
+    if (!winner) continue;
+
+    await ctx.prisma.filmBid.update({
+      data: { status: BID_STATUSES.WON },
+      where: { id: winner.id },
+    });
+    await ctx.prisma.leagueSessionStudio.update({
+      data: { budget: winner.studio!.budget - (winner.amount ?? 0) },
+      where: { id: winner.studioId },
+    });
+
+    const toDrop = await ctx.prisma.studioFilm.findFirst({
+      where: { studioId: winner.studioId, slot: winner.slot },
+    });
+    if (toDrop) await dropStudioFilmById(ctx, toDrop.id);
+
+    const film = await ctx.prisma.studioFilm.create({
+      data: {
+        tmdbId: winner.tmdbId!,
+        studioId: winner.studioId!,
+        slot: winner.slot!,
+        acquiredAt: new Date(),
+        acquiredType: FILM_ACQUISITION_TYPES.WON_BID,
+      },
+    });
+
+    const session = await getSessionById(ctx, winner.studio!.sessionId);
+    const filmDetails = await getByTMDBId(film.tmdbId);
+    const slot = session?.settings.teamStructure[winner.slot! - 1];
+    await logSessionActivity(ctx, {
+      sessionId,
+      studioId: winner.studioId,
+      type: SESSION_ACTIVITY_TYPES.BID_WON,
+      message: `${winner.studio?.name} ADDED ${filmDetails.details.title} in their ${slot?.type} slot`,
+    });
+
+    if (losers?.length) {
+      await ctx.prisma.filmBid.updateMany({
+        data: { status: BID_STATUSES.LOST },
+        where: { id: { in: losers?.map((e) => e.id) } },
+      });
+    }
+  }
+}
+
+async function getWinnerAndLosers(ctx: TRPCContext, bids: FilmBid[]) {
+  const r = { winner: undefined, losers: undefined };
+
+  for (let i = 0; i < bids.length; i++) {
+    const winner = bids[i];
+    if (!winner) return r;
+
+    const studio = await ctx.prisma.leagueSessionStudio.findFirst({
+      where: { id: winner.studioId },
+    });
+    if (studio!.budget < winner.amount)
+      await ctx.prisma.filmBid.update({
+        data: { status: BID_STATUSES.INVALID },
+        where: { id: winner.id },
+      });
+    else return { winner: { ...bids[i], studio }, losers: bids.slice(i + 1) };
+  }
+  return r;
 }

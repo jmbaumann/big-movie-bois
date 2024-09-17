@@ -37,3 +37,10 @@ export const SESSION_ACTIVITY_TYPES = {
   BID_WON: "bid-won",
   STUDIO_NAME_CHANGE: "studio-name-change",
 } as const;
+
+export const FILM_ACQUISITION_TYPES = {
+  DRAFTED: "Drafted",
+  WON_BID: "Won Bid",
+  TRADED: "Traded",
+  ADMIN_ADDED: "Admin Added",
+} as const;

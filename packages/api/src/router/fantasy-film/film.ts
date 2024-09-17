@@ -64,21 +64,7 @@ const trade = protectedProcedure
 const drop = protectedProcedure
   .input(z.object({ id: z.string() }))
   .mutation(async ({ ctx, input }) => {
-    const film = await ctx.prisma.studioFilm.findFirst({
-      where: { id: input.id },
-      include: { studio: true },
-    });
-    if (!film) throw "Invalid";
-
-    await ctx.prisma.studioFilm.delete({ where: input });
-
-    const filmDetails = await getByTMDBId(film.tmdbId);
-    await logSessionActivity(ctx, {
-      sessionId: film.studio.sessionId,
-      studioId: film.studioId,
-      type: SESSION_ACTIVITY_TYPES.FILM_DROP,
-      message: `${film.studio.name} DROPPED ${filmDetails.details.title}`,
-    });
+    return dropStudioFilmById(ctx, input.id);
   });
 
 export const filmRouter = createTRPCRouter({
@@ -88,3 +74,21 @@ export const filmRouter = createTRPCRouter({
 });
 
 ////////////////
+
+export async function dropStudioFilmById(ctx: TRPCContext, id: string) {
+  const film = await ctx.prisma.studioFilm.findFirst({
+    where: { id },
+    include: { studio: true },
+  });
+  if (!film) throw "Invalid";
+
+  await ctx.prisma.studioFilm.delete({ where: { id } });
+
+  const filmDetails = await getByTMDBId(film.tmdbId);
+  await logSessionActivity(ctx, {
+    sessionId: film.studio.sessionId,
+    studioId: film.studioId,
+    type: SESSION_ACTIVITY_TYPES.FILM_DROP,
+    message: `${film.studio.name} DROPPED ${filmDetails.details.title}`,
+  });
+}

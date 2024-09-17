@@ -152,7 +152,12 @@ export default function AvailableFilms({
   function handleBid() {
     if (selectedFilm)
       makeBid(
-        { studioId, tmdbId: selectedFilm.id, amount: Number(bidAmount) },
+        {
+          studioId,
+          tmdbId: selectedFilm.id,
+          amount: Number(bidAmount),
+          slot: Number(selectedSlot),
+        },
         {
           onSuccess: () => {
             toast({ title: "Bid submitted" });

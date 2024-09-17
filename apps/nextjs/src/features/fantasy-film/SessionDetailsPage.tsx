@@ -17,7 +17,7 @@ import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
 import { StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
-import { getDraftDate } from "~/utils/fantasy-film-helpers";
+import { getDraftDate, isSlotLocked } from "~/utils/fantasy-film-helpers";
 import AdminMenu from "~/components/AdminMenu";
 import { Button } from "~/components/ui/button";
 import {
@@ -233,18 +233,18 @@ function MyStudio({ session }: { session: Session }) {
         </p>
         <p className="ml-4 text-lg">(1st of 6)</p>
         <p className="ml-4 text-lg">${studio.budget}</p>
-        <p className="ml-auto">0 pts</p>
+        <p className="ml-auto">{studio.score} pts</p>
       </div>
       <div className="grid grid-cols-3 gap-x-2 gap-y-4">
         {session?.settings.teamStructure.map((slot, i) => {
           const film = studio.films.find((e) => e.slot === slot.pos);
-          const locked = false; // film ? isSlotLocked(slot, film) : true;
+          const locked = isSlotLocked(film);
           return (
             <StudioSlot
               key={i}
               session={session}
               slot={slot.type}
-              film={film as StudioFilmDetails}
+              film={film}
               showScore
               locked={locked}
               refreshStudio={refetch}
@@ -342,7 +342,7 @@ function Bids({ session }: { session: Session }) {
           <DropdownMenuContent side="bottom">
             <DropdownMenuItem
               onClick={handleProcessBids}
-              // disabled={!bids?.length}
+              disabled={!bids?.length}
             >
               Process Bids Now
             </DropdownMenuItem>

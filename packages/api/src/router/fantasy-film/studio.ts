@@ -2,7 +2,7 @@ import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
 import { z } from "zod";
 
-import { StudioFilm } from "@repo/db";
+import { LeagueSessionStudio, Prisma } from "@repo/db";
 
 import { BID_STATUSES } from "../../enums";
 import { AppRouter } from "../../root";
@@ -13,24 +13,65 @@ import {
   TRPCContext,
 } from "../../trpc";
 import { getByTMDBId } from "../tmdb";
+import { getFilmScore, getFilmScores } from "./film";
+import { FilmScores } from "./score";
+import { getSessionById } from "./session";
 import { createLeagueSessionStudioObj } from "./zod";
 
-type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
-type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
+type FilmWithTMDB = Awaited<ReturnType<typeof getByTMDBId>>;
+type StudioFilm = Omit<
+  Prisma.LeagueSessionStudioGetPayload<{
+    include: { films: true };
+  }>["films"][number],
+  "tmdb"
+> & {
+  tmdb: FilmWithTMDB;
+  scores: FilmScores;
+  score: number;
+};
 
 const getMyStudio = protectedProcedure
   .input(z.object({ sessionId: z.string() }))
   .query(async ({ ctx, input }) => {
     const studio = await ctx.prisma.leagueSessionStudio.findFirst({
-      where: { sessionId: input.sessionId, ownerId: ctx.session.user.id },
-      include: { films: true },
+      where: {
+        sessionId: input.sessionId,
+        ownerId: ctx.session.user.id,
+      },
+      include: {
+        films: true,
+      },
     });
     if (!studio) throw "No studio found";
 
-    for (const film of studio.films as StudioFilmDetails[])
-      film.tmdb = await getByTMDBId(film.tmdbId);
+    const session = await getSessionById(ctx, input.sessionId);
 
-    return studio;
+    if (studio && studio.films.length > 0)
+      studio.films = await Promise.all(
+        studio.films.map(async (film) => {
+          const tmdb = await getByTMDBId(film.tmdbId);
+          const scores = await getFilmScores({ ...film, tmdb });
+          const score = await getFilmScore(ctx, session!, {
+            ...film,
+            tmdb,
+            scores,
+          });
+          return {
+            ...film,
+            tmdb,
+            scores,
+            score,
+          };
+        }),
+      );
+
+    studio.score = studio.films.map((e) => e.score).reduce((a, b) => a + b, 0);
+    await ctx.prisma.leagueSessionStudio.update({
+      data: { score: studio.score },
+      where: { id: studio.id },
+    });
+
+    return studio as LeagueSessionStudio & { films: StudioFilm[] };
   });
 
 const getOpposingStudios = protectedProcedure

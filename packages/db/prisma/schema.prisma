@@ -101,7 +101,7 @@ model LeagueSessionStudio {
     ownerId   String
     name      String
     image     String?
-    score     Int       @default(0)
+    score     Float     @default(0)
     budget    Int       @default(0)
     createdAt DateTime
     updatedAt DateTime?
@@ -130,7 +130,7 @@ model StudioFilm {
     studioId      String
     tmdbId        Int
     slot          Int
-    score         Int       @default(0)
+    score         Float     @default(0)
     scoreOverride Int?
     acquiredType  String?
     acquiredAt    DateTime?

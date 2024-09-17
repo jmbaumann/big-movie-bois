@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 import { AppRouter } from "@repo/api";
-import { StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { cn } from "~/utils/shadcn";
@@ -38,8 +37,8 @@ import {
 } from "~/components/ui/select";
 
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
-type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
-type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
+type Studio = inferRouterOutputs<AppRouter>["ffStudio"]["getMyStudio"];
+type StudioFilm = Studio["films"][number];
 
 export default function StudioSlot({
   session,
@@ -51,7 +50,7 @@ export default function StudioSlot({
 }: {
   session?: Session;
   slot: string;
-  film?: StudioFilmDetails;
+  film?: StudioFilm;
   showScore?: boolean;
   locked?: boolean;
   showManageTools?: boolean;
@@ -155,38 +154,67 @@ export default function StudioSlot({
                         </p>
                         <p className="mb-4">{film.tmdb.details.overview}</p>
 
-                        <div className="flex items-center">
-                          <Select
-                            value={selectedSlot}
-                            onValueChange={setSelectedSlot}
-                          >
-                            <SelectTrigger className="w-2/3 text-black">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {session?.settings.teamStructure.map(
-                                (slot, i) => (
-                                  <SelectItem key={i} value={String(slot.pos)}>
-                                    {slot.type}
-                                  </SelectItem>
-                                ),
-                              )}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            className="ml-2"
-                            disabled={
-                              slot ===
-                              session?.settings.teamStructure[
-                                Number(selectedSlot) - 1
-                              ]?.type
-                            }
-                            onClick={handleSwap}
-                          >
-                            <Shuffle className="mr-1" />
-                            Swap
-                          </Button>
+                        <div className="mb-2 grid grid-cols-2 gap-y-2">
+                          <div className="">
+                            <p>Total Box Office</p>
+                            <p className="text-lg">
+                              {film.scores.totalBoxOffice}
+                            </p>
+                          </div>
+                          <div className="">
+                            <p>Opening Weekend Box Office</p>
+                            <p className="text-lg">
+                              {film.scores.openingWeekendBoxOffice}
+                            </p>
+                          </div>
+                          <div className="">
+                            <p>Rating</p>
+                            <p className="text-lg">{film.scores.rating}</p>
+                          </div>
+                          <div className="">
+                            <p>Reverse Rating</p>
+                            <p className="text-lg">
+                              {film.scores.reverseRating}
+                            </p>
+                          </div>
                         </div>
+                        {canEdit && (
+                          <div className="flex items-center">
+                            <Select
+                              value={selectedSlot}
+                              onValueChange={setSelectedSlot}
+                            >
+                              <SelectTrigger className="w-2/3 text-black">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {session?.settings.teamStructure.map(
+                                  (slot, i) => (
+                                    <SelectItem
+                                      key={i}
+                                      value={String(slot.pos)}
+                                    >
+                                      {slot.type}
+                                    </SelectItem>
+                                  ),
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              className="ml-2"
+                              disabled={
+                                slot ===
+                                session?.settings.teamStructure[
+                                  Number(selectedSlot) - 1
+                                ]?.type
+                              }
+                              onClick={handleSwap}
+                            >
+                              <Shuffle className="mr-1" />
+                              Swap
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </DialogDescription>
@@ -202,20 +230,22 @@ export default function StudioSlot({
                     </Link>
                   </div>
 
-                  <div className="ml-auto">
-                    <Button className="mx-1">
+                  {canEdit && (
+                    <div className="ml-auto">
+                      {/* <Button className="mx-1">
                       <ArrowRightLeft className="mr-1" />
                       Trade
-                    </Button>
-                    <Button
-                      className="mx-1"
-                      variant="destructive"
-                      onClick={handleDrop}
-                    >
-                      <XCircle className="mr-1" />
-                      Drop
-                    </Button>
-                  </div>
+                    </Button> */}
+                      <Button
+                        className="mx-1"
+                        variant="destructive"
+                        onClick={handleDrop}
+                      >
+                        <XCircle className="mr-1" />
+                        Drop
+                      </Button>
+                    </div>
+                  )}
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -229,7 +259,7 @@ export default function StudioSlot({
       <div className="flex flex-col justify-between">
         {showScore && (
           <div className="flex h-min flex-col rounded-sm rounded-l-none bg-[#9ac] px-2 text-center text-black">
-            <p className="text-2xl">0</p>
+            <p className="text-2xl">{film?.score}</p>
             <p className="text-md">pts</p>
           </div>
         )}

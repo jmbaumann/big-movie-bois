@@ -1,4 +1,5 @@
 import { inferRouterOutputs } from "@trpc/server";
+import { sub } from "date-fns";
 
 import { AppRouter } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
@@ -40,6 +41,14 @@ export function getMostRecentAndUpcoming(
   }
 
   return { mostRecent, upcoming };
+}
+
+export function isSlotLocked(film: StudioFilmDetails | undefined) {
+  if (!film) return false;
+  return (
+    sub(new Date(film.tmdb.details.releaseDate ?? ""), { days: 7 }).getTime() <
+    new Date().getTime()
+  );
 }
 
 export function getStudioOwnerByPick(draftOrder: string[], pick: number) {

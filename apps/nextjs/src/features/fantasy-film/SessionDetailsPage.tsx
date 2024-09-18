@@ -170,7 +170,9 @@ export default function SessionDetailsPage() {
             <TabsContent value="opposing-studios">
               <OpposingStudio />
             </TabsContent>
-            <TabsContent value="standings">Standings</TabsContent>
+            <TabsContent value="standings">
+              <Standings session={session} />
+            </TabsContent>
             <TabsContent value="release-calendar">Release Calendar</TabsContent>
             <TabsContent value="films">
               <Films session={session} />
@@ -268,6 +270,24 @@ function OpposingStudio() {
   );
 
   return studios?.map((studio, i) => <div key={i}>{studio.name}</div>);
+}
+
+function Standings({ session }: { session: Session }) {
+  const { data: standings } = api.ffLeagueSession.getStandings.useQuery(
+    { sessionId: session?.id ?? "" },
+    { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
+  );
+
+  return (
+    <>
+      {standings?.map((studio, i) => (
+        <div key={i} className="flex">
+          <p className="mr-2">{i + 1}.</p>
+          <p>{studio.name}</p>
+        </div>
+      ))}
+    </>
+  );
 }
 
 function Films({ session }: { session: Session }) {

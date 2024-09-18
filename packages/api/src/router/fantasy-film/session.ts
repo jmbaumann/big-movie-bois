@@ -103,6 +103,15 @@ const getAcquiredFilms = protectedProcedure
     return list;
   });
 
+const getStandings = protectedProcedure
+  .input(z.object({ sessionId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return ctx.prisma.leagueSessionStudio.findMany({
+      where: { sessionId: input.sessionId },
+      orderBy: { score: "desc" },
+    });
+  });
+
 const getBids = protectedProcedure
   .input(z.object({ sessionId: z.string() }))
   .query(async ({ ctx, input }) => {
@@ -136,6 +145,7 @@ export const leagueSessionRouter = createTRPCRouter({
   create,
   update,
   getAcquiredFilms,
+  getStandings,
   getBids,
   getLogs,
 });

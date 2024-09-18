@@ -201,15 +201,84 @@ export default function SessionDetailsPage() {
 }
 
 function Home({ session }: { session: Session }) {
+  const { data: sessionData } = useSession();
+  const router = useRouter();
+
   const draftDate = getDraftDate(session!.settings.draft);
+  const draftIsOver = draftDate.getTime() < new Date().getTime();
+
+  function handleStudioSelected(studio: Studio) {
+    if (studio.ownerId === sessionData?.user.id)
+      router.push({
+        pathname: `/fantasy-film/${router.query.leagueId}/${router.query.sessionId}`,
+        query: { tab: "my-studio" },
+      });
+    else
+      router.push({
+        pathname: `/fantasy-film/${router.query.leagueId}/${router.query.sessionId}`,
+        query: { tab: "opposing-studios", studio: studio.id },
+      });
+  }
 
   return (
     <>
-      <p>Home</p>
+      {!draftIsOver && (
+        <div className="mb-4 flex flex-col items-center">
+          <DraftCountdown draftDate={draftDate} />
 
-      <DraftCountdown draftDate={draftDate} />
+          <Link href={`/fantasy-film/draft/${session!.id}`}>Go to Draft</Link>
+        </div>
+      )}
 
-      <Link href={`/fantasy-film/draft/${session!.id}`}>Go to Draft</Link>
+      {session?.studios?.map((studio, i) => {
+        // const { mostRecent, upcoming } = getMostRecentAndUpcoming(studio.films);
+        const mostRecent = undefined;
+        const upcoming = undefined;
+
+        return (
+          <Card key={i} className="mb-2">
+            <CardHeader>
+              <CardTitle className="mb-4 flex items-end text-2xl">
+                <p
+                  className="hover:text-primary flex items-center justify-center gap-x-2 hover:cursor-pointer"
+                  onClick={() => handleStudioSelected(studio)}
+                >
+                  {/* <StudioIcon icon={studio.image} /> */}
+                  {studio.name}
+                </p>
+                <p className="ml-4 text-lg">
+                  {/* ({studio.rank} of {session?.studios.length}) */}
+                </p>
+                <p className="ml-4 text-lg">${studio.budget}</p>
+                <p className="text-primary ml-auto">{studio.score} pts</p>
+              </CardTitle>
+              <CardDescription className="flex items-center">
+                <p className="text-lg">
+                  {/* Films Released: {getFilmsReleased(studio.films)} /{" "} */}
+                  Films Released: {0} / {session?.settings.teamStructure.length}
+                </p>
+
+                {mostRecent && (
+                  <div className="ml-auto">
+                    <p>Most Recent</p>
+                    <p className="text-lg text-white">
+                      {/* {mostRecent.tmdb.details.title} */}
+                    </p>
+                  </div>
+                )}
+                {upcoming && (
+                  <div className="ml-auto">
+                    <p>Most Recent</p>
+                    <p className="text-lg text-white">
+                      {/* {upcoming.tmdb.details.title} */}
+                    </p>
+                  </div>
+                )}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        );
+      })}
     </>
   );
 }
@@ -250,7 +319,9 @@ function StudioDetails({
             <EditStudio studio={studio} refetchLeague={refetchLeague} />
           )} */}
         </p>
-        <p className="ml-4 text-lg">(1st of 6)</p>
+        <p className="ml-4 text-lg">
+          {/* ({studio.rank ?? 0} of {session?.studios.length}) */}
+        </p>
         <p className="ml-4 text-lg">${studio.budget}</p>
         <p className="ml-auto">{studio.score} pts</p>
       </div>
@@ -264,7 +335,7 @@ function StudioDetails({
               session={session}
               slot={slot.type}
               film={film}
-              showScore
+              showScore={film ? true : false}
               locked={locked}
               refreshStudio={refetch}
             />
@@ -291,9 +362,9 @@ function OpposingStudios({ session }: { session: Session }) {
   );
 
   useEffect(() => {
-    if (studios && router.query.studio)
+    if (studios)
       setSelectedStudio(studios.find((e) => e.id === router.query.studio));
-  }, [router.query.studio, studios]);
+  }, [router.query, studios]);
 
   function handleStudioSelected(studio: Studio | undefined) {
     setSelectedStudio(studio);
@@ -370,10 +441,16 @@ function OpposingStudios({ session }: { session: Session }) {
             return (
               <div key={i}>
                 <p className="text-sm text-slate-400">{slot.type}</p>
-                <p className="text-xl">{film?.tmdb.details.title}</p>
-                <p className="text-primary text-lg font-bold">
-                  {film?.score} pts
-                </p>
+                {film ? (
+                  <>
+                    <p className="text-xl">{film?.tmdb.details.title}</p>
+                    <p className="text-primary text-lg font-bold">
+                      {film?.score} pts
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xl">No film selected yet</p>
+                )}
               </div>
             );
           })}
@@ -392,9 +469,10 @@ function Standings({ session }: { session: Session }) {
   return (
     <>
       {standings?.map((studio, i) => (
-        <div key={i} className="flex">
+        <div key={i} className="flex gap-x-2">
           <p className="mr-2">{i + 1}.</p>
           <p>{studio.name}</p>
+          <p>{studio.score} pts</p>
         </div>
       ))}
     </>

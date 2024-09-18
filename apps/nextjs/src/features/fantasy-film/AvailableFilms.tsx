@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { inferRouterOutputs } from "@trpc/server";
-import { format } from "date-fns";
-import { CircleDollarSign, DollarSign, ExternalLink, Star } from "lucide-react";
+import { format, sub } from "date-fns";
+import { CircleDollarSign, DollarSign, ExternalLink, Lock, Star } from "lucide-react";
 
 import { AppRouter } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 
 import { api } from "~/utils/api";
+import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
 import SortChips from "~/components/SortChips";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
@@ -26,13 +27,7 @@ import { toast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { ONE_DAY_IN_SECONDS } from "~/utils";
 
 type Film = TMDBDiscoverResult;
@@ -42,13 +37,11 @@ export default function AvailableFilms({
   session,
   films,
   studioId,
-  canPick,
   isDraft,
 }: {
   session: Session;
   films: Film[];
   studioId: string;
-  canPick: boolean;
   isDraft?: boolean;
 }) {
   const [filmList, setFilmList] = useState(films);
@@ -64,24 +57,15 @@ export default function AvailableFilms({
     { label: "A-Z", value: "abc" },
   ];
   const sort = (a: Film, b: Film, value: string, desc: boolean) => {
-    if (value === "popularity")
-      return desc ? b.popularity - a.popularity : a.popularity - b.popularity;
+    if (value === "popularity") return desc ? b.popularity - a.popularity : a.popularity - b.popularity;
     if (value === "releaseDate")
       return desc
-        ? new Date(a.release_date).getTime() -
-            new Date(b.release_date).getTime()
-        : new Date(b.release_date).getTime() -
-            new Date(a.release_date).getTime();
+        ? new Date(a.release_date).getTime() - new Date(b.release_date).getTime()
+        : new Date(b.release_date).getTime() - new Date(a.release_date).getTime();
     if (value === "abc") {
-      const compTitleA = a.title.toLowerCase().startsWith("the ")
-        ? a.title.slice(4)
-        : a.title;
-      const compTitleB = b.title.toLowerCase().startsWith("the ")
-        ? b.title.slice(4)
-        : b.title;
-      return desc
-        ? compTitleA.localeCompare(compTitleB)
-        : compTitleB.localeCompare(compTitleA);
+      const compTitleA = a.title.toLowerCase().startsWith("the ") ? a.title.slice(4) : a.title;
+      const compTitleB = b.title.toLowerCase().startsWith("the ") ? b.title.slice(4) : b.title;
+      return desc ? compTitleA.localeCompare(compTitleB) : compTitleB.localeCompare(compTitleA);
     } else return 1;
   };
 
@@ -92,14 +76,13 @@ export default function AvailableFilms({
       staleTime: ONE_DAY_IN_SECONDS,
     },
   );
-  const { data: favorites, refetch: refreshFavorites } =
-    api.ffStudio.getFavorites.useQuery(
-      { studioId },
-      {
-        enabled: !!studioId,
-        staleTime: ONE_DAY_IN_SECONDS,
-      },
-    );
+  const { data: favorites, refetch: refreshFavorites } = api.ffStudio.getFavorites.useQuery(
+    { studioId },
+    {
+      enabled: !!studioId,
+      staleTime: ONE_DAY_IN_SECONDS,
+    },
+  );
   const { data: bids, refetch: refreshBids } = api.ffStudio.getBids.useQuery(
     { studioId },
     {
@@ -112,17 +95,10 @@ export default function AvailableFilms({
   const { mutate: makeBid } = api.ffStudio.bid.useMutation();
   const { mutate: makePick } = api.ffDraft.pick.useMutation();
 
-  const sessionSlots = session?.settings.teamStructure;
-  const availableSlots =
-    sessionSlots?.filter(
-      (e) => !myStudio?.films.map((e) => e.slot).includes(e.pos),
-    ) ?? [];
-  const isFavorite = selectedFilm
-    ? favorites?.map((e) => e.tmdbId).includes(selectedFilm.id)
-    : false;
-  const bidPlaced = selectedFilm
-    ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id)
-    : false;
+  const availableSlots = myStudio && session ? getUnlockedSlots(session, myStudio) : [];
+  const canPick = !!availableSlots?.length;
+  const isFavorite = selectedFilm ? favorites?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
+  const bidPlaced = selectedFilm ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
 
   useEffect(() => {
     if (showWatchlist) {
@@ -137,16 +113,8 @@ export default function AvailableFilms({
 
   function handleFavorite() {
     if (selectedFilm)
-      if (isFavorite)
-        removeFavorite(
-          { studioId, tmdbId: selectedFilm.id },
-          { onSuccess: () => refreshFavorites() },
-        );
-      else
-        addFavorite(
-          { studioId, tmdbId: selectedFilm.id },
-          { onSuccess: () => refreshFavorites() },
-        );
+      if (isFavorite) removeFavorite({ studioId, tmdbId: selectedFilm.id }, { onSuccess: () => refreshFavorites() });
+      else addFavorite({ studioId, tmdbId: selectedFilm.id }, { onSuccess: () => refreshFavorites() });
   }
 
   function handleBid() {
@@ -190,16 +158,8 @@ export default function AvailableFilms({
           def={{ value: "popularity", desc: true }}
         ></SortChips>
 
-        <Button
-          className="text-lg"
-          variant="ghost"
-          onClick={() => setShowWatchlist((s) => !s)}
-        >
-          <Star
-            className="mr-1"
-            color="#fbbf24"
-            fill={showWatchlist ? "#fbbf24" : ""}
-          />
+        <Button className="text-lg" variant="ghost" onClick={() => setShowWatchlist((s) => !s)}>
+          <Star className="mr-1" color="#fbbf24" fill={showWatchlist ? "#fbbf24" : ""} />
           Watchlist
         </Button>
       </div>
@@ -232,9 +192,7 @@ export default function AvailableFilms({
           })}
           <DialogContent className="max-w-2/3 w-1/2 rounded-sm" forceMount>
             <DialogHeader>
-              <DialogTitle className="text-white">
-                {selectedFilm?.title}
-              </DialogTitle>
+              <DialogTitle className="text-white">{selectedFilm?.title}</DialogTitle>
               <DialogDescription>
                 {selectedFilm && (
                   <div className="flex">
@@ -248,25 +206,27 @@ export default function AvailableFilms({
                       />
                     </div>
                     <div className="ml-4 w-full text-white">
-                      <p className="mb-2 text-lg">
-                        Release Date:{" "}
-                        {format(selectedFilm.release_date, "LLL dd, yyyy")}
-                      </p>
+                      <p className="mb-2 text-lg">Release Date: {format(selectedFilm.release_date, "LLL dd, yyyy")}</p>
                       <p className="mb-2">{selectedFilm.overview}</p>
+
+                      <Alert className="my-4">
+                        <Lock className="h-4 w-4" />
+                        <AlertTitle>
+                          This film will no longer be available after{" "}
+                          {format(sub(new Date(selectedFilm.release_date ?? ""), { days: 8 }), "LLL dd, yyyy")}
+                        </AlertTitle>
+                      </Alert>
 
                       {canPick && !bidPlaced && (
                         <>
                           <div className="mt-4">
                             <Label>Slot</Label>
-                            <Select
-                              value={selectedSlot}
-                              onValueChange={setSelectedSlot}
-                            >
+                            <Select value={selectedSlot} onValueChange={setSelectedSlot}>
                               <SelectTrigger className="w-2/3 text-black">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {availableSlots.map((slot, i) => (
+                                {availableSlots?.map((slot, i) => (
                                   <SelectItem key={i} value={String(slot.pos)}>
                                     {slot.type}
                                   </SelectItem>
@@ -294,8 +254,7 @@ export default function AvailableFilms({
                           <CircleDollarSign className="h-4 w-4" />
                           <AlertTitle>Bid placed</AlertTitle>
                           <AlertDescription>
-                            You have an active bid for this film. Manage your
-                            bids in the Bids tab.
+                            You have an active bid for this film. Manage your bids in the Bids tab.
                           </AlertDescription>
                         </Alert>
                       )}
@@ -319,20 +278,13 @@ export default function AvailableFilms({
               </div>
 
               <div className="ml-auto">
-                {isDraft ? (
-                  <Button
-                    disabled={!selectedFilm || !selectedSlot || !canPick}
-                    onClick={handleDraft}
-                  >
+                {isDraft && (
+                  <Button disabled={!selectedFilm || !selectedSlot || !canPick} onClick={handleDraft}>
                     Draft
                   </Button>
-                ) : (
-                  <Button
-                    disabled={
-                      !selectedFilm || !canPick || !selectedSlot || bidPlaced
-                    }
-                    onClick={handleBid}
-                  >
+                )}
+                {!isDraft && canPick && (
+                  <Button disabled={!selectedFilm || !canPick || !selectedSlot || bidPlaced} onClick={handleBid}>
                     Place Bid
                   </Button>
                 )}

@@ -208,7 +208,7 @@ async function getStudioFilmsAndScore(
       }),
     );
 
-  studio.score = studio.films.map((e) => e.score).reduce((a, b) => a + b, 0);
+  studio.score = Math.round(studio.films.map((e) => e.score).reduce((a, b) => a + b, 0) * 10) / 10;
   await ctx.prisma.leagueSessionStudio.update({
     data: { score: studio.score },
     where: { id: studio.id },

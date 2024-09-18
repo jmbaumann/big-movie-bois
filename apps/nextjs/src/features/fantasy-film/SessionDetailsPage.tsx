@@ -98,11 +98,6 @@ export default function SessionDetailsPage() {
               <TabsTrigger value="opposing-studios" onClick={() => handleTab("opposing-studios")}>
                 Opposing Studios
               </TabsTrigger>
-              {draftComplete && (
-                <TabsTrigger value="standings" onClick={() => handleTab("standings")}>
-                  Standings
-                </TabsTrigger>
-              )}
               {/* {draftComplete && (
                 <TabsTrigger
                   value="release-calendar"
@@ -134,9 +129,6 @@ export default function SessionDetailsPage() {
             </TabsContent>
             <TabsContent value="opposing-studios">
               <OpposingStudios session={session} studios={opposingStudios} />
-            </TabsContent>
-            <TabsContent value="standings">
-              <Standings session={session} />
             </TabsContent>
             <TabsContent value="release-calendar">Release Calendar</TabsContent>
             <TabsContent value="films">
@@ -221,7 +213,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
                 )}
                 {upcoming && (
                   <div className="ml-auto">
-                    <p>Most Recent</p>
+                    <p>Upcoming</p>
                     <p className="text-lg text-white">{upcoming.tmdb.details.title}</p>
                   </div>
                 )}
@@ -265,9 +257,10 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
             <StudioSlot
               key={i}
               session={session}
+              studio={studio}
               slot={slot.type}
               film={film}
-              showScore={film ? true : false}
+              showScore={film ? locked : false}
               locked={locked}
               refreshStudio={refetch}
             />
@@ -368,25 +361,6 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
   });
 }
 
-function Standings({ session }: { session: Session }) {
-  const { data: standings } = api.ffLeagueSession.getStandings.useQuery(
-    { sessionId: session?.id ?? "" },
-    { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
-  );
-
-  return (
-    <>
-      {standings?.map((studio, i) => (
-        <div key={i} className="flex gap-x-2">
-          <p className="mr-2">{i + 1}.</p>
-          <p>{studio.name}</p>
-          <p>{studio.score} pts</p>
-        </div>
-      ))}
-    </>
-  );
-}
-
 function Films({ session }: { session: Session }) {
   const { data: sessionData } = useSession();
 
@@ -406,7 +380,7 @@ function Films({ session }: { session: Session }) {
 
   if (!data?.results || !myStudio || !films) return <p>no films</p>;
 
-  return <AvailableFilms session={session} films={films} studioId={myStudio.id} canPick={true} />;
+  return <AvailableFilms session={session} films={films} studioId={myStudio.id} />;
 }
 
 function Bids({ session }: { session: Session }) {

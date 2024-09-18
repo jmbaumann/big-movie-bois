@@ -6,7 +6,9 @@ import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { LeagueSessionSettingsDraft } from "@repo/api/src/zod";
 
 type Film = TMDBDiscoverResult;
-type Studios = inferRouterOutputs<AppRouter>["ffStudio"]["getOpposingStudios"];
+type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
+type Studios = inferRouterOutputs<AppRouter>["ffStudio"]["getStudios"];
+type Studio = Studios[number] | inferRouterOutputs<AppRouter>["ffStudio"]["getMyStudio"];
 type StudioFilm = Studios[number]["films"][number];
 
 export function getAvailableFilms(picks: StudioFilm[], films: Film[]) {
@@ -22,9 +24,7 @@ export function getMostRecentAndUpcoming(films: StudioFilm[] | undefined) {
   const now = new Date();
 
   const sortedFilms = films.sort(
-    (a, b) =>
-      new Date(a.tmdb.details.releaseDate).getTime() -
-      new Date(b.tmdb.details.releaseDate).getTime(),
+    (a, b) => new Date(a.tmdb.details.releaseDate).getTime() - new Date(b.tmdb.details.releaseDate).getTime(),
   );
 
   for (const film of sortedFilms) {
@@ -42,10 +42,7 @@ export function getMostRecentAndUpcoming(films: StudioFilm[] | undefined) {
 
 export function isSlotLocked(film: StudioFilm | undefined) {
   if (!film) return false;
-  return (
-    sub(new Date(film.tmdb.details.releaseDate ?? ""), { days: 7 }).getTime() <
-    new Date().getTime()
-  );
+  return sub(new Date(film.tmdb.details.releaseDate ?? ""), { days: 7 }).getTime() < new Date().getTime();
 }
 
 export function getFilmsReleased(films: StudioFilm[]) {
@@ -54,21 +51,22 @@ export function getFilmsReleased(films: StudioFilm[]) {
   return total;
 }
 
+export function getUnlockedSlots(session: Session, studio: Studio) {
+  const dict = {} as Record<number, boolean>;
+  for (const film of studio.films) dict[film.slot] = isSlotLocked(film);
+
+  const slots = session?.settings.teamStructure.filter((e) => !dict[e.pos]);
+  return slots;
+}
+
 export function getStudioOwnerByPick(draftOrder: string[], pick: number) {
   const round = Math.ceil(pick / draftOrder.length);
   const studioIndex = round * draftOrder.length - pick;
-  const studio =
-    round % 2 === 0
-      ? draftOrder[studioIndex] ?? ""
-      : [...draftOrder].reverse()[studioIndex];
+  const studio = round % 2 === 0 ? draftOrder[studioIndex] ?? "" : [...draftOrder].reverse()[studioIndex];
   return studio ?? "";
 }
 
-export function getUpcomingPicks(
-  numPicks: number,
-  numRounds: number,
-  draftOrder: string[],
-) {
+export function getUpcomingPicks(numPicks: number, numRounds: number, draftOrder: string[]) {
   const pickArray: { num: number; studio: string }[] = [];
   for (let i = 0; i < numRounds * draftOrder.length; i++)
     pickArray.push({

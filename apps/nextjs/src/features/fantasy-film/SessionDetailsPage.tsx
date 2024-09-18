@@ -3,7 +3,26 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
 import { format, nextTuesday } from "date-fns";
-import { ChevronLeft, CircleDollarSign, Info, Shuffle, XCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  CircleDollarSign,
+  Clapperboard,
+  Disc3,
+  Eye,
+  Film,
+  Heart,
+  Info,
+  Pencil,
+  Popcorn,
+  Projector,
+  Shuffle,
+  Sofa,
+  Star,
+  Tv,
+  Video,
+  Videotape,
+  XCircle,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
@@ -11,12 +30,23 @@ import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
 
 import { api } from "~/utils/api";
 import { getDraftDate, getFilmsReleased, getMostRecentAndUpcoming, isSlotLocked } from "~/utils/fantasy-film-helpers";
+import { cn } from "~/utils/shadcn";
 import AdminMenu from "~/components/AdminMenu";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import { DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
@@ -25,6 +55,7 @@ import { ONE_DAY_IN_SECONDS } from "~/utils";
 import AvailableFilms from "./AvailableFilms";
 import DraftCountdown from "./DraftCountdown";
 import SessionForm from "./forms/Session";
+import StudioIcon from "./StudioIcon";
 import StudioSlot from "./StudioSlot";
 
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
@@ -186,18 +217,23 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
         return (
           <Card key={i} className="mb-2">
             <CardHeader>
-              <CardTitle className="mb-4 flex items-end text-2xl">
+              <CardTitle className="mb-4 flex items-center text-2xl">
                 <p
-                  className="hover:text-primary flex items-center justify-center gap-x-2 hover:cursor-pointer"
+                  className="hover:text-primary flex w-1/2 items-center gap-x-2 hover:cursor-pointer"
                   onClick={() => handleStudioSelected(studio)}
                 >
-                  {/* <StudioIcon icon={studio.image} /> */}
-                  {studio.name}
+                  <StudioIcon image={studio.image} />
+                  <div className="flex flex-col">
+                    <p>{studio.name}</p>
+                    <p className="text-xs text-slate-400">{studio.owner.name}</p>
+                  </div>
                 </p>
-                <p className="ml-4 text-lg">
-                  ({studio.rank} of {session?.studios.length})
-                </p>
-                <p className="ml-4 text-lg">${studio.budget}</p>
+                <div className="flex items-end">
+                  <p className="ml-4 text-lg">
+                    ({studio.rank} of {session?.studios.length})
+                  </p>
+                  <p className="ml-4 text-lg">${studio.budget}</p>
+                </div>
                 <p className="text-primary ml-auto">{studio.score} pts</p>
               </CardTitle>
               <CardDescription className="flex items-center">
@@ -233,15 +269,15 @@ function MyStudio({ session, studio, refetch }: { session: Session; studio: Stud
 }
 
 function StudioDetails({ session, studio, refetch }: { session: Session; studio: Studio; refetch?: () => void }) {
+  const { data: sessionData } = useSession();
+
   return (
     <div className="w-full">
       <div className="mb-4 flex items-end text-2xl">
         <p className="flex items-center justify-center gap-x-2">
-          {/* <StudioIcon icon={studio.image} /> */}
+          <StudioIcon image={studio.image} />
           {studio.name}
-          {/* {studio.ownerId === sessionData?.user.id && refetchLeague && (
-            <EditStudio studio={studio} refetchLeague={refetchLeague} />
-          )} */}
+          {studio.ownerId === sessionData?.user.id && refetch && <EditStudio studio={studio} refetch={refetch} />}
         </p>
         <p className="ml-4 text-lg">
           ({studio.rank} of {session?.studios.length})
@@ -310,7 +346,7 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
               className="hover:text-primary flex items-center justify-center gap-x-2 hover:cursor-pointer"
               onClick={() => handleStudioSelected(studio)}
             >
-              {/* <StudioIcon icon={studio.image} /> */}
+              <StudioIcon image={studio.image} />
               {studio.name}
             </p>
             <p className="ml-4 text-lg">
@@ -499,4 +535,119 @@ function Activity({ session }: { session: Session }) {
 
 function Settings({ session }: { session: Session }) {
   if (session) return <SessionForm leagueId={session.leagueId} session={session} />;
+}
+
+function EditStudio({ studio, refetch }: { studio: Studio; refetch: () => void }) {
+  const colors = {
+    black: "#000000",
+    gray: "#525252",
+    red: "#dc2626",
+    orange: "#ea580c",
+    green: "#84cc16",
+    blue: "#0ea5e9",
+    purple: "#9333ea",
+    pink: "#db2777",
+  };
+
+  const icon = studio.image?.split("#")[0];
+  const color = studio.image?.split("#")[1];
+
+  const updateStudio = api.ffStudio.update.useMutation();
+
+  const [open, setOpen] = useState(false);
+  const [studioName, setStudioName] = useState(studio.name);
+  const [studioColor, setStudioColor] = useState(
+    `#${color}` ?? Object.values(colors)[Math.floor(Math.random() * Object.values(colors).length)],
+  );
+  const [studioIcon, setStudioIcon] = useState(icon);
+
+  const save = () => {
+    if (studioName.length)
+      updateStudio.mutate(
+        {
+          ...studio,
+          name: studioName,
+          image: `${studioIcon}${studioColor}` ?? "",
+        },
+        {
+          onSuccess: () => {
+            refetch();
+          },
+        },
+      );
+    setOpen(false);
+  };
+
+  const icons = {
+    clapperboard: <Clapperboard />,
+    disc3: <Disc3 />,
+    eye: <Eye />,
+    film: <Film />,
+    heart: <Heart />,
+    popcorn: <Popcorn />,
+    projector: <Projector />,
+    sofa: <Sofa />,
+    star: <Star />,
+    tv: <Tv />,
+    video: <Video />,
+    videotape: <Videotape />,
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger>
+        <Button className="bg-lb-blue rounded-3xl font-sans uppercase" size="icon">
+          <Pencil className="mr-1 h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="rounded-sm">
+        <DialogHeader>
+          <DialogTitle>Edit Studio</DialogTitle>
+          <DialogDescription className="text-black">
+            <Label className="mb-2 text-white">Select a Color</Label>
+            <div className="mt-2 grid grid-cols-8 gap-y-2">
+              {Object.keys(colors).map((color, i) => {
+                const colorKey = color as keyof typeof colors;
+                return (
+                  <Button
+                    key={i}
+                    className={cn("mx-2 rounded-3xl", studioColor === colors[colorKey] ? "border-2 border-white" : "")}
+                    style={{ backgroundColor: colors[colorKey] }}
+                    size="icon"
+                    onClick={() => setStudioColor(colors[colorKey])}
+                  ></Button>
+                );
+              })}
+            </div>
+
+            <Label className="mb-2 text-white">Select an Icon</Label>
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-y-2">
+              {Object.keys(icons).map((icon, i) => {
+                const iconKey = icon as keyof typeof icons;
+                return (
+                  <Button
+                    key={i}
+                    className={cn("bg-primary mx-2 rounded-3xl", studioIcon === icon ? "border-2 border-white" : "")}
+                    style={{ backgroundColor: studioColor }}
+                    size="icon"
+                    onClick={() => setStudioIcon(icon)}
+                  >
+                    {icons[iconKey]}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-end space-x-4">
+              <div className="flex w-full flex-col">
+                <Label className="mb-2 text-white">Studio Name</Label>
+                <Input type="input" value={studioName} onChange={(e) => setStudioName(e.target.value)} />
+              </div>
+              <Button onClick={save}>Save</Button>
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  );
 }

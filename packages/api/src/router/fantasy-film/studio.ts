@@ -21,7 +21,9 @@ type StudioFilm = Omit<
   scores: FilmScores;
   score: number;
 };
-type Studio = LeagueSessionStudio & {
+type Studio = Prisma.LeagueSessionStudioGetPayload<{
+  include: { owner: { select: { name: true } } };
+}> & {
   rank: number;
   films: StudioFilm[];
 };
@@ -32,6 +34,7 @@ const getStudios = protectedProcedure.input(z.object({ sessionId: z.string() }))
       sessionId: input.sessionId,
     },
     include: {
+      owner: { select: { name: true } },
       films: true,
     },
     orderBy: { score: "desc" },
@@ -92,11 +95,28 @@ const create = protectedProcedure.input(createLeagueSessionStudioObj).mutation(a
       sessionId: input.sessionId,
       ownerId: input.ownerId,
       name,
+      image: getRandomIcon(),
       budget: 100,
       createdAt: new Date(),
     },
   });
 });
+
+const update = protectedProcedure
+  .input(z.object({ id: z.string(), name: z.string(), image: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    return await ctx.prisma.leagueSessionStudio.update({
+      data: {
+        name: input.name,
+        image: input.image,
+        updatedAt: new Date(),
+        updatedBy: ctx.session.user.id,
+      },
+      where: {
+        id: input.id,
+      },
+    });
+  });
 
 const getFavorites = protectedProcedure.input(z.object({ studioId: z.string() })).query(async ({ ctx, input }) => {
   return await ctx.prisma.studioFavorite.findMany({ where: input });
@@ -169,6 +189,7 @@ export const studioRouter = createTRPCRouter({
   getMyStudio,
   getOpposingStudios,
   create,
+  update,
   getFavorites,
   addFavorite,
   removeFavorite,
@@ -222,6 +243,7 @@ export async function createManyStudios(ctx: TRPCContext, input: z.infer<typeof 
   const data = input.map((e) => ({
     ...createLeagueSessionStudioObj.parse(e),
     name: `${users.find((u) => u.id === e.ownerId)?.name}'s Studio`,
+    image: getRandomIcon(),
     budget: 100,
     createdAt: new Date(),
   }));
@@ -243,4 +265,27 @@ function getStudiosRanks(studios: LeagueSessionStudio[]) {
   }
 
   return list;
+}
+
+function getRandomIcon() {
+  const colors = ["#000000", "#525252", "#dc2626", "#ea580c", "#84cc16", "#0ea5e9", "#9333ea", "#db2777"];
+  const icons = [
+    "clapperboard",
+    "disc3",
+    "eye",
+    "film",
+    "heart",
+    "popcorn",
+    "projector",
+    "sofa",
+    "star",
+    "tv",
+    "video",
+    "videotape",
+  ];
+
+  const randomColor = colors[Math.floor(Math.random() * colors.length)];
+  const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+
+  return `${randomIcon}${randomColor}`;
 }

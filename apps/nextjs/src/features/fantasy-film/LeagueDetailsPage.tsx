@@ -15,32 +15,11 @@ import { api } from "~/utils/api";
 import { getMostRecentAndUpcoming } from "~/utils/fantasy-film-helpers";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "~/components/ui/command";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
+import { Command, CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 import NewSessionDialog from "./NewSessionDialog";
@@ -97,16 +76,9 @@ export default function LeagueDetailsPage() {
         )}
 
         <div className="">
-          <Tabs
-            className="w-full px-2 lg:px-4"
-            value={activeTab}
-            onValueChange={setActiveTab}
-          >
+          <Tabs className="w-full px-2 lg:px-4" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="">
-              <TabsTrigger
-                value="sessions"
-                onClick={() => handleTab("sessions")}
-              >
+              <TabsTrigger value="sessions" onClick={() => handleTab("sessions")}>
                 Sessions
               </TabsTrigger>
               <TabsTrigger value="members" onClick={() => handleTab("members")}>
@@ -116,18 +88,13 @@ export default function LeagueDetailsPage() {
                 History
               </TabsTrigger>
               {isOwner && (
-                <TabsTrigger
-                  value="settings"
-                  onClick={() => handleTab("settings")}
-                >
+                <TabsTrigger value="settings" onClick={() => handleTab("settings")}>
                   Settings
                 </TabsTrigger>
               )}
             </TabsList>
             <TabsContent value="sessions">
-              {league?.sessions.map((session, i) => (
-                <SessionCard key={i} session={session} />
-              ))}
+              {league?.sessions.map((session, i) => <SessionCard key={i} session={session} />)}
             </TabsContent>
             <TabsContent value="members">
               <Members league={league!} refreshLeague={refreshLeague} />
@@ -147,60 +114,50 @@ function SessionCard({ session }: { session: LeagueSession }) {
     includeDetails: true,
   });
 
-  const { mostRecent, upcoming } = getMostRecentAndUpcoming(
-    films as StudioFilmDetails[],
-  );
+  const { mostRecent, upcoming } = getMostRecentAndUpcoming(films);
 
   return (
     <Card className="my-2">
       <CardHeader>
         <CardTitle>
-          <Link
-            className="hover:text-primary"
-            href={`/fantasy-film/${session.leagueId}/${session.id}`}
-          >
+          <Link className="hover:text-primary" href={`/fantasy-film/${session.leagueId}/${session.id}`}>
             {session.name}
           </Link>
           <p className="ml-4 inline-block text-sm">
-            {format(session.startDate, "LLL d, yyyy")} -{" "}
-            {format(session.endDate, "LLL d, yyyy")}
+            {format(session.startDate, "LLL d, yyyy")} - {format(session.endDate, "LLL d, yyyy")}
           </p>
         </CardTitle>
         <CardDescription></CardDescription>
       </CardHeader>
       <CardContent>
         <div className="">
-          <div className="w-1/3">
+          <div className="flex w-1/3">
             {mostRecent && (
-              <div className="flex w-min flex-col items-center">
+              <div className="flex flex-col items-center">
                 <p className="text-lg">Most Recent</p>
-                <Image
+                {/* <Image
                   className="min-w-[125px]"
                   src={`https://image.tmdb.org/t/p/w1280/${mostRecent.tmdb.details.poster}`}
                   alt={`${mostRecent.tmdb.details.title} poster`}
                   width={150}
                   height={225}
-                />
+                /> */}
                 <p className="text-center">{mostRecent.tmdb.details.title}</p>
-                <p className="text-center text-xs">
-                  {format(mostRecent.tmdb.details.releaseDate, "LLL d, yyyy")}
-                </p>
+                <p className="text-center text-xs">{format(mostRecent.tmdb.details.releaseDate, "LLL d, yyyy")}</p>
               </div>
             )}
             {upcoming && (
-              <div className="flex w-min flex-col items-center">
+              <div className="flex flex-col items-center">
                 <p className="text-lg">Upcoming</p>
-                <Image
+                {/* <Image
                   className="min-w-[125px]"
                   src={`https://image.tmdb.org/t/p/w1280/${upcoming.tmdb.details.poster}`}
                   alt={`${upcoming.tmdb.details.title} poster`}
                   width={150}
                   height={225}
-                />
+                /> */}
                 <p className="text-center">{upcoming.tmdb.details.title}</p>
-                <p className="text-center text-xs">
-                  {format(upcoming.tmdb.details.releaseDate, "LLL d, yyyy")}
-                </p>
+                <p className="text-center text-xs">{format(upcoming.tmdb.details.releaseDate, "LLL d, yyyy")}</p>
               </div>
             )}
           </div>
@@ -210,13 +167,7 @@ function SessionCard({ session }: { session: LeagueSession }) {
   );
 }
 
-function Members({
-  league,
-  refreshLeague,
-}: {
-  league: League;
-  refreshLeague: Function;
-}) {
+function Members({ league, refreshLeague }: { league: League; refreshLeague: Function }) {
   const [searchKeyword, setSearchKeyword] = useState<string>();
   const [open, setOpen] = useState(false);
   const confirm = useConfirm();
@@ -234,8 +185,7 @@ function Members({
       { userId, leagueId: league!.id },
       {
         onSettled: () => refreshLeague(),
-        onError: (error) =>
-          toast({ title: error.message, variant: "destructive" }),
+        onError: (error) => toast({ title: error.message, variant: "destructive" }),
       },
     );
     setOpen(false);
@@ -244,9 +194,7 @@ function Members({
 
   async function handleRemoveUser(id: string, type: "member" | "invite") {
     const ok = await confirm(
-      `Are you sure you want to ${
-        type === "member" ? "remove this member" : "revoke this invitation"
-      }?`,
+      `Are you sure you want to ${type === "member" ? "remove this member" : "revoke this invitation"}?`,
     );
     if (ok)
       if (type === "member")
@@ -335,9 +283,7 @@ function Members({
         <CommandInput
           placeholder="Search by username"
           value={searchKeyword}
-          onChangeCapture={(e: ChangeEvent<HTMLInputElement>) =>
-            setSearchKeyword(e.target.value)
-          }
+          onChangeCapture={(e: ChangeEvent<HTMLInputElement>) => setSearchKeyword(e.target.value)}
         />
         <CommandList>
           {!!searchKeyword && <CommandEmpty>No users found</CommandEmpty>}

@@ -4,22 +4,19 @@ import { sub } from "date-fns";
 import { AppRouter } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { LeagueSessionSettingsDraft } from "@repo/api/src/zod";
-import { StudioFilm } from "@repo/db";
 
 type Film = TMDBDiscoverResult;
-type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
-type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
+type Studios = inferRouterOutputs<AppRouter>["ffStudio"]["getOpposingStudios"];
+type StudioFilm = Studios[number]["films"][number];
 
 export function getAvailableFilms(picks: StudioFilm[], films: Film[]) {
   const takenIds = picks.map((e) => e.tmdbId);
   return films.filter((e) => !takenIds.includes(e.id));
 }
 
-export function getMostRecentAndUpcoming(
-  films: StudioFilmDetails[] | undefined,
-) {
-  let mostRecent: StudioFilmDetails | undefined;
-  let upcoming: StudioFilmDetails | undefined;
+export function getMostRecentAndUpcoming(films: StudioFilm[] | undefined) {
+  let mostRecent: StudioFilm | undefined;
+  let upcoming: StudioFilm | undefined;
   if (!films) return { mostRecent, upcoming };
 
   const now = new Date();
@@ -43,12 +40,18 @@ export function getMostRecentAndUpcoming(
   return { mostRecent, upcoming };
 }
 
-export function isSlotLocked(film: StudioFilmDetails | undefined) {
+export function isSlotLocked(film: StudioFilm | undefined) {
   if (!film) return false;
   return (
     sub(new Date(film.tmdb.details.releaseDate ?? ""), { days: 7 }).getTime() <
     new Date().getTime()
   );
+}
+
+export function getFilmsReleased(films: StudioFilm[]) {
+  let total = 0;
+  for (const film of films) if (isSlotLocked(film)) total++;
+  return total;
 }
 
 export function getStudioOwnerByPick(draftOrder: string[], pick: number) {

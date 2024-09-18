@@ -82,7 +82,7 @@ export default function LeagueDetailsPage() {
       <div>
         <Link href={"/fantasy-film"}>
           <Button variant="link" className="px-0">
-            <ChevronLeft /> Back to Leagues
+            <ChevronLeft /> Leagues
           </Button>
         </Link>
         {league && (

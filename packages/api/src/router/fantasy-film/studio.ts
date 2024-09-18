@@ -44,32 +44,7 @@ const getMyStudio = protectedProcedure
     });
     if (!studio) throw "No studio found";
 
-    const session = await getSessionById(ctx, input.sessionId);
-
-    if (studio && studio.films.length > 0)
-      studio.films = await Promise.all(
-        studio.films.map(async (film) => {
-          const tmdb = await getByTMDBId(film.tmdbId);
-          const scores = await getFilmScores({ ...film, tmdb });
-          const score = await getFilmScore(ctx, session!, {
-            ...film,
-            tmdb,
-            scores,
-          });
-          return {
-            ...film,
-            tmdb,
-            scores,
-            score,
-          };
-        }),
-      );
-
-    studio.score = studio.films.map((e) => e.score).reduce((a, b) => a + b, 0);
-    await ctx.prisma.leagueSessionStudio.update({
-      data: { score: studio.score },
-      where: { id: studio.id },
-    });
+    await getStudioFilmsAndScore(ctx, studio, input.sessionId);
 
     return studio as LeagueSessionStudio & { films: StudioFilm[] };
   });
@@ -77,12 +52,25 @@ const getMyStudio = protectedProcedure
 const getOpposingStudios = protectedProcedure
   .input(z.object({ sessionId: z.string() }))
   .query(async ({ ctx, input }) => {
-    return await ctx.prisma.leagueSessionStudio.findMany({
+    const list = await ctx.prisma.leagueSessionStudio.findMany({
       where: {
         sessionId: input.sessionId,
-        ownerId: { notIn: [ctx.session.user.id] },
       },
+      include: { films: true },
+      orderBy: { score: "desc" },
     });
+
+    const opposing = list
+      .map((e, i) => ({ ...e, rank: i + 1 }))
+      .filter((e) => e.ownerId !== ctx.session.user.id);
+
+    for (const studio of opposing)
+      await getStudioFilmsAndScore(ctx, studio, input.sessionId);
+
+    return opposing as (LeagueSessionStudio & {
+      rank: number;
+      films: StudioFilm[];
+    })[];
   });
 
 const create = protectedProcedure
@@ -189,6 +177,41 @@ export const studioRouter = createTRPCRouter({
 });
 
 ////////////////
+
+async function getStudioFilmsAndScore(
+  ctx: TRPCContext,
+  studio: Prisma.LeagueSessionStudioGetPayload<{
+    include: { films: true };
+  }>,
+  sessionId: string,
+) {
+  const session = await getSessionById(ctx, sessionId);
+
+  if (studio && studio.films.length > 0)
+    studio.films = await Promise.all(
+      studio.films.map(async (film) => {
+        const tmdb = await getByTMDBId(film.tmdbId);
+        const scores = await getFilmScores({ ...film, tmdb });
+        const score = await getFilmScore(ctx, session!, {
+          ...film,
+          tmdb,
+          scores,
+        });
+        return {
+          ...film,
+          tmdb,
+          scores,
+          score,
+        };
+      }),
+    );
+
+  studio.score = studio.films.map((e) => e.score).reduce((a, b) => a + b, 0);
+  await ctx.prisma.leagueSessionStudio.update({
+    data: { score: studio.score },
+    where: { id: studio.id },
+  });
+}
 
 export async function createManyStudios(
   ctx: TRPCContext,

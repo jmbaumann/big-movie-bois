@@ -14,10 +14,14 @@ import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
 import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
-import { StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
-import { getDraftDate, isSlotLocked } from "~/utils/fantasy-film-helpers";
+import {
+  getDraftDate,
+  getFilmsReleased,
+  getMostRecentAndUpcoming,
+  isSlotLocked,
+} from "~/utils/fantasy-film-helpers";
 import AdminMenu from "~/components/AdminMenu";
 import { Button } from "~/components/ui/button";
 import {
@@ -54,7 +58,10 @@ import StudioSlot from "./StudioSlot";
 
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
 type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
-type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
+type Studios = inferRouterOutputs<AppRouter>["ffStudio"]["getOpposingStudios"];
+type Studio =
+  | inferRouterOutputs<AppRouter>["ffStudio"]["getMyStudio"]
+  | Studios[number];
 
 export default function SessionDetailsPage() {
   const { data: sessionData } = useSession();
@@ -95,7 +102,7 @@ export default function SessionDetailsPage() {
       <div>
         <Link href={`/fantasy-film/${session.leagueId}`}>
           <Button variant="link" className="px-0">
-            <ChevronLeft /> Back to League
+            <ChevronLeft /> League
           </Button>
         </Link>
         <div className="mb-4 flex items-center">
@@ -168,7 +175,7 @@ export default function SessionDetailsPage() {
               <MyStudio session={session} />
             </TabsContent>
             <TabsContent value="opposing-studios">
-              <OpposingStudio />
+              <OpposingStudios session={session} />
             </TabsContent>
             <TabsContent value="standings">
               <Standings session={session} />
@@ -208,8 +215,6 @@ function Home({ session }: { session: Session }) {
 }
 
 function MyStudio({ session }: { session: Session }) {
-  const router = useRouter();
-
   const {
     data: studio,
     isLoading,
@@ -223,6 +228,18 @@ function MyStudio({ session }: { session: Session }) {
 
   if (!studio) return <>no studios</>;
 
+  return <StudioDetails session={session} studio={studio} refetch={refetch} />;
+}
+
+function StudioDetails({
+  session,
+  studio,
+  refetch,
+}: {
+  session: Session;
+  studio: Studio;
+  refetch?: () => void;
+}) {
   return (
     <div className="w-full">
       <div className="mb-4 flex items-end text-2xl">
@@ -258,9 +275,13 @@ function MyStudio({ session }: { session: Session }) {
   );
 }
 
-function OpposingStudio() {
+function OpposingStudios({ session }: { session: Session }) {
   const router = useRouter();
   const sessionId = router.query.sessionId as string;
+
+  const [selectedStudio, setSelectedStudio] = useState<Studio | undefined>(
+    undefined,
+  );
 
   const { data: studios } = api.ffStudio.getOpposingStudios.useQuery(
     { sessionId },
@@ -269,7 +290,97 @@ function OpposingStudio() {
     },
   );
 
-  return studios?.map((studio, i) => <div key={i}>{studio.name}</div>);
+  useEffect(() => {
+    if (studios && router.query.studio)
+      setSelectedStudio(studios.find((e) => e.id === router.query.studio));
+  }, [router.query.studio, studios]);
+
+  function handleStudioSelected(studio: Studio | undefined) {
+    setSelectedStudio(studio);
+    router.push({
+      pathname: `/fantasy-film/${router.query.leagueId}/${router.query.sessionId}`,
+      query: studio
+        ? { tab: "opposing-studios", studio: studio.id }
+        : { tab: "opposing-studios" },
+    });
+  }
+
+  if (selectedStudio)
+    return (
+      <div>
+        <Button
+          variant="link"
+          className="px-0"
+          onClick={() => handleStudioSelected(undefined)}
+        >
+          <ChevronLeft /> Opposing Studios
+        </Button>
+
+        <StudioDetails session={session} studio={selectedStudio} />
+      </div>
+    );
+
+  return studios?.map((studio, i) => {
+    const { mostRecent, upcoming } = getMostRecentAndUpcoming(studio.films);
+
+    return (
+      <Card key={i} className="mb-2">
+        <CardHeader>
+          <CardTitle className="mb-4 flex items-end text-2xl">
+            <p
+              className="hover:text-primary flex items-center justify-center gap-x-2 hover:cursor-pointer"
+              onClick={() => handleStudioSelected(studio)}
+            >
+              {/* <StudioIcon icon={studio.image} /> */}
+              {studio.name}
+            </p>
+            <p className="ml-4 text-lg">
+              ({studio.rank} of {session?.studios.length})
+            </p>
+            <p className="ml-4 text-lg">${studio.budget}</p>
+            <p className="text-primary ml-auto">{studio.score} pts</p>
+          </CardTitle>
+          <CardDescription className="flex items-center">
+            <p className="text-lg">
+              Films Released: {getFilmsReleased(studio.films)} /{" "}
+              {session?.settings.teamStructure.length}
+            </p>
+
+            {mostRecent && (
+              <div className="ml-auto">
+                <p>Most Recent</p>
+                <p className="text-lg text-white">
+                  {mostRecent.tmdb.details.title}
+                </p>
+              </div>
+            )}
+            {upcoming && (
+              <div className="ml-auto">
+                <p>Most Recent</p>
+                <p className="text-lg text-white">
+                  {upcoming.tmdb.details.title}
+                </p>
+              </div>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-4 gap-x-4 gap-y-2">
+          {session?.settings.teamStructure.map((slot, i) => {
+            const film = studio.films.find((e) => e.slot === i + 1);
+            return (
+              <div key={i}>
+                <p className="text-sm text-slate-400">{slot.type}</p>
+                <p className="text-xl">{film?.tmdb.details.title}</p>
+                <p className="text-primary text-lg font-bold">
+                  {film?.score} pts
+                </p>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+    );
+  });
 }
 
 function Standings({ session }: { session: Session }) {

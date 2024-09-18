@@ -1,17 +1,9 @@
-import { inferRouterOutputs } from "@trpc/server";
-import { format } from "date-fns";
 import { z } from "zod";
 
 import { LeagueSessionStudio, Prisma } from "@repo/db";
 
 import { BID_STATUSES } from "../../enums";
-import { AppRouter } from "../../root";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-  TRPCContext,
-} from "../../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { getByTMDBId } from "../tmdb";
 import { getFilmScore, getFilmScores } from "./film";
 import { FilmScores } from "./score";
@@ -29,25 +21,45 @@ type StudioFilm = Omit<
   scores: FilmScores;
   score: number;
 };
+type Studio = LeagueSessionStudio & {
+  rank: number;
+  films: StudioFilm[];
+};
 
-const getMyStudio = protectedProcedure
-  .input(z.object({ sessionId: z.string() }))
-  .query(async ({ ctx, input }) => {
-    const studio = await ctx.prisma.leagueSessionStudio.findFirst({
-      where: {
-        sessionId: input.sessionId,
-        ownerId: ctx.session.user.id,
-      },
-      include: {
-        films: true,
-      },
-    });
-    if (!studio) throw "No studio found";
-
-    await getStudioFilmsAndScore(ctx, studio, input.sessionId);
-
-    return studio as LeagueSessionStudio & { films: StudioFilm[] };
+const getStudios = protectedProcedure.input(z.object({ sessionId: z.string() })).query(async ({ ctx, input }) => {
+  const list = await ctx.prisma.leagueSessionStudio.findMany({
+    where: {
+      sessionId: input.sessionId,
+    },
+    include: {
+      films: true,
+    },
+    orderBy: { score: "desc" },
   });
+
+  for (const studio of list) await getStudioFilmsAndScore(ctx, studio, input.sessionId);
+
+  const studios = getStudiosRanks(list);
+
+  return studios as Studio[];
+});
+
+const getMyStudio = protectedProcedure.input(z.object({ sessionId: z.string() })).query(async ({ ctx, input }) => {
+  const studio = await ctx.prisma.leagueSessionStudio.findFirst({
+    where: {
+      sessionId: input.sessionId,
+      ownerId: ctx.session.user.id,
+    },
+    include: {
+      films: true,
+    },
+  });
+  if (!studio) throw "No studio found";
+
+  await getStudioFilmsAndScore(ctx, studio, input.sessionId);
+
+  return studio as LeagueSessionStudio & { films: StudioFilm[] };
+});
 
 const getOpposingStudios = protectedProcedure
   .input(z.object({ sessionId: z.string() }))
@@ -60,12 +72,9 @@ const getOpposingStudios = protectedProcedure
       orderBy: { score: "desc" },
     });
 
-    const opposing = list
-      .map((e, i) => ({ ...e, rank: i + 1 }))
-      .filter((e) => e.ownerId !== ctx.session.user.id);
+    const opposing = list.map((e, i) => ({ ...e, rank: i + 1 })).filter((e) => e.ownerId !== ctx.session.user.id);
 
-    for (const studio of opposing)
-      await getStudioFilmsAndScore(ctx, studio, input.sessionId);
+    for (const studio of opposing) await getStudioFilmsAndScore(ctx, studio, input.sessionId);
 
     return opposing as (LeagueSessionStudio & {
       rank: number;
@@ -73,29 +82,25 @@ const getOpposingStudios = protectedProcedure
     })[];
   });
 
-const create = protectedProcedure
-  .input(createLeagueSessionStudioObj)
-  .mutation(async ({ ctx, input }) => {
-    const user = await ctx.prisma.user.findFirst({
-      where: { id: input.ownerId },
-    });
-    const name = `${user?.name}'s Studio`;
-    return await ctx.prisma.leagueSessionStudio.create({
-      data: {
-        sessionId: input.sessionId,
-        ownerId: input.ownerId,
-        name,
-        budget: 100,
-        createdAt: new Date(),
-      },
-    });
+const create = protectedProcedure.input(createLeagueSessionStudioObj).mutation(async ({ ctx, input }) => {
+  const user = await ctx.prisma.user.findFirst({
+    where: { id: input.ownerId },
   });
+  const name = `${user?.name}'s Studio`;
+  return await ctx.prisma.leagueSessionStudio.create({
+    data: {
+      sessionId: input.sessionId,
+      ownerId: input.ownerId,
+      name,
+      budget: 100,
+      createdAt: new Date(),
+    },
+  });
+});
 
-const getFavorites = protectedProcedure
-  .input(z.object({ studioId: z.string() }))
-  .query(async ({ ctx, input }) => {
-    return await ctx.prisma.studioFavorite.findMany({ where: input });
-  });
+const getFavorites = protectedProcedure.input(z.object({ studioId: z.string() })).query(async ({ ctx, input }) => {
+  return await ctx.prisma.studioFavorite.findMany({ where: input });
+});
 
 const addFavorite = protectedProcedure
   .input(z.object({ studioId: z.string(), tmdbId: z.number() }))
@@ -111,13 +116,11 @@ const removeFavorite = protectedProcedure
     });
   });
 
-const getBids = protectedProcedure
-  .input(z.object({ studioId: z.string() }))
-  .query(async ({ ctx, input }) => {
-    return await ctx.prisma.filmBid.findMany({
-      where: { studioId: input.studioId, status: BID_STATUSES.PENDING },
-    });
+const getBids = protectedProcedure.input(z.object({ studioId: z.string() })).query(async ({ ctx, input }) => {
+  return await ctx.prisma.filmBid.findMany({
+    where: { studioId: input.studioId, status: BID_STATUSES.PENDING },
   });
+});
 
 const bid = protectedProcedure
   .input(
@@ -157,13 +160,12 @@ const updateBid = protectedProcedure
     return await ctx.prisma.filmBid.update({ data, where: { id: input.id } });
   });
 
-const deleteBid = protectedProcedure
-  .input(z.object({ id: z.string() }))
-  .mutation(async ({ ctx, input }) => {
-    return await ctx.prisma.filmBid.delete({ where: { id: input.id } });
-  });
+const deleteBid = protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+  return await ctx.prisma.filmBid.delete({ where: { id: input.id } });
+});
 
 export const studioRouter = createTRPCRouter({
+  getStudios,
   getMyStudio,
   getOpposingStudios,
   create,
@@ -213,10 +215,7 @@ async function getStudioFilmsAndScore(
   });
 }
 
-export async function createManyStudios(
-  ctx: TRPCContext,
-  input: z.infer<typeof createLeagueSessionStudioObj>[],
-) {
+export async function createManyStudios(ctx: TRPCContext, input: z.infer<typeof createLeagueSessionStudioObj>[]) {
   const users = await ctx.prisma.user.findMany({
     where: { id: { in: input.map((e) => e.ownerId) } },
   });
@@ -229,4 +228,19 @@ export async function createManyStudios(
   return await ctx.prisma.leagueSessionStudio.createMany({
     data,
   });
+}
+
+function getStudiosRanks(studios: LeagueSessionStudio[]) {
+  const list = studios.map((e) => ({ ...e, rank: 0 }));
+  for (let i = 0; i < list.length; i++) {
+    const studio = list[i] as LeagueSessionStudio & { rank: number };
+
+    if (i === 0) studio.rank = 1;
+    else {
+      const before = [...list].splice(0, i).filter((e) => e.score > studio.score);
+      studio.rank = before.length + 1;
+    }
+  }
+
+  return list;
 }

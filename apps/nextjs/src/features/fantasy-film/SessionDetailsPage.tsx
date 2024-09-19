@@ -28,6 +28,7 @@ import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
 import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
+import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 
 import { api } from "~/utils/api";
 import { getDraftDate, getFilmsReleased, getMostRecentAndUpcoming, isSlotLocked } from "~/utils/fantasy-film-helpers";
@@ -402,8 +403,11 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
 function Films({ session }: { session: Session }) {
   const { data: sessionData } = useSession();
 
-  const { data, isLoading } = api.tmdb.getFilmsForSession.useQuery(
-    { sessionId: session?.id ?? "", today: true },
+  const [films, setFilms] = useState<TMDBDiscoverResult[]>([]);
+  const [page, setPage] = useState(1);
+
+  const { data, refetch: refetchFilms } = api.tmdb.getFilmsForSession.useQuery(
+    { sessionId: session?.id ?? "", page, today: true },
     { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
   );
   const { data: acquiredFilms } = api.ffLeagueSession.getAcquiredFilms.useQuery(
@@ -411,14 +415,28 @@ function Films({ session }: { session: Session }) {
     { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
   );
 
+  useEffect(() => {
+    if (data?.results) setFilms((s) => [...s, ...data.results]);
+  }, [data]);
+
   const acquiredIds = acquiredFilms?.map((e) => e.tmdbId);
-  const films = data?.results.filter((e) => !acquiredIds?.includes(e.id));
+  const available = films.filter((e) => !acquiredIds?.includes(e.id));
+
+  console.log(films.length);
+  console.log(available.length);
 
   const myStudio = session?.studios.find((e) => e.ownerId === sessionData?.user.id);
 
-  if (!data?.results || !myStudio || !films) return <p>no films</p>;
+  if (!films || !myStudio || !available) return <p>no films</p>;
 
-  return <AvailableFilms session={session} films={films} studioId={myStudio.id} />;
+  return (
+    <AvailableFilms
+      session={session}
+      films={available}
+      studioId={myStudio.id}
+      loadMoreFilms={() => setPage((s) => s + 1)}
+    />
+  );
 }
 
 function Bids({ session }: { session: Session }) {

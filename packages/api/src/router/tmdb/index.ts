@@ -1,21 +1,9 @@
-import { format } from "date-fns";
+import { add, format, nextTuesday } from "date-fns";
 import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure, TRPCContext } from "../../trpc";
-import {
-  tmdbCertifications,
-  tmdbCredits,
-  tmdbDetails,
-  tmdbKeywords,
-} from "../daily-games/overlap/movieDataLL";
-import {
-  getByDateRange,
-  getCreditsById,
-  getDetailsById,
-  getKeywordsById,
-  getReleaseDatesById,
-  tmdb,
-} from "./tmdb";
+import { tmdbCertifications, tmdbCredits, tmdbDetails, tmdbKeywords } from "../daily-games/overlap/movieDataLL";
+import { getByDateRange, getCreditsById, getDetailsById, getKeywordsById, getReleaseDatesById, tmdb } from "./tmdb";
 import {
   TMDBCreditsResponse,
   TMDBDetailsResponse,
@@ -26,40 +14,34 @@ import {
 
 const POPULARITY_THRESHOLD = 10;
 
-const search = publicProcedure
-  .input(z.object({ keyword: z.string() }))
-  .query(async ({ ctx, input }) => {
-    const url = `https://api.themoviedb.org/3/search/movie?query=${input.keyword}&include_adult=false&language=en-US&page=1`;
-    const options = {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${process.env.TMDB_READ_ACCESS_TOKEN}`,
-      },
-    };
+const search = publicProcedure.input(z.object({ keyword: z.string() })).query(async ({ ctx, input }) => {
+  const url = `https://api.themoviedb.org/3/search/movie?query=${input.keyword}&include_adult=false&language=en-US&page=1`;
+  const options = {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: `Bearer ${process.env.TMDB_READ_ACCESS_TOKEN}`,
+    },
+  };
 
-    try {
-      const res = await fetch(url, options);
-      const data: TMDBSearchResponse = await res.json();
-      // TODO: handle duplicate titles
-      return data.results
-        .filter((e) => e.popularity >= POPULARITY_THRESHOLD)
-        .map((e) => ({ id: e.id, title: e.title }));
-    } catch (error) {
-      console.error(error);
-    }
-  });
+  try {
+    const res = await fetch(url, options);
+    const data: TMDBSearchResponse = await res.json();
+    // TODO: handle duplicate titles
+    return data.results.filter((e) => e.popularity >= POPULARITY_THRESHOLD).map((e) => ({ id: e.id, title: e.title }));
+  } catch (error) {
+    console.error(error);
+  }
+});
 
-const getById = publicProcedure
-  .input(z.object({ id: z.number() }))
-  .query(async ({ ctx, input }) => {
-    return getByTMDBId(input.id);
-  });
+const getById = publicProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
+  return getByTMDBId(input.id);
+});
 
 const getFilmsForSession = publicProcedure
-  .input(z.object({ sessionId: z.string(), today: z.boolean().optional() }))
+  .input(z.object({ sessionId: z.string(), page: z.number(), today: z.boolean().optional() }))
   .query(async ({ ctx, input }) => {
-    return await getFilmsBySessionId(ctx, input.sessionId, input.today);
+    return await getFilmsBySessionId(ctx, input.sessionId, input.page, input.today);
   });
 
 export const tmdbRouter = createTRPCRouter({
@@ -81,21 +63,17 @@ export async function getByTMDBId(id: number) {
   return restructure({ details, credits, releases, keywords });
 }
 
-export async function getFilmsBySessionId(
-  ctx: TRPCContext,
-  sessionId: string,
-  today?: boolean,
-) {
+export async function getFilmsBySessionId(ctx: TRPCContext, sessionId: string, page: number, today?: boolean) {
   const session = await ctx.prisma.leagueSession.findFirst({
     where: { id: sessionId },
   });
   if (!session) throw "No session found";
 
   const fromDate = today
-    ? format(new Date(), "yyyy-MM-dd")
+    ? format(add(nextTuesday(new Date()), { days: 8 }), "yyyy-MM-dd")
     : format(session.startDate, "yyyy-MM-dd");
 
-  return getByDateRange(fromDate, format(session.endDate, "yyyy-MM-dd"));
+  return getByDateRange(fromDate, format(session.endDate, "yyyy-MM-dd"), page);
 }
 
 function restructure(movie: {
@@ -112,9 +90,8 @@ function restructure(movie: {
     releaseYear: format(movie.details.release_date, "yyyy"),
     genres: movie.details.genres.map((e) => e.name),
     runtime: movie.details.runtime,
-    rating: movie.releases.results
-      .find((e) => e.iso_3166_1 === "US")
-      ?.release_dates.find((e) => e.type === 3)?.certification,
+    rating: movie.releases.results.find((e) => e.iso_3166_1 === "US")?.release_dates.find((e) => e.type === 3)
+      ?.certification,
     budget: movie.details.budget,
     revenue: movie.details.revenue,
     score: movie.details.vote_average,

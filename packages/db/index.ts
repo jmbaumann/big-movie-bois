@@ -9,18 +9,9 @@ export const prisma =
   new PrismaClient({
     log:
       process.env.NODE_ENV === "development"
-        ? ["query", "error", "warn"]
-        : ["error"],
+        ? ["error", "warn"]
+        : // ? ["query", "error", "warn"]
+          ["error"],
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-
-export type {
-  Session,
-  Studio,
-  Film,
-  TMDBFilm,
-  LeagueSettings,
-  DraftState,
-  DraftStateUpdate,
-} from "./types";

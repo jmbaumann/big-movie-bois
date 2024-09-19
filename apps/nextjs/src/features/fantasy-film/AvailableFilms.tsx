@@ -38,13 +38,16 @@ export default function AvailableFilms({
   films,
   studioId,
   isDraft,
+  loadMoreFilms,
 }: {
   session: Session;
   films: Film[];
   studioId: string;
   isDraft?: boolean;
+  loadMoreFilms?: () => void;
 }) {
-  const [filmList, setFilmList] = useState(films);
+  const [filmList, setFilmList] = useState<Film[]>(films);
+  const [favoritesList, setFavoritesList] = useState<Film[]>([]);
   const [showWatchlist, setShowWatchlist] = useState(false);
   const [open, setOpen] = useState(false);
   const [selectedFilm, setSelectedFilm] = useState<Film>();
@@ -101,11 +104,13 @@ export default function AvailableFilms({
   const bidPlaced = selectedFilm ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
 
   useEffect(() => {
-    if (showWatchlist) {
-      const favoriteIds = favorites?.map((e) => e.tmdbId);
-      setFilmList(films.filter((e) => favoriteIds?.includes(e.id)));
-    } else setFilmList(films);
-  }, [showWatchlist, favorites, films]);
+    if (films) setFilmList(films);
+  }, [films]);
+
+  useEffect(() => {
+    const favoriteIds = new Set(favorites?.map((e) => e.tmdbId));
+    setFavoritesList(films.filter((e) => favoriteIds?.has(e.id)));
+  }, [filmList]);
 
   useEffect(() => {
     setSelectedSlot(undefined);
@@ -153,6 +158,7 @@ export default function AvailableFilms({
     <>
       <div className="flex items-center">
         <SortChips
+          items={filmList}
           setItems={setFilmList}
           options={sortOptions}
           sortFunc={sort}
@@ -167,7 +173,7 @@ export default function AvailableFilms({
 
       <Dialog open={open} onOpenChange={setOpen}>
         <div className="flex max-h-[calc(100%-40px)] flex-wrap justify-around gap-4 overflow-y-auto">
-          {filmList.map((film, i) => {
+          {(showWatchlist ? favoritesList : filmList).map((film, i) => {
             return (
               <DialogTrigger
                 key={i}
@@ -207,14 +213,19 @@ export default function AvailableFilms({
                       />
                     </div>
                     <div className="ml-4 w-full text-white">
-                      <p className="mb-2 text-lg">Release Date: {format(selectedFilm.release_date, "LLL dd, yyyy")}</p>
+                      <p className="mb-2 text-lg">
+                        Release Date: {format(new Date(selectedFilm.release_date + "T00:00:00"), "LLL dd, yyyy")}
+                      </p>
                       <p className="mb-2">{selectedFilm.overview}</p>
 
                       <Alert className="my-4">
                         <Lock className="h-4 w-4" />
                         <AlertTitle>
                           This film will no longer be available after{" "}
-                          {format(sub(new Date(selectedFilm.release_date ?? ""), { days: 8 }), "LLL dd, yyyy")}
+                          {format(
+                            sub(new Date(selectedFilm.release_date + "T00:00:00" ?? ""), { days: 8 }),
+                            "LLL dd, yyyy",
+                          )}
                         </AlertTitle>
                       </Alert>
 
@@ -294,6 +305,14 @@ export default function AvailableFilms({
           </DialogContent>
         </div>
       </Dialog>
+
+      {!!filmList.length && !!loadMoreFilms && (
+        <div className="flex w-full">
+          <Button className="mx-auto" onClick={() => loadMoreFilms()}>
+            Load More
+          </Button>
+        </div>
+      )}
     </>
   );
 }

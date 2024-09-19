@@ -4,11 +4,13 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "~/utils/shadcn";
 
 export default function SortChips<T>({
+  items,
   setItems,
   sortFunc,
   def,
   options,
 }: {
+  items: T[];
   setItems: Dispatch<SetStateAction<T[]>>;
   sortFunc: (a: T, b: T, option: string, desc: boolean) => number;
   def: { value: string; desc: boolean };
@@ -22,30 +24,20 @@ export default function SortChips<T>({
   };
 
   useEffect(() => {
-    sortItems(def.value, def.desc);
-  }, []);
+    sortItems(sort.value, sort.desc);
+  }, [items.length]);
 
   return (
     <div className="flex w-full flex-row">
       {options.map((e, i) => (
-        <SortChip
-          key={i}
-          label={e.label}
-          value={e.value}
-          sort={sort}
-          sortItems={sortItems}
-        />
+        <SortChip key={i} label={e.label} value={e.value} sort={sort} sortItems={sortItems} />
       ))}
     </div>
   );
 }
 
 function SortIcon({ desc }: { desc: boolean }) {
-  return desc ? (
-    <ChevronDown className="ml-2" />
-  ) : (
-    <ChevronUp className="ml-2" />
-  );
+  return desc ? <ChevronDown className="ml-2" /> : <ChevronUp className="ml-2" />;
 }
 
 function SortChip({
@@ -63,9 +55,7 @@ function SortChip({
     <span
       className={cn(
         "mr-4 flex select-none items-center rounded-3xl px-4 py-1 hover:cursor-pointer",
-        sort.value === value
-          ? "bg-primary text-zinc-100"
-          : "bg-zinc-100 text-neutral-800",
+        sort.value === value ? "bg-primary text-zinc-100" : "bg-zinc-100 text-neutral-800",
       )}
       onClick={() => sortItems(value, sort.value === value ? !sort.desc : true)}
     >

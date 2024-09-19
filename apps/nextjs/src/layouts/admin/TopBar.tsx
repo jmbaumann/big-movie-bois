@@ -1,10 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from "next-auth/react";
 
-import { cn } from "~/utils/shadcn";
-import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,35 +14,13 @@ export default function TopBar() {
   const { data: sessionData } = useSession();
   const router = useRouter();
 
-  const links = [
-    { href: "/fantasy-film", label: "Fantasy Film" },
-    { href: "/daily-games", label: "Daily Games" },
-    // { href: '/forums', label: 'Forums'},
-    // { href: '/podcast', label: 'Podcast'},
-    // { href: '/support', label: 'Suppport'},
-  ];
-
   return (
-    <header className="flex h-[72px] items-center justify-around bg-neutral-900 font-sans">
-      <div className="flex w-full items-center lg:w-[80%]">
+    <header className="flex h-[72px] items-center justify-around bg-neutral-900 px-2 font-sans">
+      <div className="flex w-full items-center">
         <Link href={"/"} className="mx-3 uppercase hover:text-white">
           <span className="text-3xl font-bold text-white">BMB</span>
         </Link>
-
-        <nav className="ml-4 hidden lg:flex">
-          {links.map((link, i) => (
-            <Link
-              key={i}
-              href={link.href}
-              className={cn(
-                "hover:text-primary mx-3 uppercase",
-                router.pathname.startsWith(link.href) ? "border-primary border-b-2" : "",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        <span className="text-xl font-bold text-white">ADMIN DASHBOARD</span>
 
         <nav className="ml-auto flex">
           <DropdownMenu>

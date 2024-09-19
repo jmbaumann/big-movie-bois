@@ -1,7 +1,8 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "@repo/db";
 import type { DefaultSession, NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+
+import { prisma } from "@repo/db";
 
 import { env } from "../env.mjs";
 
@@ -15,14 +16,14 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
-      admin: boolean;
+      isAdmin: boolean;
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
   }
 
   interface User {
-    admin: boolean;
+    isAdmin: boolean;
     // ...other properties
     // role: UserRole;
   }
@@ -38,7 +39,7 @@ export const authOptions: NextAuthOptions = {
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
-        session.user.admin = !!user.admin;
+        session.user.isAdmin = !!user.isAdmin;
         // session.user.role = user.role; <-- put other properties on the session here
       }
       return session;

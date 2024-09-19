@@ -147,6 +147,7 @@ const bid = protectedProcedure
     z.object({
       studioId: z.string(),
       tmdbId: z.number(),
+      title: z.string(),
       amount: z.number(),
       slot: z.number(),
       dropFilmId: z.string().optional(),

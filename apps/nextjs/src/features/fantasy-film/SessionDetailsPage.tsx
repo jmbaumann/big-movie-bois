@@ -60,6 +60,7 @@ import StudioSlot from "./StudioSlot";
 
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
 type Studio = inferRouterOutputs<AppRouter>["ffStudio"]["getStudios"][number];
+type Activty = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getLogs"][number];
 
 export default function SessionDetailsPage() {
   const { data: sessionData } = useSession();
@@ -479,7 +480,9 @@ function Bids({ session }: { session: Session }) {
 }
 
 function Activity({ session }: { session: Session }) {
-  const { data: activity } = api.ffLeagueSession.getLogs.useQuery(
+  const { data: sessionData } = useSession();
+
+  const { data: logs } = api.ffLeagueSession.getLogs.useQuery(
     { sessionId: session?.id ?? "" },
     { enabled: !!session, staleTime: ONE_DAY_IN_SECONDS },
   );
@@ -509,6 +512,30 @@ function Activity({ session }: { session: Session }) {
     return "";
   };
 
+  function getMessage(activity: Activty) {
+    const regex = /{(STUDIO|FILM)}/g;
+    const parts = activity.message.split(regex);
+
+    return parts.map((part, index) => {
+      if (part === "STUDIO") {
+        const url =
+          activity.studio?.ownerId === sessionData?.user.id
+            ? `/fantasy-film/${activity.session.leagueId}/${activity.sessionId}?tab=my-studio`
+            : `/fantasy-film/${activity.session.leagueId}/${activity.sessionId}?tab=opposing-studios&studio=${activity.studioId}`;
+        return (
+          <Link key={index} href={url} className="text-primary font-bold">
+            {activity.studio?.name}
+          </Link>
+        );
+      }
+      // else if (part === "FILM") {
+      //   return <span className="text-primary font-bold">{activity.film?.title}</span>;
+      // }
+
+      return <span key={index}>{part}</span>;
+    });
+  }
+
   return (
     <>
       <Table>
@@ -520,11 +547,11 @@ function Activity({ session }: { session: Session }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {activity?.map((a, i) => (
+          {logs?.map((activity, i) => (
             <TableRow key={i}>
-              <TableCell className="font-medium">{format(a.timestamp, "E LLL dd h:mm aaa")}</TableCell>
-              <TableCell>{getType(a.type)}</TableCell>
-              <TableCell>{a.message}</TableCell>
+              <TableCell className="font-medium">{format(activity.timestamp, "E LLL dd h:mm aaa")}</TableCell>
+              <TableCell>{getType(activity.type)}</TableCell>
+              <TableCell>{getMessage(activity)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

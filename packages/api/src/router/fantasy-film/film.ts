@@ -1,16 +1,9 @@
-import { inferRouterOutputs } from "@trpc/server";
 import { z } from "zod";
 
 import { LeagueSessionStudio as Studio, StudioFilm } from "@repo/db";
 
 import { SESSION_ACTIVITY_TYPES, STUDIO_SLOT_TYPES } from "../../enums";
-import { AppRouter } from "../../root";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-  TRPCContext,
-} from "../../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { getByTMDBId } from "../tmdb";
 import {
   FilmScores,
@@ -29,9 +22,7 @@ type FilmWithScores = FilmWithTMDB & {
 };
 
 const swap = protectedProcedure
-  .input(
-    z.object({ studioId: z.string(), fromPos: z.number(), toPos: z.number() }),
-  )
+  .input(z.object({ studioId: z.string(), fromPos: z.number(), toPos: z.number() }))
   .mutation(async ({ ctx, input }) => {
     const inFromPos = await ctx.prisma.studioFilm.findFirst({
       where: { studioId: input.studioId, slot: input.fromPos },
@@ -49,12 +40,12 @@ const swap = protectedProcedure
 
     const session = await getSessionById(ctx, inFromPos.studio.sessionId);
     const toSlot = session?.settings.teamStructure[input.toPos - 1];
-    const filmDetails = await getByTMDBId(inFromPos.tmdbId);
     await logSessionActivity(ctx, {
       sessionId: inFromPos.studio.sessionId,
       studioId: input.studioId,
+      filmId: inFromPos.id,
       type: SESSION_ACTIVITY_TYPES.FILM_SWAP,
-      message: `${inFromPos.studio.name} SWAPPED ${filmDetails.details.title} into their ${toSlot?.type} slot`,
+      message: `{STUDIO} SWAPPED ${inFromPos.title} into their ${toSlot?.type} slot`,
     });
 
     if (inToPos) {
@@ -64,12 +55,12 @@ const swap = protectedProcedure
       });
 
       const fromSlot = session?.settings.teamStructure[input.fromPos - 1];
-      const filmDetails = await getByTMDBId(inToPos.tmdbId);
       await logSessionActivity(ctx, {
         sessionId: inFromPos.studio.sessionId,
         studioId: input.studioId,
+        filmId: inToPos.id,
         type: SESSION_ACTIVITY_TYPES.FILM_SWAP,
-        message: `${inFromPos.studio.name} SWAPPED ${filmDetails.details.title} into their ${fromSlot?.type} slot`,
+        message: `{STUDIO} SWAPPED ${inToPos.title} into their ${fromSlot?.type} slot`,
       });
     }
   });
@@ -78,11 +69,9 @@ const trade = protectedProcedure
   .input(z.object({ fromPos: z.number(), toPos: z.number() }))
   .mutation(async ({ ctx, input }) => {});
 
-const drop = protectedProcedure
-  .input(z.object({ id: z.string() }))
-  .mutation(async ({ ctx, input }) => {
-    return dropStudioFilmById(ctx, input.id);
-  });
+const drop = protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+  return dropStudioFilmById(ctx, input.id);
+});
 
 export const filmRouter = createTRPCRouter({
   swap,
@@ -92,11 +81,7 @@ export const filmRouter = createTRPCRouter({
 
 ////////////////
 
-export async function getFilmScore(
-  ctx: TRPCContext,
-  session: Session,
-  film: FilmWithScores,
-) {
+export async function getFilmScore(ctx: TRPCContext, session: Session, film: FilmWithScores) {
   let score = 0;
   if (film.scoreOverride) score = film.scoreOverride;
 
@@ -143,11 +128,11 @@ export async function dropStudioFilmById(ctx: TRPCContext, id: string) {
 
   await ctx.prisma.studioFilm.delete({ where: { id } });
 
-  const filmDetails = await getByTMDBId(film.tmdbId);
   await logSessionActivity(ctx, {
     sessionId: film.studio.sessionId,
     studioId: film.studioId,
+    filmId: film.id,
     type: SESSION_ACTIVITY_TYPES.FILM_DROP,
-    message: `${film.studio.name} DROPPED ${filmDetails.details.title}`,
+    message: `{STUDIO} DROPPED ${film.title}`,
   });
 }

@@ -9,17 +9,13 @@ const leagueSessionSettingsDraftObj = z.object({
   min: z.string().optional(),
   ampm: z.string().optional(),
   type: z.enum(toZodEnum(DRAFT_TYPES)),
-  order: z
-    .array(z.string())
-    .refine((items) => new Set(items).size === items.length, {
-      message: "Invalid draft order",
-    }),
+  order: z.array(z.string()).refine((items) => new Set(items).size === items.length, {
+    message: "Invalid draft order",
+  }),
   numRounds: z.coerce.number(),
   timePerRound: z.coerce.number(),
 });
-export type LeagueSessionSettingsDraft = z.infer<
-  typeof leagueSessionSettingsDraftObj
->;
+export type LeagueSessionSettingsDraft = z.infer<typeof leagueSessionSettingsDraftObj>;
 
 const leagueSessionSettingsObj = z.object({
   draft: leagueSessionSettingsDraftObj,
@@ -68,6 +64,7 @@ export const makePickObj = z.object({
 export const logActivityObj = z.object({
   sessionId: z.string(),
   studioId: z.string().optional(),
+  filmId: z.string().optional(),
   type: z.string(),
   message: z.string(),
 });

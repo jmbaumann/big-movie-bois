@@ -123,6 +123,7 @@ export default function AvailableFilms({
         {
           studioId,
           tmdbId: selectedFilm.id,
+          title: selectedFilm.title,
           amount: Number(bidAmount),
           slot: Number(selectedSlot),
         },

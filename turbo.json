@@ -2,6 +2,10 @@
   "$schema": "https://turborepo.org/schema.json",
   "globalDependencies": ["**/.env", "tsconfig.json"],
   "pipeline": {
+    "db:migrate": {
+      "inputs": ["prisma/schema.prisma"],
+      "cache": false
+    },
     "db:generate": {
       "inputs": ["prisma/schema.prisma"],
       "cache": false

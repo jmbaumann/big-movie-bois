@@ -86,13 +86,18 @@ model LeagueSessionActivity {
     id        String   @id @default(cuid())
     sessionId String
     studioId  String?
+    filmId    String?
     type      String
     message   String
     timestamp DateTime
 
-    session LeagueSession @relation(fields: [sessionId], references: [id])
+    session LeagueSession        @relation(fields: [sessionId], references: [id])
+    studio  LeagueSessionStudio? @relation(fields: [studioId], references: [id])
+    film    StudioFilm?          @relation(fields: [filmId], references: [id])
 
     @@index([sessionId])
+    @@index([studioId])
+    @@index([filmId])
 }
 
 model LeagueSessionStudio {
@@ -109,15 +114,16 @@ model LeagueSessionStudio {
     deletedAt DateTime?
     deletedBy String?
 
-    session        LeagueSession       @relation(fields: [sessionId], references: [id])
-    owner          User                @relation("StudioOwner", fields: [ownerId], references: [id])
-    updater        User?               @relation("StudioUpdater", fields: [updatedBy], references: [id])
-    deleter        User?               @relation("StudioDeleter", fields: [deletedBy], references: [id])
+    session        LeagueSession           @relation(fields: [sessionId], references: [id])
+    owner          User                    @relation("StudioOwner", fields: [ownerId], references: [id])
+    updater        User?                   @relation("StudioUpdater", fields: [updatedBy], references: [id])
+    deleter        User?                   @relation("StudioDeleter", fields: [deletedBy], references: [id])
     films          StudioFilm[]
     favorites      StudioFavorite[]
     bids           FilmBid[]
-    tradesOffered  FilmTradeProposal[] @relation("OfferingStudio")
-    tradesReceived FilmTradeProposal[] @relation("ReceivingStudio")
+    tradesOffered  FilmTradeProposal[]     @relation("OfferingStudio")
+    tradesReceived FilmTradeProposal[]     @relation("ReceivingStudio")
+    activity       LeagueSessionActivity[]
 
     @@index([sessionId])
     @@index([ownerId])
@@ -129,6 +135,7 @@ model StudioFilm {
     id            String    @id @default(cuid())
     studioId      String
     tmdbId        Int
+    title         String
     slot          Int
     score         Float     @default(0)
     scoreOverride Int?
@@ -136,9 +143,10 @@ model StudioFilm {
     acquiredAt    DateTime?
     droppedAt     DateTime?
 
-    studio         LeagueSessionStudio @relation(fields: [studioId], references: [id])
-    tradesOffered  FilmTradeProposal[] @relation("OfferingFilm")
-    tradesReceived FilmTradeProposal[] @relation("ReceivingFilm")
+    studio         LeagueSessionStudio     @relation(fields: [studioId], references: [id])
+    tradesOffered  FilmTradeProposal[]     @relation("OfferingFilm")
+    tradesReceived FilmTradeProposal[]     @relation("ReceivingFilm")
+    activity       LeagueSessionActivity[]
 
     @@index([studioId])
 }
@@ -158,6 +166,7 @@ model FilmBid {
     id        String   @id @default(cuid())
     studioId  String
     tmdbId    Int
+    title     String
     amount    Int
     slot      Int
     status    String

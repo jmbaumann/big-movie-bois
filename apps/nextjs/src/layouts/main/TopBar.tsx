@@ -48,25 +48,24 @@ export default function TopBar() {
         </nav>
 
         <nav className="ml-auto flex">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="bg-primary mx-2 rounded-3xl px-4 py-2 uppercase text-white no-underline lg:ml-3"
-              onClick={() => {
-                if (!sessionData?.user) signIn();
-              }}
-            >
-              {sessionData ? sessionData.user?.name : "Sign in"}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => signOut()}>Sign Out</DropdownMenuItem>
-              {sessionData?.user.isAdmin && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push("/admin")}>Admin</DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!sessionData?.user ? (
+            <Button onClick={() => signIn()}>Sign In</Button>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="bg-primary mx-2 rounded-3xl px-4 py-2 uppercase text-white no-underline lg:ml-3">
+                {sessionData.user.name}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => signOut()}>Sign Out</DropdownMenuItem>
+                {sessionData.user.isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push("/admin")}>Admin</DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </nav>
       </div>
     </header>

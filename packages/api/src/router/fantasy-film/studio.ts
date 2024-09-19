@@ -38,6 +38,7 @@ const getStudios = protectedProcedure.input(z.object({ sessionId: z.string() }))
       films: true,
     },
     orderBy: { score: "desc" },
+    take: 20,
   });
 
   for (const studio of list) await getStudioFilmsAndScore(ctx, studio, input.sessionId);

@@ -6,11 +6,14 @@ import type { League, Session } from "@repo/db";
 import { LEAGUE_INVITE_STATUSES } from "../../enums";
 // import { movieList } from "../movies";
 import type { TRPCContext } from "../../trpc";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from "../../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
+
+const getSiteWideSessions = protectedProcedure.query(async ({ ctx }) => {
+  return await ctx.prisma.leagueSession.findMany({
+    where: { leagueId: "cm18qkt8o00056e9iscpz7ym8" },
+    include: { league: true, studios: { where: { ownerId: ctx.session.user.id } } },
+  });
+});
 
 const getMyLeagues = publicProcedure.query(async ({ ctx }) => {
   const user = ctx.session?.user;
@@ -32,20 +35,18 @@ const getPublicLeagues = publicProcedure.query(({ ctx }) => {
   return [];
 });
 
-const getById = protectedProcedure
-  .input(z.object({ id: z.string() }))
-  .query(async ({ ctx, input }) => {
-    const league = await ctx.prisma.league.findFirst({
-      where: { id: input.id },
-      include: {
-        sessions: true,
-        members: { include: { user: true } },
-        invites: { include: { user: true } },
-      },
-    });
-    if (!league) return null;
-    return league;
+const getById = protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+  const league = await ctx.prisma.league.findFirst({
+    where: { id: input.id },
+    include: {
+      sessions: true,
+      members: { include: { user: true } },
+      invites: { include: { user: true } },
+    },
   });
+  if (!league) return null;
+  return league;
+});
 
 const create = protectedProcedure
   .input(
@@ -94,16 +95,14 @@ const update = protectedProcedure
     return league;
   });
 
-const getInvitesByUserId = protectedProcedure
-  .input(z.object({ userId: z.string() }))
-  .query(async ({ ctx, input }) => {
-    return await ctx.prisma.leagueInvitation.findMany({
-      where: { userId: input.userId, status: LEAGUE_INVITE_STATUSES.PENDING },
-      include: {
-        league: { select: { name: true, owner: true } },
-      },
-    });
+const getInvitesByUserId = protectedProcedure.input(z.object({ userId: z.string() })).query(async ({ ctx, input }) => {
+  return await ctx.prisma.leagueInvitation.findMany({
+    where: { userId: input.userId, status: LEAGUE_INVITE_STATUSES.PENDING },
+    include: {
+      league: { select: { name: true, owner: true } },
+    },
   });
+});
 
 const invite = protectedProcedure
   .input(z.object({ leagueId: z.string(), userId: z.string() }))
@@ -127,13 +126,11 @@ const updateInvite = protectedProcedure
     });
   });
 
-const removeInvite = protectedProcedure
-  .input(z.object({ id: z.string() }))
-  .mutation(async ({ ctx, input }) => {
-    return await ctx.prisma.leagueInvitation.delete({
-      where: { id: input.id },
-    });
+const removeInvite = protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+  return await ctx.prisma.leagueInvitation.delete({
+    where: { id: input.id },
   });
+});
 
 const addMember = protectedProcedure
   .input(
@@ -157,15 +154,14 @@ const addMember = protectedProcedure
     });
   });
 
-const removeMember = protectedProcedure
-  .input(z.object({ id: z.string() }))
-  .mutation(async ({ ctx, input }) => {
-    return await ctx.prisma.leagueMember.delete({
-      where: { id: input.id },
-    });
+const removeMember = protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+  return await ctx.prisma.leagueMember.delete({
+    where: { id: input.id },
   });
+});
 
 export const leagueRouter = createTRPCRouter({
+  getSiteWideSessions,
   getMyLeagues,
   getPublicLeagues,
   getById,
@@ -181,11 +177,7 @@ export const leagueRouter = createTRPCRouter({
 
 ////////////////
 
-export async function getLeagueByUuid(
-  ctx: TRPCContext,
-  uuid: string,
-  year?: string,
-) {
+export async function getLeagueByUuid(ctx: TRPCContext, uuid: string, year?: string) {
   const Session = year ?? String(new Date().getFullYear());
   const r: (League & Session)[] = await ctx.prisma.$queryRaw(
     Prisma.sql`SELECT * FROM "League" l LEFT JOIN "Session" ly ON l.id=ly."leagueId" WHERE l.uuid=${uuid} AND ly.year=${Session}`,
@@ -193,18 +185,13 @@ export async function getLeagueByUuid(
   return r[0] ?? undefined;
 }
 
-export async function getLeaguesForUser(
-  ctx: TRPCContext,
-  userId: string,
-  year?: string,
-) {
+export async function getLeaguesForUser(ctx: TRPCContext, userId: string, year?: string) {
   const Session = year ?? String(new Date().getFullYear());
-  const r: (League & Session & { ownerName: string })[] =
-    await ctx.prisma.$queryRaw(
-      Prisma.sql`SELECT l.*,ly.*,u.name as "ownerName" FROM "League" l 
+  const r: (League & Session & { ownerName: string })[] = await ctx.prisma.$queryRaw(
+    Prisma.sql`SELECT l.*,ly.*,u.name as "ownerName" FROM "League" l 
       LEFT JOIN "Session" ly ON l.id=ly."leagueId" 
       LEFT JOIN "User" u ON u.id=l."ownerId"
       WHERE ly.id IN (SELECT "SessionId" FROM "Studio" WHERE "ownerId"=${userId}) AND ly.year=${Session}`,
-    );
+  );
   return r ?? undefined;
 }

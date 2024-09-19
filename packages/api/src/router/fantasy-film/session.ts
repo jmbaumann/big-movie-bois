@@ -190,7 +190,7 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
       studioId: winner.studioId,
       filmId: film.id,
       type: SESSION_ACTIVITY_TYPES.BID_WON,
-      message: `{STUDIO} ADDED ${film.title} in their ${slot?.type} slot`,
+      message: `{STUDIO} ADDED ${film.title} in their ${slot?.type} slot for $${winner.amount}`,
     });
 
     if (losers?.length) {

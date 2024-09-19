@@ -1,13 +1,8 @@
-import { format } from "date-fns";
 import { z } from "zod";
 
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-  TRPCContext,
-} from "../../trpc";
-import { processSessionBids } from "./session";
+import { SESSION_ACTIVITY_TYPES } from "../../enums";
+import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
+import { logSessionActivity, processSessionBids } from "./session";
 
 const processBids = protectedProcedure
   .input(
@@ -16,6 +11,12 @@ const processBids = protectedProcedure
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    await logSessionActivity(ctx, {
+      sessionId: input.sessionId,
+      type: SESSION_ACTIVITY_TYPES.ADMIN_ACTION,
+      message: `${ctx.session.user.name} manually processed active bids`,
+    });
+
     return processSessionBids(ctx, input.sessionId, new Date());
   });
 

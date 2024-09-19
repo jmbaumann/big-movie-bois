@@ -35,7 +35,8 @@ export const SESSION_ACTIVITY_TYPES = {
   FILM_SWAP: "film-swap",
   FILM_DROP: "film-drop",
   BID_WON: "bid-won",
-  STUDIO_NAME_CHANGE: "studio-name-change",
+  STUDIO_UPDATE: "studio-update",
+  ADMIN_ACTION: "admin-action",
 } as const;
 
 export const FILM_ACQUISITION_TYPES = {

@@ -15,6 +15,7 @@ import {
   Pencil,
   Popcorn,
   Projector,
+  ShieldEllipsis,
   Shuffle,
   Sofa,
   Star,
@@ -505,6 +506,18 @@ function Activity({ session }: { session: Session }) {
         return (
           <div className="flex items-center">
             <XCircle className="mr-1 text-red-600" /> Film Dropped
+          </div>
+        );
+      case SESSION_ACTIVITY_TYPES.STUDIO_UPDATE:
+        return (
+          <div className="flex items-center">
+            <Pencil className="mr-1 text-white" /> Studio Updated
+          </div>
+        );
+      case SESSION_ACTIVITY_TYPES.ADMIN_ACTION:
+        return (
+          <div className="flex items-center">
+            <ShieldEllipsis className="mr-1 text-white" /> Admin Action
           </div>
         );
     }

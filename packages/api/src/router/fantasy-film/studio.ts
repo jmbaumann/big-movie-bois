@@ -2,12 +2,12 @@ import { z } from "zod";
 
 import { LeagueSessionStudio, Prisma } from "@repo/db";
 
-import { BID_STATUSES } from "../../enums";
+import { BID_STATUSES, SESSION_ACTIVITY_TYPES } from "../../enums";
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { getByTMDBId } from "../tmdb";
 import { getFilmScore, getFilmScores } from "./film";
 import { FilmScores } from "./score";
-import { getSessionById } from "./session";
+import { getSessionById, logSessionActivity } from "./session";
 import { createLeagueSessionStudioObj } from "./zod";
 
 type FilmWithTMDB = Awaited<ReturnType<typeof getByTMDBId>>;
@@ -105,6 +105,17 @@ const create = protectedProcedure.input(createLeagueSessionStudioObj).mutation(a
 const update = protectedProcedure
   .input(z.object({ id: z.string(), name: z.string(), image: z.string() }))
   .mutation(async ({ ctx, input }) => {
+    const old = await ctx.prisma.leagueSessionStudio.findFirst({ where: { id: input.id } });
+    if (!old) throw "No studio to update";
+
+    if (old.name !== input.name)
+      await logSessionActivity(ctx, {
+        sessionId: old.sessionId,
+        type: SESSION_ACTIVITY_TYPES.STUDIO_UPDATE,
+        studioId: input.id,
+        message: `${old.name} is now {STUDIO}`,
+      });
+
     return await ctx.prisma.leagueSessionStudio.update({
       data: {
         name: input.name,

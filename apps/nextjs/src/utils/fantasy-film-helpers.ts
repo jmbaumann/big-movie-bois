@@ -4,31 +4,32 @@ import { sub } from "date-fns";
 import { AppRouter } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { LeagueSessionSettingsDraft } from "@repo/api/src/zod";
+import { StudioFilm } from "@repo/db";
 
 type Film = TMDBDiscoverResult;
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
 type Studios = inferRouterOutputs<AppRouter>["ffStudio"]["getStudios"];
 type Studio = Studios[number] | inferRouterOutputs<AppRouter>["ffStudio"]["getMyStudio"];
-type StudioFilm = Studios[number]["films"][number];
+type StudioFilmTMDB = Studios[number]["films"][number];
 
 export function getAvailableFilms(picks: StudioFilm[], films: Film[]) {
   const takenIds = picks.map((e) => e.tmdbId);
   return films.filter((e) => !takenIds.includes(e.id));
 }
 
-export function getMostRecentAndUpcoming(films: StudioFilm[] | undefined) {
-  let mostRecent: StudioFilm | undefined;
-  let upcoming: StudioFilm | undefined;
+export function getMostRecentAndUpcoming(films: StudioFilmTMDB[] | undefined) {
+  let mostRecent: StudioFilmTMDB | undefined;
+  let upcoming: StudioFilmTMDB | undefined;
   if (!films) return { mostRecent, upcoming };
 
   const now = new Date();
 
   const sortedFilms = films.sort(
-    (a, b) => new Date(a.tmdb.details.releaseDate).getTime() - new Date(b.tmdb.details.releaseDate).getTime(),
+    (a, b) => new Date(a?.tmdb?.releaseDate ?? "").getTime() - new Date(b?.tmdb?.releaseDate ?? "").getTime(),
   );
 
   for (const film of sortedFilms) {
-    const filmDate = new Date(film.tmdb.details.releaseDate);
+    const filmDate = new Date(film?.tmdb?.releaseDate ?? "");
 
     if (filmDate <= now) mostRecent = film;
     else if (!upcoming && filmDate > now) {
@@ -40,12 +41,12 @@ export function getMostRecentAndUpcoming(films: StudioFilm[] | undefined) {
   return { mostRecent, upcoming };
 }
 
-export function isSlotLocked(film: StudioFilm | undefined) {
+export function isSlotLocked(film: StudioFilmTMDB | undefined) {
   if (!film) return false;
-  return sub(new Date(film.tmdb.details.releaseDate ?? ""), { days: 7 }).getTime() < new Date().getTime();
+  return sub(new Date(film?.tmdb?.releaseDate ?? ""), { days: 7 }).getTime() < new Date().getTime();
 }
 
-export function getFilmsReleased(films: StudioFilm[]) {
+export function getFilmsReleased(films: StudioFilmTMDB[]) {
   let total = 0;
   for (const film of films) if (isSlotLocked(film)) total++;
   return total;

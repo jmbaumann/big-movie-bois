@@ -1,6 +1,8 @@
 import { format } from "date-fns";
 import { z } from "zod";
 
+import { StudioFilm } from "@repo/db";
+
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { draftEvent } from "../../wss";
 import { getFilmsBySessionId } from "../tmdb";
@@ -72,7 +74,7 @@ const start = protectedProcedure
       newActivities: ["The draft has started!"],
     };
 
-    draftEvent<typeof draftState>(`draft:${input.sessionId}:draft-update`, draftState);
+    draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
     return input.sessionId;
   });
 
@@ -101,7 +103,6 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
   const film = await ctx.prisma.studioFilm.create({
     data: {
       tmdbId: input.tmdbId,
-      title: input.title,
       studioId: input.studioId,
       slot: input.slot,
       acquiredAt: new Date(),
@@ -124,7 +125,7 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
   const draftState = {
     sessionId: input.sessionId,
     currentPick: {
-      studioId: nextStudio?.id,
+      studioId: nextStudio!.id,
       num: sessionFilms.length + 1,
       startTimestamp: ts,
       endTimestamp: ts + session!.settings.draft.timePerRound * 1000,
@@ -133,12 +134,11 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
     lastPick: film,
   };
 
-  await draftEvent<typeof draftState>(`draft:${input.sessionId}:draft-update`, draftState);
+  await draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
   return input.sessionId;
 }
 
 export async function autoDraft(ctx: TRPCContext, sessionId: string, studioId: string, pick: number) {
-  console.log("here");
   const picks = await ctx.prisma.studioFilm.findMany({
     where: { studio: { sessionId } },
   });
@@ -148,7 +148,7 @@ export async function autoDraft(ctx: TRPCContext, sessionId: string, studioId: s
   if (!session) throw "No session";
   if (picks.length === session?.settings.draft.numRounds * session?.studios.length) return;
 
-  const films = await getFilmsBySessionId(ctx, sessionId);
+  const films = await getFilmsBySessionId(ctx, sessionId, 1);
   const unavailable = await ctx.prisma.studioFilm.findMany({
     where: { studio: { sessionId } },
     orderBy: { slot: "asc" },
@@ -162,14 +162,6 @@ export async function autoDraft(ctx: TRPCContext, sessionId: string, studioId: s
   for (const film of drafted)
     if (openSlot !== film.slot) break;
     else openSlot++;
-
-  console.log({
-    sessionId,
-    studioId,
-    tmdbId: bestAvailable.id,
-    title: bestAvailable.title,
-    slot: openSlot,
-  });
 
   await makePick(ctx, {
     sessionId,
@@ -186,3 +178,15 @@ function getStudioOwnerByPick(draftOrder: string[], pick: number) {
   const studio = round % 2 === 0 ? draftOrder[studioIndex] ?? "" : [...draftOrder].reverse()[studioIndex];
   return studio ?? "";
 }
+
+export type DraftState = {
+  sessionId: string;
+  currentPick: {
+    studioId: string;
+    num: number;
+    startTimestamp: number;
+    endTimestamp: number;
+  };
+  newActivities: string[];
+  lastPick: StudioFilm | undefined;
+};

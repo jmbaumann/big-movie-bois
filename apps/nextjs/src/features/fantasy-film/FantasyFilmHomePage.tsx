@@ -98,7 +98,8 @@ function LeagueCard({ league }: { league: League }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p>Active Session(s)</p>
+        <span>Active Session(s)</span>
+
         {league.sessions.map((session, i) => (
           <Card key={i}>
             <CardHeader>

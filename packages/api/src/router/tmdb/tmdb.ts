@@ -6,6 +6,17 @@ import {
   TMDBReleaseDatesResponse,
 } from "./types";
 
+export async function getMovieFromTMDB(id: number) {
+  const details = await getDetailsById(id);
+  const credits = await getCreditsById(id);
+  const releases = await getReleaseDatesById(id);
+  const keywords = await getKeywordsById(id);
+
+  if (!details || !credits || !releases || !keywords) throw "Bad TMDB call";
+
+  return restructure({ details, credits, releases, keywords });
+}
+
 export async function getDetailsById(id: number): Promise<TMDBDetailsResponse | undefined> {
   return await tmdb(`https://api.themoviedb.org/3/movie/${id}?language=en-US`);
 }
@@ -28,7 +39,7 @@ export async function getByDateRange(
   page: number,
 ): Promise<TMDBDiscoverResponse | undefined> {
   return await tmdb(
-    `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=${page}&primary_release_date.gte=${fromDate}&primary_release_date.lte=${toDate}&sort_by=popularity.desc`,
+    `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=${page}&primary_release_date.gte=${fromDate}&primary_release_date.lte=${toDate}&sort_by=popularity.desc&with_runtime.gte=1`,
   );
 }
 
@@ -52,4 +63,58 @@ export function getTMDBHeaders() {
     accept: "application/json",
     Authorization: `Bearer ${process.env.TMDB_READ_ACCESS_TOKEN}`,
   };
+}
+
+function restructure(movie: {
+  details: TMDBDetailsResponse;
+  credits: TMDBCreditsResponse;
+  releases: TMDBReleaseDatesResponse;
+  keywords: TMDBKeywordsResponse;
+}) {
+  const crewDict = {
+    Directing: new Set(["Director"]),
+    Editing: new Set(["Editor"]),
+    Production: new Set(["Executive Producer", "Producer"]),
+    Sound: new Set(["Original Music Composer"]),
+    Writing: new Set(["Writer"]),
+    Camera: new Set(["Director of Photography"]),
+  };
+
+  const details = {
+    id: movie.details.id,
+    imdbId: movie.details.imdb_id,
+    title: movie.details.title,
+    overview: movie.details.overview,
+    poster: movie.details.poster_path,
+    // poster: `https://image.tmdb.org/t/p/w1280/${movie.details.poster_path}`,
+    releaseDate: movie.details.release_date,
+    runtime: movie.details.runtime,
+    certification: movie.releases.results.find((e) => e.iso_3166_1 === "US")?.release_dates.find((e) => e.type === 3)
+      ?.certification,
+    budget: movie.details.budget,
+    revenue: movie.details.revenue,
+    popularity: movie.details.popularity,
+    rating: movie.details.vote_average,
+    tagline: movie.details.tagline,
+    genres: movie.details.genres.map((e) => e.name),
+    keywords: movie.keywords.keywords.map((e) => e.name).slice(0, 12),
+  };
+  const cast = movie.credits.cast.slice(0, 20).map((e) => ({
+    tmdbId: movie.details.id,
+    name: e.name,
+    image: e.profile_path,
+    // image: `https://media.themoviedb.org/t/p/w600_and_h900_bestv2/${e.profile_path}`,
+  }));
+  const crew = movie.credits.crew
+    .filter((e) => crewDict[e.department as keyof typeof crewDict]?.has(e.job))
+    .map((e) => ({
+      tmdbId: movie.details.id,
+      name: e.name,
+      department: e.department,
+      job: e.job,
+      image: e.profile_path,
+      // image: `https://media.themoviedb.org/t/p/w600_and_h900_bestv2/${e.profile_path}`,
+    }));
+
+  return { details, cast, crew };
 }

@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { CalendarDays, Home, Shield, User } from "lucide-react";
 
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
+import OverlapAdmin from "./OverlapAdmin";
 
 export default function AdminDashboard() {
+  const router = useRouter();
+
   const tabs = [
     { icon: <Home />, value: "home" },
     { icon: <User />, value: "users" },
@@ -26,15 +30,31 @@ export default function AdminDashboard() {
       { label: "Film Data", value: "film-data", component: <FilmData /> },
       { label: "Public Sessions", value: "public-sessions", component: <PublicSessions /> },
     ],
-    dailys: [{ label: "Overlap", value: "overlap", component: <Overlap /> }],
+    dailys: [{ label: "Overlap", value: "overlap", component: <OverlapAdmin /> }],
   };
 
-  const [activeTab, setActiveTab] = useState("home");
-  const [activeSubMenu, setActiveSubMenu] = useState("analytics");
+  const [activeTab, setActiveTab] = useState((router.query.tab as string) || "home");
+  const [activeSubMenu, setActiveSubMenu] = useState((router.query.menu as string) || "analytics");
 
   useEffect(() => {
-    setActiveSubMenu(subMenu[activeTab as keyof typeof subMenu][0]?.value ?? "");
-  }, [activeTab]);
+    const urlTab = router.query.tab as string;
+    const urlMenu = router.query.menu as string;
+
+    const validSubMenu = !!subMenu[activeTab as keyof typeof subMenu]?.find((e) => e.value === activeSubMenu);
+    const sm = validSubMenu ? activeSubMenu : subMenu[activeTab as keyof typeof subMenu][0]!.value;
+
+    if (!validSubMenu) setActiveSubMenu(sm);
+
+    if (activeTab !== urlTab || !validSubMenu || urlMenu !== sm) {
+      void router.replace(
+        {
+          query: { tab: activeTab, menu: sm },
+        },
+        undefined,
+        { shallow: true },
+      );
+    }
+  }, [router.query, activeTab, activeSubMenu]);
 
   return (
     <div className="flex gap-x-2 px-2">
@@ -65,7 +85,7 @@ export default function AdminDashboard() {
           ))}
         </div>
       )}
-      <div className="flex flex-col">
+      <div className="flex max-h-[calc(100vh-70px)] grow flex-col overflow-y-scroll px-4">
         {subMenu[activeTab as keyof typeof subMenu].find((e) => e.value === activeSubMenu)?.component}
       </div>
     </div>
@@ -98,8 +118,4 @@ function FilmData() {
 
 function PublicSessions() {
   return <p>PublicSessions</p>;
-}
-
-function Overlap() {
-  return <p>Overlap</p>;
 }

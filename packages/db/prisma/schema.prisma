@@ -11,6 +11,54 @@ datasource db {
     relationMode = "prisma"
 }
 
+model TMDBDetails {
+    id            Int      @id
+    imdbId        String
+    title         String
+    overview      String
+    poster        String
+    releaseDate   String
+    runtime       Int
+    certification String?
+    budget        Int
+    revenue       Int
+    popularity    Float
+    rating        Float
+    tagline       String
+    genres        String[]
+    keywords      String[]
+
+    cast           TMDBCast[]
+    crew           TMDBCrew[]
+    studioFilms    StudioFilm[]
+    filmBids       FilmBid[]
+    overlapAnswers OverlapAnswer[]
+}
+
+model TMDBCast {
+    id     String  @id @default(cuid())
+    tmdbId Int
+    name   String
+    image  String?
+
+    tmdb TMDBDetails @relation(fields: [tmdbId], references: [id])
+
+    @@index([tmdbId])
+}
+
+model TMDBCrew {
+    id         String  @id @default(cuid())
+    tmdbId     Int
+    name       String
+    image      String?
+    department String
+    job        String
+
+    tmdb TMDBDetails @relation(fields: [tmdbId], references: [id])
+
+    @@index([tmdbId])
+}
+
 model League {
     id        String    @id @default(cuid())
     uuid      String    @unique @default(uuid())
@@ -135,7 +183,6 @@ model StudioFilm {
     id            String    @id @default(cuid())
     studioId      String
     tmdbId        Int
-    title         String
     slot          Int
     score         Float     @default(0)
     scoreOverride Int?
@@ -144,11 +191,13 @@ model StudioFilm {
     droppedAt     DateTime?
 
     studio         LeagueSessionStudio     @relation(fields: [studioId], references: [id])
+    tmdb           TMDBDetails             @relation(fields: [tmdbId], references: [id])
     tradesOffered  FilmTradeProposal[]     @relation("OfferingFilm")
     tradesReceived FilmTradeProposal[]     @relation("ReceivingFilm")
     activity       LeagueSessionActivity[]
 
     @@index([studioId])
+    @@index([tmdbId])
 }
 
 model StudioFavorite {
@@ -166,16 +215,17 @@ model FilmBid {
     id        String   @id @default(cuid())
     studioId  String
     tmdbId    Int
-    title     String
     amount    Int
     slot      Int
     status    String
     createdAt DateTime
 
     studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
+    tmdb   TMDBDetails         @relation(fields: [tmdbId], references: [id])
 
     @@unique([studioId, tmdbId])
     @@index([studioId])
+    @@index([tmdbId])
 }
 
 model FilmTradeProposal {
@@ -200,6 +250,30 @@ model FilmTradeProposal {
     @@index([offeringFilmId])
     @@index([receivingStudioId])
     @@index([receivingFilmId])
+}
+
+model OverlapAnswer {
+    id     String @id @default(cuid())
+    date   String @unique()
+    tmdbId Int
+
+    tmdb    TMDBDetails     @relation(fields: [tmdbId], references: [id])
+    results OverlapResult[]
+
+    @@index([tmdbId])
+}
+
+model OverlapResult {
+    id         String @id @default(cuid())
+    answerId   String
+    userId     String
+    numGuesses Int
+
+    answer OverlapAnswer @relation(fields: [answerId], references: [id])
+    user   User          @relation(fields: [userId], references: [id])
+
+    @@index([answerId])
+    @@index([userId])
 }
 
 // Necessary for Next auth
@@ -252,6 +326,7 @@ model User {
     leaguesDeleted    League[]              @relation("LeagueDeleter")
     studiosUpdated    LeagueSessionStudio[] @relation("StudioUpdater")
     studiosDeleted    LeagueSessionStudio[] @relation("StudioDeleter")
+    overlapResults    OverlapResult[]
 }
 
 model VerificationToken {

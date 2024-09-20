@@ -1,10 +1,9 @@
 import { z } from "zod";
 
-import { LeagueSessionStudio as Studio, StudioFilm } from "@repo/db";
+import { Prisma } from "@repo/db";
 
 import { SESSION_ACTIVITY_TYPES, STUDIO_SLOT_TYPES } from "../../enums";
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
-import { getByTMDBId } from "../tmdb";
 import {
   FilmScores,
   getOpeningWeekendBoxOfficeScore,
@@ -15,8 +14,9 @@ import {
 import { getSessionById, logSessionActivity } from "./session";
 
 type Session = Awaited<ReturnType<typeof getSessionById>>;
-type TMDBDetails = Awaited<ReturnType<typeof getByTMDBId>>;
-type FilmWithTMDB = StudioFilm & { tmdb: TMDBDetails };
+type FilmWithTMDB = Prisma.StudioFilmGetPayload<{
+  include: { tmdb: true };
+}>;
 type FilmWithScores = FilmWithTMDB & {
   scores: FilmScores;
 };
@@ -43,9 +43,9 @@ const swap = protectedProcedure
     await logSessionActivity(ctx, {
       sessionId: inFromPos.studio.sessionId,
       studioId: input.studioId,
-      filmId: inFromPos.id,
+      tmdbId: inFromPos.tmdbId,
       type: SESSION_ACTIVITY_TYPES.FILM_SWAP,
-      message: `{STUDIO} SWAPPED ${inFromPos.title} into their ${toSlot?.type} slot`,
+      message: `{STUDIO} SWAPPED {FILM} into their ${toSlot?.type} slot`,
     });
 
     if (inToPos) {
@@ -58,9 +58,9 @@ const swap = protectedProcedure
       await logSessionActivity(ctx, {
         sessionId: inFromPos.studio.sessionId,
         studioId: input.studioId,
-        filmId: inToPos.id,
+        tmdbId: inToPos.tmdbId,
         type: SESSION_ACTIVITY_TYPES.FILM_SWAP,
-        message: `{STUDIO} SWAPPED ${inToPos.title} into their ${fromSlot?.type} slot`,
+        message: `{STUDIO} SWAPPED {FILM} into their ${fromSlot?.type} slot`,
       });
     }
   });
@@ -131,8 +131,8 @@ export async function dropStudioFilmById(ctx: TRPCContext, id: string) {
   await logSessionActivity(ctx, {
     sessionId: film.studio.sessionId,
     studioId: film.studioId,
-    filmId: film.id,
+    tmdbId: film.tmdbId,
     type: SESSION_ACTIVITY_TYPES.FILM_DROP,
-    message: `{STUDIO} DROPPED ${film.title}`,
+    message: `{STUDIO} DROPPED {FILM}`,
   });
 }

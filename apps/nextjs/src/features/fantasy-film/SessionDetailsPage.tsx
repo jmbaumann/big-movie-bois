@@ -247,13 +247,13 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
                 {mostRecent && (
                   <div className="ml-auto">
                     <p>Most Recent</p>
-                    <p className="text-lg text-white">{mostRecent.tmdb.details.title}</p>
+                    <p className="text-lg text-white">{mostRecent.tmdb?.title}</p>
                   </div>
                 )}
                 {upcoming && (
                   <div className="ml-auto">
                     <p>Upcoming</p>
-                    <p className="text-lg text-white">{upcoming.tmdb.details.title}</p>
+                    <p className="text-lg text-white">{upcoming.tmdb?.title}</p>
                   </div>
                 )}
               </CardDescription>
@@ -366,13 +366,13 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
             {mostRecent && (
               <div className="ml-auto">
                 <p>Most Recent</p>
-                <p className="text-lg text-white">{mostRecent.tmdb.details.title}</p>
+                <p className="text-lg text-white">{mostRecent.tmdb?.title}</p>
               </div>
             )}
             {upcoming && (
               <div className="ml-auto">
                 <p>Most Recent</p>
-                <p className="text-lg text-white">{upcoming.tmdb.details.title}</p>
+                <p className="text-lg text-white">{upcoming.tmdb?.title}</p>
               </div>
             )}
           </CardDescription>
@@ -385,7 +385,7 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
                 <p className="text-sm text-slate-400">{slot.type}</p>
                 {film ? (
                   <>
-                    <p className="text-xl">{film?.tmdb.details.title}</p>
+                    <p className="text-xl">{film?.tmdb?.title}</p>
                     <p className="text-primary text-lg font-bold">{film?.score} pts</p>
                   </>
                 ) : (
@@ -421,9 +421,6 @@ function Films({ session }: { session: Session }) {
 
   const acquiredIds = acquiredFilms?.map((e) => e.tmdbId);
   const available = films.filter((e) => !acquiredIds?.includes(e.id));
-
-  console.log(films.length);
-  console.log(available.length);
 
   const myStudio = session?.studios.find((e) => e.ownerId === sessionData?.user.id);
 
@@ -491,7 +488,7 @@ function Bids({ session }: { session: Session }) {
 
       {bids?.map((bid, i) => (
         <div key={i}>
-          {bid.studio.name} - {bid.film.details.title} - ${bid.amount}
+          {bid.studio.name} - {bid.tmdb.title} - ${bid.amount}
         </div>
       ))}
     </>

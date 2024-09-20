@@ -30,12 +30,12 @@ type Studio = Prisma.LeagueSessionStudioGetPayload<{
 
 const getStudios = protectedProcedure.input(z.object({ sessionId: z.string() })).query(async ({ ctx, input }) => {
   const list = await ctx.prisma.leagueSessionStudio.findMany({
-    where: {
-      sessionId: input.sessionId,
-    },
     include: {
       owner: { select: { name: true } },
-      films: true,
+      films: { include: { tmdb: true } },
+    },
+    where: {
+      sessionId: input.sessionId,
     },
     orderBy: { score: "desc" },
     take: 20,
@@ -50,12 +50,12 @@ const getStudios = protectedProcedure.input(z.object({ sessionId: z.string() }))
 
 const getMyStudio = protectedProcedure.input(z.object({ sessionId: z.string() })).query(async ({ ctx, input }) => {
   const studio = await ctx.prisma.leagueSessionStudio.findFirst({
+    include: {
+      films: { include: { tmdb: true } },
+    },
     where: {
       sessionId: input.sessionId,
       ownerId: ctx.session.user.id,
-    },
-    include: {
-      films: true,
     },
   });
   if (!studio) throw "No studio found";
@@ -69,10 +69,10 @@ const getOpposingStudios = protectedProcedure
   .input(z.object({ sessionId: z.string() }))
   .query(async ({ ctx, input }) => {
     const list = await ctx.prisma.leagueSessionStudio.findMany({
+      include: { films: { include: { tmdb: true } } },
       where: {
         sessionId: input.sessionId,
       },
-      include: { films: true },
       orderBy: { score: "desc" },
     });
 
@@ -217,7 +217,7 @@ export const studioRouter = createTRPCRouter({
 async function getStudioFilmsAndScore(
   ctx: TRPCContext,
   studio: Prisma.LeagueSessionStudioGetPayload<{
-    include: { films: true };
+    include: { films: { include: { tmdb: true } } };
   }>,
   sessionId: string,
 ) {
@@ -226,16 +226,13 @@ async function getStudioFilmsAndScore(
   if (studio && studio.films.length > 0)
     studio.films = await Promise.all(
       studio.films.map(async (film) => {
-        const tmdb = await getByTMDBId(film.tmdbId);
-        const scores = await getFilmScores({ ...film, tmdb });
+        const scores = await getFilmScores({ ...film });
         const score = await getFilmScore(ctx, session!, {
           ...film,
-          tmdb,
           scores,
         });
         return {
           ...film,
-          tmdb,
           scores,
           score,
         };

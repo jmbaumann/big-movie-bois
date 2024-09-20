@@ -3,7 +3,15 @@ import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure, TRPCContext } from "../../trpc";
 import { tmdbCertifications, tmdbCredits, tmdbDetails, tmdbKeywords } from "../daily-games/overlap/movieDataLL";
-import { getByDateRange, getCreditsById, getDetailsById, getKeywordsById, getReleaseDatesById, tmdb } from "./tmdb";
+import {
+  getByDateRange,
+  getCreditsById,
+  getDetailsById,
+  getKeywordsById,
+  getMovieFromTMDB,
+  getReleaseDatesById,
+  tmdb,
+} from "./tmdb";
 import {
   TMDBCreditsResponse,
   TMDBDetailsResponse,
@@ -35,7 +43,7 @@ const search = publicProcedure.input(z.object({ keyword: z.string() })).query(as
 });
 
 const getById = publicProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
-  return getByTMDBId(input.id);
+  return getByTMDBId(ctx, input.id);
 });
 
 const getFilmsForSession = publicProcedure
@@ -52,15 +60,16 @@ export const tmdbRouter = createTRPCRouter({
 
 ////////////////
 
-export async function getByTMDBId(id: number) {
-  const details = await getDetailsById(id);
-  const credits = await getCreditsById(id);
-  const releases = await getReleaseDatesById(id);
-  const keywords = await getKeywordsById(id);
+export async function getByTMDBId(ctx: TRPCContext, id: number) {
+  const film = await ctx.prisma.tMDBDetails.findFirst({ include: { cast: true, crew: true }, where: { id } });
+  if (film) return film;
 
-  if (!details || !credits || !releases || !keywords) throw "Bad TMDB call";
+  const tmdb = await getMovieFromTMDB(id);
+  await ctx.prisma.tMDBDetails.create({ data: tmdb.details });
+  await ctx.prisma.tMDBCast.createMany({ data: tmdb.cast });
+  await ctx.prisma.tMDBCrew.createMany({ data: tmdb.crew });
 
-  return restructure({ details, credits, releases, keywords });
+  return await ctx.prisma.tMDBDetails.findFirst({ include: { cast: true, crew: true }, where: { id } });
 }
 
 export async function getFilmsBySessionId(ctx: TRPCContext, sessionId: string, page: number, today?: boolean) {
@@ -74,40 +83,4 @@ export async function getFilmsBySessionId(ctx: TRPCContext, sessionId: string, p
     : format(session.startDate, "yyyy-MM-dd");
 
   return getByDateRange(fromDate, format(session.endDate, "yyyy-MM-dd"), page);
-}
-
-function restructure(movie: {
-  details: TMDBDetailsResponse;
-  credits: TMDBCreditsResponse;
-  releases: TMDBReleaseDatesResponse;
-  keywords: TMDBKeywordsResponse;
-}) {
-  const details = {
-    id: movie.details.id,
-    title: movie.details.title,
-    overview: movie.details.overview,
-    releaseDate: movie.details.release_date,
-    releaseYear: format(movie.details.release_date, "yyyy"),
-    genres: movie.details.genres.map((e) => e.name),
-    runtime: movie.details.runtime,
-    rating: movie.releases.results.find((e) => e.iso_3166_1 === "US")?.release_dates.find((e) => e.type === 3)
-      ?.certification,
-    budget: movie.details.budget,
-    revenue: movie.details.revenue,
-    score: movie.details.vote_average,
-    keywords: movie.keywords.keywords.map((e) => e.name).slice(0, 12),
-    poster: `https://image.tmdb.org/t/p/w1280/${movie.details.poster_path}`,
-  };
-  const cast = movie.credits.cast.map((e) => ({
-    name: e.name,
-    image: `https://media.themoviedb.org/t/p/w600_and_h900_bestv2/${e.profile_path}`,
-  }));
-  const crew = movie.credits.crew.map((e) => ({
-    name: e.name,
-    department: e.department,
-    job: e.job,
-    image: `https://media.themoviedb.org/t/p/w600_and_h900_bestv2/${e.profile_path}`,
-  }));
-
-  return { details, cast, crew };
 }

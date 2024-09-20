@@ -1,35 +1,26 @@
-import { inferRouterOutputs } from "@trpc/server";
+import { format } from "date-fns";
 
-import { AppRouter } from "@repo/api";
+import { RouterOutputs } from "@repo/api";
 
 import { OverlapGameState } from "~/store/overlap";
 import { toMoney } from ".";
 
-type OverlapMovie = inferRouterOutputs<AppRouter>["overlap"]["todaysMovie"];
+type TMDBMovie = NonNullable<RouterOutputs["tmdb"]["getById"]>;
 
-export function findOverlap(
-  answerMovie: OverlapMovie,
-  guessMovies: OverlapMovie[],
-) {
+export function findOverlap(answerMovie: TMDBMovie, guessMovies: TMDBMovie[]) {
   const answer = restructure(answerMovie);
   const guesses = guessMovies.map((e) => restructure(e));
 
   const titlesArray = guesses.map((e) => e.title);
-  const yearsArray = guesses.map((e) => Number(e.releaseYear));
+  const yearsArray = guesses.map((e) => Number(format(e.releaseDate, "yyyy")));
   const runtimesArray = guesses.map((e) => e.runtime);
-  const ratingsArray = guesses.map((e) => e.rating!);
+  const certificationsArray = guesses.map((e) => e.certification!);
   const budgetsArray = guesses.map((e) => e.budget);
   const revenuesArray = guesses.map((e) => e.revenue);
 
-  const guessedDirectors = new Set(
-    guesses.map((e) => e.directors.map((d) => d.name)).flat(),
-  );
-  const guessedWriters = new Set(
-    guesses.map((e) => e.writers.map((w) => w.name)).flat(),
-  );
-  const guessedCast = new Set(
-    guesses.map((e) => e.cast.map((c) => c.name)).flat(),
-  );
+  const guessedDirectors = new Set(guesses.map((e) => e.directors.map((d) => d.name)).flat());
+  const guessedWriters = new Set(guesses.map((e) => e.writers.map((w) => w.name)).flat());
+  const guessedCast = new Set(guesses.map((e) => e.cast.map((c) => c.name)).flat());
   const guessedGenres = new Set(guesses.map((e) => e.genres).flat());
   const guessedKeywords = new Set(guesses.map((e) => e.keywords).flat());
 
@@ -76,10 +67,10 @@ export function findOverlap(
       }),
     },
     releaseYear: {
-      value: answer.releaseYear,
-      revealed: new Set(yearsArray).has(Number(answer.releaseYear)),
-      gt: findClosest(yearsArray, Number(answer.releaseYear), { flag: "gt" }),
-      lt: findClosest(yearsArray, Number(answer.releaseYear), { flag: "lt" }),
+      value: format(answer.releaseDate, "yyyy"),
+      revealed: new Set(yearsArray).has(Number(format(answer.releaseDate, "yyyy"))),
+      gt: findClosest(yearsArray, Number(format(answer.releaseDate, "yyyy")), { flag: "gt" }),
+      lt: findClosest(yearsArray, Number(format(answer.releaseDate, "yyyy")), { flag: "lt" }),
     },
     runtime: {
       value: `${answer.runtime} mins`,
@@ -87,11 +78,11 @@ export function findOverlap(
       gt: findClosest(runtimesArray, answer.runtime, { flag: "gt" }),
       lt: findClosest(runtimesArray, answer.runtime, { flag: "lt" }),
     },
-    rating: {
-      value: answer.rating,
-      revealed: new Set(ratingsArray).has(answer.rating!),
-      // gt: findClosest(ratingsArray, answer.rating, {flag: "gt"}),
-      // lt: findClosest(ratingsArray, answer.rating, {flag: "lt"}),
+    certification: {
+      value: String(answer.certification),
+      revealed: new Set(certificationsArray).has(answer.certification!),
+      // gt: findClosest(certificationsArray, answer.certification, {flag: "gt"}),
+      // lt: findClosest(certificationsArray, answer.certification, {flag: "lt"}),
     },
     budget: {
       value: toMoney(answer.budget),
@@ -136,17 +127,13 @@ function findClosest(
     checkEqual?: boolean;
   },
 ): number | string | undefined {
-  const targetValue =
-    typeof answer === "string" && Number.isInteger(answer)
-      ? Number(answer)
-      : answer;
+  const targetValue = typeof answer === "string" && Number.isInteger(answer) ? Number(answer) : answer;
 
   let closestValue: number | string | undefined = undefined;
   let closestDifference = Infinity;
 
   for (const item of guesses) {
-    const currentValue =
-      typeof item === "string" && Number.isInteger(item) ? Number(item) : item;
+    const currentValue = typeof item === "string" && Number.isInteger(item) ? Number(item) : item;
 
     if (
       (options.flag === "gt" && currentValue > targetValue) ||
@@ -173,18 +160,17 @@ function findClosest(
     }
   }
 
-  if (options.checkEqual)
-    return closestDifference === 0 ? closestValue : undefined;
+  if (options.checkEqual) return closestDifference === 0 ? closestValue : undefined;
 
   return closestValue;
 }
 
-function restructure(movie: OverlapMovie) {
-  const directors = movie.crew.filter((e) => e.job === "Director");
-  const writers = movie.crew.filter((e) => e.department === "Writing");
+function restructure(movie: TMDBMovie) {
+  const directors = movie?.crew.filter((e) => e.job === "Director");
+  const writers = movie?.crew.filter((e) => e.department === "Writing");
   return {
-    ...movie.details,
-    cast: movie.cast,
+    ...movie,
+    cast: movie?.cast,
     directors,
     writers,
   };

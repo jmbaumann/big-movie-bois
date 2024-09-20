@@ -1,19 +1,13 @@
-import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
 import { z } from "zod";
 
-import { FilmBid, StudioFilm } from "@repo/db";
+import { FilmBid } from "@repo/db";
 
 import { BID_STATUSES, FILM_ACQUISITION_TYPES, SESSION_ACTIVITY_TYPES } from "../../enums";
-import { AppRouter } from "../../root";
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
-import { getByTMDBId } from "../tmdb";
 import { dropStudioFilmById } from "./film";
 import { createManyStudios } from "./studio";
 import { createLeagueSessionInputObj, LeagueSessionSettings, logActivityObj, updateLeagueSessionInputObj } from "./zod";
-
-type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
-type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
 
 const getById = protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
   return await getSessionById(ctx, input.id);
@@ -65,11 +59,10 @@ const getAcquiredFilms = protectedProcedure
   .input(z.object({ sessionId: z.string(), includeDetails: z.boolean().optional() }))
   .query(async ({ ctx, input }) => {
     const list = await ctx.prisma.studioFilm.findMany({
+      include: { tmdb: true },
       where: { studio: { sessionId: { equals: input.sessionId } } },
     });
     if (!input.includeDetails) return list;
-
-    for (const film of list as StudioFilmDetails[]) film.tmdb = await getByTMDBId(film.tmdbId);
 
     return list;
   });
@@ -82,20 +75,13 @@ const getStandings = protectedProcedure.input(z.object({ sessionId: z.string() }
 });
 
 const getBids = protectedProcedure.input(z.object({ sessionId: z.string() })).query(async ({ ctx, input }) => {
-  return await Promise.all(
-    (
-      await ctx.prisma.filmBid.findMany({
-        where: {
-          studio: { sessionId: input.sessionId },
-          status: BID_STATUSES.PENDING,
-        },
-        include: { studio: { select: { name: true } } },
-      })
-    ).map(async (bid) => ({
-      ...bid,
-      film: await getByTMDBId(bid.tmdbId),
-    })),
-  );
+  return await ctx.prisma.filmBid.findMany({
+    include: { tmdb: true, studio: { select: { name: true } } },
+    where: {
+      studio: { sessionId: input.sessionId },
+      status: BID_STATUSES.PENDING,
+    },
+  });
 });
 
 const getLogs = protectedProcedure.input(z.object({ sessionId: z.string() })).query(async ({ ctx, input }) => {
@@ -120,11 +106,11 @@ export const leagueSessionRouter = createTRPCRouter({
 
 export async function getSessionById(ctx: TRPCContext, id: string) {
   const session = await ctx.prisma.leagueSession.findFirst({
-    where: { id },
     include: {
       studios: { orderBy: { score: "desc" } },
       league: { select: { ownerId: true } },
     },
+    where: { id },
   });
   if (!session) return null;
   return {
@@ -140,6 +126,7 @@ export async function logSessionActivity(ctx: TRPCContext, input: z.infer<typeof
 
 export async function processSessionBids(ctx: TRPCContext, sessionId: string, timestamp: Date) {
   const bids = await ctx.prisma.filmBid.findMany({
+    include: { tmdb: true },
     where: {
       studio: { sessionId },
       status: BID_STATUSES.PENDING,
@@ -175,7 +162,6 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
     const film = await ctx.prisma.studioFilm.create({
       data: {
         tmdbId: winner.tmdbId!,
-        title: winner.title!,
         studioId: winner.studioId!,
         slot: winner.slot!,
         acquiredAt: new Date(),
@@ -188,9 +174,9 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
     await logSessionActivity(ctx, {
       sessionId,
       studioId: winner.studioId,
-      filmId: film.id,
+      tmdbId: film.tmdbId,
       type: SESSION_ACTIVITY_TYPES.BID_WON,
-      message: `{STUDIO} ADDED ${film.title} in their ${slot?.type} slot for $${winner.amount}`,
+      message: `{STUDIO} ADDED {FILM} in their ${slot?.type} slot for $${winner.amount}`,
     });
 
     if (losers?.length) {

@@ -64,7 +64,7 @@ export const makePickObj = z.object({
 export const logActivityObj = z.object({
   sessionId: z.string(),
   studioId: z.string().optional(),
-  filmId: z.string().optional(),
+  tmdbId: z.number().optional(),
   type: z.string(),
   message: z.string(),
 });

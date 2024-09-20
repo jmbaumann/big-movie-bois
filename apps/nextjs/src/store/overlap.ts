@@ -18,7 +18,7 @@ export interface OverlapGameState {
   title: OverlapAnswerDetails;
   releaseYear: OverlapAnswerDetails;
   runtime: OverlapAnswerDetails;
-  rating: OverlapAnswerDetails;
+  certification: OverlapAnswerDetails;
   budget: OverlapAnswerDetails;
   revenue: OverlapAnswerDetails;
   directors: OverlapAnswerDetails[];
@@ -159,8 +159,5 @@ function saveState(state: OverlapGameData) {
     if (gs.stats.gamesPlayed > 0 && state.stats.gamesPlayed === 0) return;
   }
 
-  localStorage.setItem(
-    LOCAL_STOREAGE_KEY,
-    JSON.stringify({ ...state, timestamp: new Date().getTime() }),
-  );
+  localStorage.setItem(LOCAL_STOREAGE_KEY, JSON.stringify({ ...state, timestamp: new Date().getTime() }));
 }

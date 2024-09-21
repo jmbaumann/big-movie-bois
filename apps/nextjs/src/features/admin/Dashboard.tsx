@@ -4,6 +4,7 @@ import { CalendarDays, Home, Shield, User } from "lucide-react";
 
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
+import FilmDataAdmin from "./FilmData";
 import OverlapAdmin from "./OverlapAdmin";
 import PublicSessionsAdmin from "./PublicSessions";
 
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
       { label: "Supporters", value: "supporters", component: <Supporters /> },
     ],
     fantasy: [
-      { label: "Film Data", value: "film-data", component: <FilmData /> },
+      { label: "Film Data", value: "film-data", component: <FilmDataAdmin /> },
       { label: "Public Sessions", value: "public-sessions", component: <PublicSessionsAdmin /> },
     ],
     dailys: [{ label: "Overlap", value: "overlap", component: <OverlapAdmin /> }],
@@ -111,8 +112,4 @@ function Users() {
 
 function Supporters() {
   return <p>Supporters</p>;
-}
-
-function FilmData() {
-  return <p>FilmData</p>;
 }

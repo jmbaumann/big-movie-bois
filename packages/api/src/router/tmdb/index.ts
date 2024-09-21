@@ -1,6 +1,8 @@
 import { add, format, nextTuesday } from "date-fns";
 import { z } from "zod";
 
+import { Prisma } from "@repo/db";
+
 import { createTRPCRouter, publicProcedure, TRPCContext } from "../../trpc";
 import { tmdbCertifications, tmdbCredits, tmdbDetails, tmdbKeywords } from "../daily-games/overlap/movieDataLL";
 import {
@@ -52,10 +54,41 @@ const getFilmsForSession = publicProcedure
     return await getFilmsBySessionId(ctx, input.sessionId, input.page, input.today);
   });
 
+const get = publicProcedure.input(z.object({})).query(
+  async ({ ctx, input }) =>
+    await ctx.prisma.tMDBDetails.findMany({
+      include: { cast: true, crew: true },
+      where: {
+        studioFilms: {
+          some: {
+            studio: {
+              session: {
+                AND: [
+                  {
+                    startDate: {
+                      lte: new Date(),
+                    },
+                  },
+                  {
+                    endDate: {
+                      gte: new Date(),
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      orderBy: { releaseDate: "asc" },
+    }),
+);
+
 export const tmdbRouter = createTRPCRouter({
   search,
   getById,
   getFilmsForSession,
+  get,
 });
 
 ////////////////

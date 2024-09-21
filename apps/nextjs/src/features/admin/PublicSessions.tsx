@@ -1,30 +1,22 @@
-import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, sub } from "date-fns";
-import { CalendarIcon, ChevronsUpDown, Pencil, Trash, X } from "lucide-react";
+import { format } from "date-fns";
+import { Pencil, Trash, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "@repo/api/src/enums";
 import { LeagueSessionSettings, updateLeagueSessionInputObj } from "@repo/api/src/router/fantasy-film/zod";
-import { createLeagueSessionInputObj } from "@repo/api/src/zod";
 import { LeagueSession } from "@repo/db";
 
-import { api, RouterOutputs } from "~/utils/api";
+import { api } from "~/utils/api";
 import { useArray } from "~/utils/hooks/use-array";
-import { cn } from "~/utils/shadcn";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
 import { Button } from "~/components/ui/button";
-import { Calendar } from "~/components/ui/calendar";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form";
+import { Form } from "~/components/ui/form";
 import { useToast } from "~/components/ui/hooks/use-toast";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
-import { DetailsSection, DraftSection, MembersSection } from "~/features/fantasy-film/forms/Session";
+import { DetailsSection } from "~/features/fantasy-film/forms/Session";
 import { ONE_DAY_IN_SECONDS } from "~/utils";
-
-type OverlapAnswer = RouterOutputs["overlap"]["getAnswers"][number];
 
 export default function PublicSessionsAdmin() {
   const { toast } = useToast();

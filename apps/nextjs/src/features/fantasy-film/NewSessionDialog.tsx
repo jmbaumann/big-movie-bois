@@ -34,53 +34,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "~/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "~/components/ui/form";
 import { useToast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { DetailsSection, DraftSection, MembersSection } from "./forms/Session";
 
 type Steps = "details" | "draft" | "members";
 type League = inferRouterOutputs<AppRouter>["ffLeague"]["getById"];
 
-export default function NewSessionDialog({
-  className,
-  league,
-}: {
-  className: string;
-  league: League;
-}) {
+export default function NewSessionDialog({ className, league }: { className: string; league: League }) {
   const { data: sessionData } = useSession();
   const router = useRouter();
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState<Steps>("details");
-  const sessionMembers = useArray<string>(
-    league?.members.map((e) => e.userId) ?? [],
-  );
+  const sessionMembers = useArray<string>(league?.members.map((e) => e.userId) ?? []);
 
-  const { isLoading, mutate: createSession } =
-    api.ffLeagueSession.create.useMutation();
+  const { isLoading, mutate: createSession } = api.ffLeagueSession.create.useMutation();
 
   const formSchema = createLeagueSessionInputObj;
 
@@ -106,9 +81,9 @@ export default function NewSessionDialog({
           { type: STUDIO_SLOT_TYPES.TOTAL_BOX_OFFICE, pos: 1 },
           { type: STUDIO_SLOT_TYPES.OPENING_WEEKEND_BOX_OFFICE, pos: 2 },
           { type: STUDIO_SLOT_TYPES.OPENING_WEEKEND_BOX_OFFICE, pos: 3 },
-          { type: STUDIO_SLOT_TYPES.IMDB_RATING, pos: 4 },
-          { type: STUDIO_SLOT_TYPES.IMDB_RATING, pos: 5 },
-          { type: STUDIO_SLOT_TYPES.REVERSE_IMDB_RATING, pos: 6 },
+          { type: STUDIO_SLOT_TYPES.TMDB_RATING, pos: 4 },
+          { type: STUDIO_SLOT_TYPES.TMDB_RATING, pos: 5 },
+          { type: STUDIO_SLOT_TYPES.REVERSE_TMDB_RATING, pos: 6 },
         ],
       },
     },
@@ -139,9 +114,7 @@ export default function NewSessionDialog({
       case "details":
         return <DetailsSection />;
       case "members":
-        return (
-          <MembersSection league={league} sessionMembers={sessionMembers} />
-        );
+        return <MembersSection league={league} sessionMembers={sessionMembers} />;
       case "draft":
         return <DraftSection league={league} sessionMembers={sessionMembers} />;
     }
@@ -173,10 +146,7 @@ export default function NewSessionDialog({
       </DialogTrigger>
 
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit, onInvalid)}
-          className="mt-4 space-y-8"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="mt-4 space-y-8">
           <DialogContent
             className="max-w-2/3 max-h-[90%] w-2/3 overflow-y-auto"
             onPointerDownOutside={(event) => event.preventDefault()} // Prevent closing on outside click
@@ -189,27 +159,15 @@ export default function NewSessionDialog({
               <Breadcrumb className="text-gray-400">
                 <BreadcrumbList>
                   <BreadcrumbItem>
-                    <BreadcrumbPage
-                      className={currentStep === "details" ? "text-white" : ""}
-                    >
-                      Details
-                    </BreadcrumbPage>
+                    <BreadcrumbPage className={currentStep === "details" ? "text-white" : ""}>Details</BreadcrumbPage>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbPage
-                      className={currentStep === "members" ? "text-white" : ""}
-                    >
-                      Members
-                    </BreadcrumbPage>
+                    <BreadcrumbPage className={currentStep === "members" ? "text-white" : ""}>Members</BreadcrumbPage>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbPage
-                      className={currentStep === "draft" ? "text-white" : ""}
-                    >
-                      Draft
-                    </BreadcrumbPage>
+                    <BreadcrumbPage className={currentStep === "draft" ? "text-white" : ""}>Draft</BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
@@ -219,14 +177,9 @@ export default function NewSessionDialog({
 
             <DialogFooter>
               <>
-                {currentStep !== "details" && (
-                  <Button onClick={() => navigateForm("back")}>Back</Button>
-                )}
+                {currentStep !== "details" && <Button onClick={() => navigateForm("back")}>Back</Button>}
                 {currentStep !== "draft" && (
-                  <Button
-                    className="float-right"
-                    onClick={() => navigateForm("next")}
-                  >
+                  <Button className="float-right" onClick={() => navigateForm("next")}>
                     Next
                   </Button>
                 )}

@@ -52,6 +52,16 @@ export default function SlotDescriptionDialog({ className, size }: { className?:
                   <td className="px-6 py-4">[OPENING WEEKEND BOX OFFICE] / $1 million</td>
                 </tr>
                 <tr className="border-b">
+                  <th className="px-2">{STUDIO_SLOT_TYPES.TMDB_RATING}</th>
+                  <td className="px-6 py-4">The film's score on TMDB on the day your session ends</td>
+                  <td className="px-6 py-4">[TMDB%]</td>
+                </tr>
+                <tr className="border-b">
+                  <th className="px-2">{STUDIO_SLOT_TYPES.REVERSE_TMDB_RATING}</th>
+                  <td className="px-6 py-4">The inverse of the film's score on TMDB on the day your session ends</td>
+                  <td className="px-6 py-4">100 - [TMDB%]</td>
+                </tr>
+                {/* <tr className="border-b">
                   <th className="px-2">{STUDIO_SLOT_TYPES.IMDB_RATING}</th>
                   <td className="px-6 py-4">The film's score on IMDb on the day your session ends</td>
                   <td className="px-6 py-4">[IMDB SCORE] x 10</td>
@@ -116,7 +126,7 @@ export default function SlotDescriptionDialog({ className, size }: { className?:
                     The number of people who have marked the film as "Watched" on Letterboxd
                   </td>
                   <td className="px-6 py-4">[# WATCHED] / 10 thousand</td>
-                </tr>
+                </tr> */}
               </tbody>
             </table>
           </DialogDescription>

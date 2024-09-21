@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { inferRouterOutputs } from "@trpc/server";
-import { format, sub } from "date-fns";
-import { CalendarIcon, Loader2, Trash } from "lucide-react";
+import { add, format, sub } from "date-fns";
+import { CalendarIcon, Info, Loader2, Trash } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useFieldArray, useForm, useFormContext } from "react-hook-form";
 import { z } from "zod";
@@ -16,38 +16,18 @@ import { api } from "~/utils/api";
 import { useArray, type UseArray } from "~/utils/hooks/use-array";
 import { cn } from "~/utils/shadcn";
 import SlotDescriptionDialog from "~/components/SlotDescriptionDialog";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "~/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
 import { Button } from "~/components/ui/button";
 import { Calendar } from "~/components/ui/calendar";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "~/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "~/components/ui/form";
 import { useToast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 
 type League = inferRouterOutputs<AppRouter>["ffLeague"]["getById"];
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
@@ -65,13 +45,10 @@ export default function SessionForm({
   const router = useRouter();
   const { toast } = useToast();
 
-  const { isLoading, mutate: updateSession } =
-    api.ffLeagueSession.update.useMutation();
+  const { isLoading, mutate: updateSession } = api.ffLeagueSession.update.useMutation();
   const { data: league } = api.ffLeague.getById.useQuery({ id: leagueId });
 
-  const sessionMembers = useArray<string>(
-    league?.members.map((e) => e.userId) ?? [],
-  );
+  const sessionMembers = useArray<string>(league?.members.map((e) => e.userId) ?? []);
 
   useEffect(() => {
     sessionMembers.set(league?.members.map((e) => e.userId) ?? []);
@@ -100,9 +77,7 @@ export default function SessionForm({
         endDate: new Date(values.endDate),
         memberIds: sessionMembers.array,
       };
-      data.settings.draft.date = values.settings.draft.date
-        ? new Date(values.settings.draft.date)
-        : undefined;
+      data.settings.draft.date = values.settings.draft.date ? new Date(values.settings.draft.date) : undefined;
       updateSession(data, {
         onSuccess: () => {
           toast({ title: "Settings saved" });
@@ -119,11 +94,7 @@ export default function SessionForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onInvalid)}>
-        <Button
-          className="float-right block"
-          type="submit"
-          onClick={() => onSubmit(form.getValues())}
-        >
+        <Button className="float-right block" type="submit" onClick={() => onSubmit(form.getValues())}>
           Save
         </Button>
 
@@ -139,19 +110,13 @@ export default function SessionForm({
               <AccordionItem value="members">
                 <AccordionTrigger>Members</AccordionTrigger>
                 <AccordionContent className="mt-2 space-y-8 px-4">
-                  <MembersSection
-                    league={league}
-                    sessionMembers={sessionMembers}
-                  />
+                  <MembersSection league={league} sessionMembers={sessionMembers} />
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="draft">
                 <AccordionTrigger>Draft</AccordionTrigger>
                 <AccordionContent className="mt-2 space-y-8 px-4">
-                  <DraftSection
-                    league={league}
-                    sessionMembers={sessionMembers}
-                  />
+                  <DraftSection league={league} sessionMembers={sessionMembers} />
                 </AccordionContent>
               </AccordionItem>
             </>
@@ -191,7 +156,17 @@ export function DetailsSection() {
           name="startDate"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Start Date</FormLabel>
+              <FormLabel className="flex items-center">
+                Start Date
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="ml-auto">
+                      <Info size={20} />
+                    </TooltipTrigger>
+                    <TooltipContent>Sessions can be created up to 30 days in advance</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -202,11 +177,7 @@ export function DetailsSection() {
                         !field.value && "text-muted-foreground",
                       )}
                     >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span className="text-black">Pick a date</span>
-                      )}
+                      {field.value ? format(field.value, "PPP") : <span className="text-black">Pick a date</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 text-black opacity-50" />
                     </Button>
                   </FormControl>
@@ -216,7 +187,7 @@ export function DetailsSection() {
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    disabled={(date) => date < sub(new Date(), { days: 1 })}
+                    disabled={(date) => date < sub(new Date(), { days: 1 }) || date > add(new Date(), { days: 30 })}
                     initialFocus
                   />
                 </PopoverContent>
@@ -229,7 +200,17 @@ export function DetailsSection() {
           name="endDate"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>End Date</FormLabel>
+              <FormLabel className="flex items-center">
+                End Date
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="ml-auto">
+                      <Info size={20} />
+                    </TooltipTrigger>
+                    <TooltipContent>Sessions can be between 30 & 365 days long</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -240,11 +221,7 @@ export function DetailsSection() {
                         !field.value && "text-muted-foreground",
                       )}
                     >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span className="text-black">Pick a date</span>
-                      )}
+                      {field.value ? format(field.value, "PPP") : <span className="text-black">Pick a date</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 text-black opacity-50" />
                     </Button>
                   </FormControl>
@@ -254,7 +231,10 @@ export function DetailsSection() {
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    disabled={(date) => date < sub(new Date(), { days: 1 })}
+                    disabled={(date) =>
+                      date < add(new Date(form.getValues().startDate), { days: 30 }) ||
+                      date > add(new Date(form.getValues().startDate), { days: 366 })
+                    }
                     initialFocus
                   />
                 </PopoverContent>
@@ -267,7 +247,7 @@ export function DetailsSection() {
       <div className="">
         <div className="flex items-center">
           <Label className="flex items-center">Studio Structure</Label>
-          <SlotDescriptionDialog className="ml-2" />
+          <SlotDescriptionDialog className="ml-2" size={20} />
         </div>
         <div className="space-y-4 px-4">
           {fields.map((field, index) => {
@@ -281,21 +261,16 @@ export function DetailsSection() {
                     <FormControl>
                       <div className="mt-2 flex items-center space-x-2">
                         <span>{index + 1}</span>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <SelectTrigger className="w-1/2 text-black">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Object.values(STUDIO_SLOT_TYPES).map(
-                              (slotType, i) => (
-                                <SelectItem key={i} value={slotType}>
-                                  {slotType}
-                                </SelectItem>
-                              ),
-                            )}
+                            {Object.values(STUDIO_SLOT_TYPES).map((slotType, i) => (
+                              <SelectItem key={i} value={slotType}>
+                                {slotType}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <Button
@@ -333,13 +308,7 @@ export function DetailsSection() {
   );
 }
 
-export function MembersSection({
-  league,
-  sessionMembers,
-}: {
-  league: League;
-  sessionMembers: UseArray<string>;
-}) {
+export function MembersSection({ league, sessionMembers }: { league: League; sessionMembers: UseArray<string> }) {
   function handleRemove(userId: string) {
     sessionMembers.removeValue(userId);
   }
@@ -354,19 +323,11 @@ export function MembersSection({
           <span className="mr-2 h-10 w-10 rounded-full bg-blue-400"></span>
           <p>{member.user.name}</p>
           {new Set(sessionMembers.array).has(member.userId) ? (
-            <Button
-              className="ml-auto"
-              variant="destructive"
-              onClick={() => handleRemove(member.userId)}
-            >
+            <Button className="ml-auto" variant="destructive" onClick={() => handleRemove(member.userId)}>
               Remove
             </Button>
           ) : (
-            <Button
-              className="ml-auto"
-              variant="destructive"
-              onClick={() => handleAdd(member.userId)}
-            >
+            <Button className="ml-auto" variant="destructive" onClick={() => handleAdd(member.userId)}>
               Add
             </Button>
           )}
@@ -376,13 +337,7 @@ export function MembersSection({
   );
 }
 
-export function DraftSection({
-  league,
-  sessionMembers,
-}: {
-  league: League;
-  sessionMembers: UseArray<string>;
-}) {
+export function DraftSection({ league, sessionMembers }: { league: League; sessionMembers: UseArray<string> }) {
   const form = useFormContext();
   const members = sessionMembers.array.map((e) => ({
     id: e,
@@ -408,11 +363,7 @@ export function DraftSection({
                         !field.value && "text-muted-foreground",
                       )}
                     >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span className="text-black">Pick a date</span>
-                      )}
+                      {field.value ? format(field.value, "PPP") : <span className="text-black">Pick a date</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </FormControl>
@@ -436,17 +387,12 @@ export function DraftSection({
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <SelectTrigger className="w-[80px] text-black">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({ length: 12 }, (_, index) =>
-                      (index + 1).toString().padStart(2, "0"),
-                    ).map((e) => {
+                    {Array.from({ length: 12 }, (_, index) => (index + 1).toString().padStart(2, "0")).map((e) => {
                       return (
                         <SelectItem key={e} value={e}>
                           {e}
@@ -465,17 +411,12 @@ export function DraftSection({
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <SelectTrigger className="w-[80px] text-black">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({ length: 12 }, (_, index) =>
-                      (index * 5).toString().padStart(2, "0"),
-                    ).map((e) => {
+                    {Array.from({ length: 12 }, (_, index) => (index * 5).toString().padStart(2, "0")).map((e) => {
                       return (
                         <SelectItem key={e} value={e}>
                           {e}
@@ -494,10 +435,7 @@ export function DraftSection({
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <SelectTrigger className="w-[80px] text-black">
                     <SelectValue />
                   </SelectTrigger>
@@ -529,9 +467,7 @@ export function DraftSection({
                         <RadioGroupItem value={draftType} className="sr-only" />
                       </FormControl>
                       <div className="border-muted hover:border-accent items-center rounded-md border-2 p-1 hover:cursor-pointer">
-                        <span className="block p-2 text-center font-normal">
-                          {draftType}
-                        </span>
+                        <span className="block p-2 text-center font-normal">{draftType}</span>
                       </div>
                     </FormLabel>
                   </FormItem>
@@ -549,12 +485,7 @@ export function DraftSection({
             <FormItem className="">
               <FormLabel>Number of Rounds</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  className="w-[120px] text-black"
-                  type="number"
-                  min={0}
-                />
+                <Input {...field} className="w-[120px] text-black" type="number" min={0} />
               </FormControl>
             </FormItem>
           )}
@@ -566,11 +497,7 @@ export function DraftSection({
             <FormItem className="">
               <FormLabel>Time per Round (seconds)</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  className="w-[120px] text-black"
-                  type="number"
-                />
+                <Input {...field} className="w-[120px] text-black" type="number" />
               </FormControl>
             </FormItem>
           )}
@@ -589,10 +516,7 @@ export function DraftSection({
                   <FormControl>
                     <div className="mt-2 flex w-auto items-center space-x-2">
                       <span>{index + 1}</span>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <SelectTrigger className="w-[300px] text-black">
                           <SelectValue />
                         </SelectTrigger>

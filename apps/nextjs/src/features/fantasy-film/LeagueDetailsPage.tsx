@@ -142,8 +142,8 @@ function SessionCard({ session }: { session: LeagueSession }) {
                   width={150}
                   height={225}
                 /> */}
-                <p className="text-center">{mostRecent.tmdb.details.title}</p>
-                <p className="text-center text-xs">{format(mostRecent.tmdb.details.releaseDate, "LLL d, yyyy")}</p>
+                <p className="text-center">{mostRecent.tmdb!.title}</p>
+                <p className="text-center text-xs">{format(mostRecent.tmdb!.releaseDate, "LLL d, yyyy")}</p>
               </div>
             )}
             {upcoming && (
@@ -156,8 +156,8 @@ function SessionCard({ session }: { session: LeagueSession }) {
                   width={150}
                   height={225}
                 /> */}
-                <p className="text-center">{upcoming.tmdb.details.title}</p>
-                <p className="text-center text-xs">{format(upcoming.tmdb.details.releaseDate, "LLL d, yyyy")}</p>
+                <p className="text-center">{upcoming.tmdb!.title}</p>
+                <p className="text-center text-xs">{format(upcoming.tmdb!.releaseDate, "LLL d, yyyy")}</p>
               </div>
             )}
           </div>

@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 
 export default function FilmDataAdmin() {
-  const { data: films } = api.tmdb.get.useQuery({});
+  const { data: films } = api.tmdb.getActive.useQuery({});
 
   return (
     <Table>

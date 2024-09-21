@@ -1,26 +1,10 @@
-import { add, format, nextTuesday } from "date-fns";
+import { add, format, nextTuesday, sub } from "date-fns";
+import e from "express";
 import { z } from "zod";
 
-import { Prisma } from "@repo/db";
-
 import { createTRPCRouter, publicProcedure, TRPCContext } from "../../trpc";
-import { tmdbCertifications, tmdbCredits, tmdbDetails, tmdbKeywords } from "../daily-games/overlap/movieDataLL";
-import {
-  getByDateRange,
-  getCreditsById,
-  getDetailsById,
-  getKeywordsById,
-  getMovieFromTMDB,
-  getReleaseDatesById,
-  tmdb,
-} from "./tmdb";
-import {
-  TMDBCreditsResponse,
-  TMDBDetailsResponse,
-  TMDBKeywordsResponse,
-  TMDBReleaseDatesResponse,
-  TMDBSearchResponse,
-} from "./types";
+import { getByDateRange, getMovieFromTMDB } from "./tmdb";
+import { TMDBSearchResponse } from "./types";
 
 const POPULARITY_THRESHOLD = 10;
 
@@ -54,7 +38,7 @@ const getFilmsForSession = publicProcedure
     return await getFilmsBySessionId(ctx, input.sessionId, input.page, input.today);
   });
 
-const get = publicProcedure.input(z.object({})).query(
+const getActive = publicProcedure.input(z.object({})).query(
   async ({ ctx, input }) =>
     await ctx.prisma.tMDBDetails.findMany({
       include: { cast: true, crew: true },
@@ -84,11 +68,14 @@ const get = publicProcedure.input(z.object({})).query(
     }),
 );
 
+const updateFantasyFilms = publicProcedure.mutation(async ({ ctx, input }) => {});
+
 export const tmdbRouter = createTRPCRouter({
   search,
   getById,
   getFilmsForSession,
-  get,
+  getActive,
+  updateFantasyFilms,
 });
 
 ////////////////
@@ -116,4 +103,40 @@ export async function getFilmsBySessionId(ctx: TRPCContext, sessionId: string, p
     : format(session.startDate, "yyyy-MM-dd");
 
   return getByDateRange(fromDate, format(session.endDate, "yyyy-MM-dd"), page);
+}
+
+async function updateMasterFantasyFilmList(ctx: TRPCContext) {
+  // get top 260 films from tmdb (from -365 days - +400 days)
+  const from = format(sub(new Date(), { days: 370 }), "yyyy-MM-dd");
+  const to = format(add(new Date(), { days: 400 }), "yyyy-MM-dd");
+
+  const chunks = await Promise.all(Array.from({ length: 13 }).map((_, i) => getByDateRange(from, to, i + 1)));
+  const films = chunks
+    .filter((e) => e !== undefined)
+    .map((e) => e!.results)
+    .flat();
+
+  const inDb = await ctx.prisma.tMDBDetails.findMany({
+    select: { id: true },
+    where: { id: { in: films.map((e) => e?.id) } },
+  });
+  const inDbIds = new Set(inDb.map((e) => e.id));
+  const toCreate = films.filter((e) => !inDbIds.has(e.id));
+  const toUpdate = films
+    .filter((e) => inDbIds.has(e.id))
+    .map((e) => ({
+      id: e.id,
+      title: e.title,
+      overview: e.overview,
+      poster: e.poster_path,
+      releaseDate: e.release_date,
+      popularity: e.popularity,
+      rating: e.vote_count,
+    }));
+
+  // update existing
+  for (const update of toUpdate) await ctx.prisma.tMDBDetails.update({ data: update, where: { id: update.id } });
+
+  // create new entries
+  for (const create of toCreate) await getByTMDBId(ctx, create.id);
 }

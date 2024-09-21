@@ -20,9 +20,9 @@ export function getOpeningWeekendBoxOfficeScore(film: FilmWithTMDB) {
 }
 
 export function getRatingScore(film: FilmWithTMDB) {
-  return Math.round(film.score * 100) / 10;
+  return Math.round(film.tmdb.rating * 100) / 10;
 }
 
 export function getReverseRatingScore(film: FilmWithTMDB) {
-  return Math.round((10 - film.score) * 100) / 10;
+  return Math.round((10 - film.tmdb.rating) * 100) / 10;
 }

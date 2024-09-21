@@ -121,10 +121,13 @@ export async function getFilmScores(film: FilmWithTMDB) {
 
 export async function dropStudioFilmById(ctx: TRPCContext, id: string) {
   const film = await ctx.prisma.studioFilm.findFirst({
-    where: { id },
     include: { studio: true },
+    where: { id },
   });
   if (!film) throw "Invalid";
+
+  console.log(id);
+  console.log(film);
 
   await ctx.prisma.studioFilm.delete({ where: { id } });
 

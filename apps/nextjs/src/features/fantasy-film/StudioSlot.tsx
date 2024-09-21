@@ -107,35 +107,33 @@ export default function StudioSlot({
           {slot}
         </p>
         <div className="flex aspect-[2/3] flex-col justify-center p-2">
-          {film ? (
+          {!!film ? (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger className="flex">
                 <Image
-                  src={`https://image.tmdb.org/t/p/w1280${film.tmdb.details.poster}`}
-                  alt={`${film.tmdb.details.title} poster`}
+                  src={`https://image.tmdb.org/t/p/w1280${film?.tmdb?.poster}`}
+                  alt={`${film?.tmdb?.title} poster`}
                   width={200}
                   height={300}
                 />
               </DialogTrigger>
               <DialogContent className="max-w-2/3 w-1/2 rounded-sm" forceMount>
                 <DialogHeader>
-                  <DialogTitle className="text-white">{film.tmdb.details.title}</DialogTitle>
+                  <DialogTitle className="text-white">{film?.tmdb?.title}</DialogTitle>
                   <DialogDescription>
                     <div className="flex">
                       <div className="flex flex-col">
                         <Image
                           className="group-hover:border-primary inset-0 min-w-[200px] border-4 border-transparent"
-                          src={`https://image.tmdb.org/t/p/w1280${film.tmdb.details.poster}`}
-                          alt={`${film.tmdb.details.title} poster`}
+                          src={`https://image.tmdb.org/t/p/w1280${film?.tmdb?.poster}`}
+                          alt={`${film?.tmdb?.title} poster`}
                           width={200}
                           height={300}
                         />
                       </div>
                       <div className="ml-4 w-full text-white">
-                        <p className="mb-2 text-lg">
-                          Release Date: {format(film.tmdb.details.releaseDate, "LLL dd, yyyy")}
-                        </p>
-                        <p className="mb-4">{film.tmdb.details.overview}</p>
+                        <p className="mb-2 text-lg">Release Date: {format(film?.tmdb?.releaseDate!, "LLL dd, yyyy")}</p>
+                        <p className="mb-4">{film?.tmdb?.overview}</p>
 
                         {showScore ? (
                           <div className="mb-2 grid grid-cols-2 gap-y-2">
@@ -161,7 +159,7 @@ export default function StudioSlot({
                             <Lock className="h-4 w-4" />
                             <AlertTitle>
                               This film will lock on{" "}
-                              {format(sub(new Date(film.tmdb.details.releaseDate ?? ""), { days: 7 }), "LLL dd, yyyy")}
+                              {format(sub(new Date(film?.tmdb?.releaseDate ?? ""), { days: 7 }), "LLL dd, yyyy")}
                             </AlertTitle>
                           </Alert>
                         )}
@@ -197,7 +195,7 @@ export default function StudioSlot({
                   <div className="flex items-center">
                     <Link
                       className="flex items-center"
-                      href={`https://www.themoviedb.org/movie/${film.tmdb.details?.id}`}
+                      href={`https://www.themoviedb.org/movie/${film.tmdb?.id}`}
                       target="_blank"
                     >
                       More Info <ExternalLink className="mx-1" size={16} />

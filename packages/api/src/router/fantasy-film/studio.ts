@@ -159,13 +159,14 @@ const bid = protectedProcedure
     z.object({
       studioId: z.string(),
       tmdbId: z.number(),
-      title: z.string(),
       amount: z.number(),
       slot: z.number(),
       dropFilmId: z.string().optional(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    await getByTMDBId(ctx, input.tmdbId);
+
     const data = {
       ...input,
       status: BID_STATUSES.PENDING,

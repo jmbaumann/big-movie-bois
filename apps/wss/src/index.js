@@ -23,19 +23,22 @@ app.post("/draft-event", async (req) => {
   console.log(data);
   io.emit(req.body.eventName, data);
 
-  setTimeout(async () => {
-    const url = "http://localhost:3000";
+  setTimeout(
+    async () => {
+      const url = "http://localhost:3000";
 
-    try {
-      await axios.post(`${url}/api/auto-draft`, {
-        sessionId: data.sessionId,
-        studioId: data.currentPick.studioId,
-        pick: data.currentPick.num,
-      });
-    } catch (e) {
-      // console.log(e);
-    }
-  }, data.currentPick.endTimestamp - data.currentPick.startTimestamp);
+      try {
+        await axios.post(`${url}/api/auto-draft`, {
+          sessionId: data.sessionId,
+          studioId: data.currentPick.studioId,
+          pick: data.currentPick.num,
+        });
+      } catch (e) {
+        // console.log(e);
+      }
+    },
+    data.currentPick.endTimestamp - data.currentPick.startTimestamp + 2500,
+  );
 });
 
 io.on("connect", (socket) => {

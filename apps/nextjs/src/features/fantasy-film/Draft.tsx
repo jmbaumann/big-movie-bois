@@ -345,7 +345,7 @@ function MyStudio({
     <>
       <div className="flex items-center">
         <p>My Studio</p>
-        <Button className="ml-auto" variant="ghost" onClick={() => setExpand((s) => !s)}>
+        <Button className="ml-auto pr-1" variant="ghost" onClick={() => setExpand((s) => !s)}>
           {expand ? <ArrowLeftFromLine /> : <ArrowRightFromLine />}
         </Button>
       </div>

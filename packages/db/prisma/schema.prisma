@@ -32,6 +32,7 @@ model TMDBDetails {
     crew           TMDBCrew[]
     studioFilms    StudioFilm[]
     filmBids       FilmBid[]
+    activity       LeagueSessionActivity[]
     overlapAnswers OverlapAnswer[]
 }
 
@@ -134,18 +135,18 @@ model LeagueSessionActivity {
     id        String   @id @default(cuid())
     sessionId String
     studioId  String?
-    filmId    String?
+    tmdbId    Int?
     type      String
     message   String
     timestamp DateTime
 
     session LeagueSession        @relation(fields: [sessionId], references: [id])
     studio  LeagueSessionStudio? @relation(fields: [studioId], references: [id])
-    film    StudioFilm?          @relation(fields: [filmId], references: [id])
+    film    TMDBDetails?         @relation(fields: [tmdbId], references: [id])
 
     @@index([sessionId])
     @@index([studioId])
-    @@index([filmId])
+    @@index([tmdbId])
 }
 
 model LeagueSessionStudio {
@@ -190,11 +191,10 @@ model StudioFilm {
     acquiredAt    DateTime?
     droppedAt     DateTime?
 
-    studio         LeagueSessionStudio     @relation(fields: [studioId], references: [id])
-    tmdb           TMDBDetails             @relation(fields: [tmdbId], references: [id])
-    tradesOffered  FilmTradeProposal[]     @relation("OfferingFilm")
-    tradesReceived FilmTradeProposal[]     @relation("ReceivingFilm")
-    activity       LeagueSessionActivity[]
+    studio         LeagueSessionStudio @relation(fields: [studioId], references: [id])
+    tmdb           TMDBDetails         @relation(fields: [tmdbId], references: [id])
+    tradesOffered  FilmTradeProposal[] @relation("OfferingFilm")
+    tradesReceived FilmTradeProposal[] @relation("ReceivingFilm")
 
     @@index([studioId])
     @@index([tmdbId])

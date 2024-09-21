@@ -5,7 +5,7 @@ import { StudioFilm } from "@repo/db";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { draftEvent } from "../../wss";
-import { getFilmsBySessionId } from "../tmdb";
+import { getByTMDBId, getFilmsBySessionId } from "../tmdb";
 import { getSessionById } from "./session";
 import { makePickObj } from "./zod";
 
@@ -108,6 +108,8 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
       acquiredAt: new Date(),
     },
   });
+
+  await getByTMDBId(ctx, input.tmdbId);
 
   const ts = new Date().getTime();
 

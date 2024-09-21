@@ -92,7 +92,7 @@ export default function AvailableFilms({
   );
   const { mutate: addFavorite } = api.ffStudio.addFavorite.useMutation();
   const { mutate: removeFavorite } = api.ffStudio.removeFavorite.useMutation();
-  const { mutate: makeBid } = api.ffStudio.bid.useMutation();
+  const { mutate: makeBid, isLoading: bidding } = api.ffStudio.bid.useMutation();
   const { mutate: makePick } = api.ffDraft.pick.useMutation();
 
   const availableSlots = myStudio && session ? getUnlockedSlots(session, myStudio) : [];
@@ -125,7 +125,6 @@ export default function AvailableFilms({
         {
           studioId,
           tmdbId: selectedFilm.id,
-          title: selectedFilm.title,
           amount: Number(bidAmount),
           slot: Number(selectedSlot),
         },
@@ -294,7 +293,11 @@ export default function AvailableFilms({
                     </Button>
                   )}
                   {!isDraft && canPick && (
-                    <Button disabled={!selectedFilm || !canPick || !selectedSlot || bidPlaced} onClick={handleBid}>
+                    <Button
+                      isLoading={bidding}
+                      disabled={!selectedFilm || !canPick || !selectedSlot || bidPlaced}
+                      onClick={handleBid}
+                    >
                       Place Bid
                     </Button>
                   )}

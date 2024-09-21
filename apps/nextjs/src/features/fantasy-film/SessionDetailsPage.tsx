@@ -555,10 +555,9 @@ function Activity({ session }: { session: Session }) {
             {activity.studio?.name}
           </Link>
         );
+      } else if (part === "FILM") {
+        return <span className="text-primary font-bold">{activity.film?.title}</span>;
       }
-      // else if (part === "FILM") {
-      //   return <span className="text-primary font-bold">{activity.film?.title}</span>;
-      // }
 
       return <span key={index}>{part}</span>;
     });

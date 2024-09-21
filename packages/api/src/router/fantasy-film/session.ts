@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { z } from "zod";
+import { string, z } from "zod";
 
 import { FilmBid } from "@repo/db";
 
@@ -84,13 +84,19 @@ const getBids = protectedProcedure.input(z.object({ sessionId: z.string() })).qu
   });
 });
 
-const getLogs = protectedProcedure.input(z.object({ sessionId: z.string() })).query(async ({ ctx, input }) => {
-  return ctx.prisma.leagueSessionActivity.findMany({
-    where: input,
-    include: { session: { select: { leagueId: true } }, studio: { select: { name: true, ownerId: true } }, film: true },
-    orderBy: { timestamp: "desc" },
+const getLogs = protectedProcedure
+  .input(z.object({ sessionId: z.string(), studioId: z.string().optional() }))
+  .query(async ({ ctx, input }) => {
+    return ctx.prisma.leagueSessionActivity.findMany({
+      include: {
+        session: { select: { leagueId: true } },
+        studio: { select: { name: true, ownerId: true } },
+        film: true,
+      },
+      orderBy: { timestamp: "desc" },
+      where: input,
+    });
   });
-});
 
 export const leagueSessionRouter = createTRPCRouter({
   getById,

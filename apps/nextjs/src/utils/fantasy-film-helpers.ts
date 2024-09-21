@@ -1,16 +1,15 @@
-import { inferRouterOutputs } from "@trpc/server";
 import { sub } from "date-fns";
 
-import { AppRouter } from "@repo/api";
+import { RouterOutputs } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { LeagueSessionSettingsDraft } from "@repo/api/src/zod";
-import { StudioFilm } from "@repo/db";
+import { StudioFilm, TMDBDetails } from "@repo/db";
 
 type Film = TMDBDiscoverResult;
-type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
-type Studios = inferRouterOutputs<AppRouter>["ffStudio"]["getStudios"];
-type Studio = Studios[number] | inferRouterOutputs<AppRouter>["ffStudio"]["getMyStudio"];
-type StudioFilmTMDB = Studios[number]["films"][number];
+type Session = RouterOutputs["ffLeagueSession"]["getById"];
+type Studios = RouterOutputs["ffStudio"]["getStudios"];
+type Studio = Studios[number] | RouterOutputs["ffStudio"]["getMyStudio"];
+type StudioFilmTMDB = Studios[number]["films"][number] | (StudioFilm & { tmdb: TMDBDetails });
 
 export function getAvailableFilms(picks: StudioFilm[], films: Film[]) {
   const takenIds = picks.map((e) => e.tmdbId);

@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { inferRouterOutputs } from "@trpc/server";
-import { format, nextTuesday } from "date-fns";
+import { format } from "date-fns";
 import {
-  ChevronLeft,
   CircleDollarSign,
   Clapperboard,
   Disc3,
   Eye,
   Film,
   Heart,
-  Info,
   Pencil,
   Popcorn,
   Projector,
@@ -26,15 +23,14 @@ import {
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
-import { AppRouter } from "@repo/api";
+import { RouterOutputs } from "@repo/api";
 import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
+import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 
 import { api } from "~/utils/api";
-import { getDraftDate, getFilmsReleased, getMostRecentAndUpcoming, isSlotLocked } from "~/utils/fantasy-film-helpers";
+import { getFilmsReleased, isSlotLocked } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
-import AdminMenu from "~/components/AdminMenu";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -43,8 +39,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
-import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -54,14 +48,12 @@ import Layout from "~/layouts/main/Layout";
 import Loading from "~/layouts/main/Loading";
 import { ONE_DAY_IN_SECONDS } from "~/utils";
 import AvailableFilms from "./AvailableFilms";
-import DraftCountdown from "./DraftCountdown";
-import SessionForm from "./forms/Session";
 import StudioIcon from "./StudioIcon";
 import StudioSlot from "./StudioSlot";
 
-type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
-type Studio = inferRouterOutputs<AppRouter>["ffStudio"]["getStudios"][number];
-type Activty = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getLogs"][number];
+type Session = RouterOutputs["ffLeagueSession"]["getById"];
+type Studio = RouterOutputs["ffStudio"]["getStudios"][number];
+type Activty = RouterOutputs["ffLeagueSession"]["getLogs"][number];
 
 export default function BiddingWarSessionDetailsPage() {
   const { data: sessionData } = useSession();
@@ -96,6 +88,20 @@ export default function BiddingWarSessionDetailsPage() {
       initialData: [],
     },
   );
+  const { mutate: join, isLoading: joining } = api.ffStudio.create.useMutation();
+
+  function handleJoin(sessionId: string) {
+    if (sessionData)
+      join(
+        { sessionId, ownerId: sessionData.user.id },
+        {
+          onSuccess: () => {
+            toast({ title: "Session joined" });
+            refreshStudios();
+          },
+        },
+      );
+  }
 
   const myStudio = studios?.find((e) => e.ownerId === sessionData?.user.id);
   const opposingStudios = studios?.filter((e) => e.ownerId !== sessionData?.user.id);
@@ -112,7 +118,7 @@ export default function BiddingWarSessionDetailsPage() {
           </p>
         </div>
 
-        <div className="">
+        <div className="flex">
           <Tabs className="w-full px-2 lg:px-4" value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="home" onClick={() => handleTab("home")}>
@@ -127,6 +133,9 @@ export default function BiddingWarSessionDetailsPage() {
               <TabsTrigger value="films" onClick={() => handleTab("films")}>
                 Films
               </TabsTrigger>
+              <TabsTrigger value="activity" onClick={() => handleTab("activity")}>
+                My Activity
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="home">
               <Home session={session} studios={studios} />
@@ -138,9 +147,18 @@ export default function BiddingWarSessionDetailsPage() {
               <OpposingStudios session={session} studios={opposingStudios} />
             </TabsContent>
             <TabsContent value="films">
-              <Films session={session} />
+              <Films session={session} myStudio={myStudio} />
+            </TabsContent>
+            <TabsContent value="activity">
+              <Activity session={session} />
             </TabsContent>
           </Tabs>
+
+          {!myStudio && (
+            <Button className="mb-1 ml-auto" onClick={() => handleJoin(session.id)} isLoading={joining}>
+              Join
+            </Button>
+          )}
         </div>
       </div>
     </Layout>
@@ -166,8 +184,6 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
 
   return (
     <div className="flex w-full flex-col">
-      <Button className="mb-1 ml-auto">Join</Button>
-
       <Table>
         <TableHeader>
           <TableRow>
@@ -186,10 +202,11 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
               <TableRow key={i}>
                 <TableCell>{studio.rank}</TableCell>
                 <TableCell
-                  className="hover:text-primary font-medium hover:cursor-pointer"
+                  className="hover:text-primary flex items-center font-medium hover:cursor-pointer"
                   onClick={() => handleStudioSelected(studio)}
                 >
-                  {studio.name}
+                  <StudioIcon image={studio.image} />
+                  <p className="ml-2">{studio.name}</p>
                 </TableCell>
                 <TableCell>${studio.budget}</TableCell>
                 <TableCell>
@@ -206,7 +223,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
 }
 
 function MyStudio({ session, studio, refetch }: { session: Session; studio: Studio | undefined; refetch: () => void }) {
-  if (!studio) return <>no studios</>;
+  if (!studio) return <>no studio</>;
 
   return <StudioDetails session={session} studio={studio} refetch={refetch} />;
 }
@@ -241,6 +258,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
               film={film}
               showScore={film ? locked : false}
               locked={locked}
+              bidWar
               refreshStudio={refetch}
             />
           );
@@ -269,26 +287,125 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
   return <p>opposing studios</p>;
 }
 
-function Films({ session }: { session: Session }) {
-  const { data: sessionData } = useSession();
+function Films({ session, myStudio }: { session: Session; myStudio: Studio | undefined }) {
+  const [films, setFilms] = useState<(TMDBDiscoverResult & { price: number })[]>([]);
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = api.tmdb.getFilmsForSession.useQuery(
-    { sessionId: session?.id ?? "", today: true },
-    { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
-  );
-  const { data: acquiredFilms } = api.ffLeagueSession.getAcquiredFilms.useQuery(
-    { sessionId: session?.id ?? "" },
+    { sessionId: session?.id ?? "", page, today: true },
     { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
   );
 
-  const acquiredIds = acquiredFilms?.map((e) => e.tmdbId);
-  const films = data?.results.filter((e) => !acquiredIds?.includes(e.id));
+  useEffect(() => {
+    if (data?.results) {
+      setFilms((s) =>
+        [...s, ...data.results].map((e) => ({ ...e, price: Math.min(Math.round((e.popularity / 100) * 40), 40) })),
+      );
+    }
+  }, [data]);
 
-  const myStudio = session?.studios.find((e) => e.ownerId === sessionData?.user.id);
+  const acquiredIds = myStudio?.films.map((e) => e.tmdbId);
+  const available = films.filter((e) => !acquiredIds?.includes(e.id));
 
   if (!data?.results || !myStudio || !films) return <p>no films</p>;
 
-  return <AvailableFilms session={session} films={films} studioId={myStudio.id} />;
+  return (
+    <AvailableFilms
+      session={session}
+      films={available}
+      studioId={myStudio.id}
+      buyNow
+      loadMoreFilms={() => setPage((s) => s + 1)}
+    />
+  );
+}
+
+function Activity({ session }: { session: Session }) {
+  const { data: sessionData } = useSession();
+
+  const myStudio = session?.studios.find((e) => e.ownerId === sessionData?.user.id);
+
+  const { data: logs } = api.ffLeagueSession.getLogs.useQuery(
+    { sessionId: session?.id ?? "", studioId: myStudio?.id ?? "" },
+    { enabled: !!session && !!myStudio, staleTime: ONE_DAY_IN_SECONDS },
+  );
+
+  const getType = (type: string) => {
+    switch (type) {
+      case SESSION_ACTIVITY_TYPES.FILM_SWAP:
+        return (
+          <div className="flex items-center">
+            <Shuffle className="mr-1 text-white" /> Film Swapped
+          </div>
+        );
+      case SESSION_ACTIVITY_TYPES.FILM_PURCHASED:
+        return (
+          <div className="flex items-center">
+            <CircleDollarSign className="mr-1 text-green-500" /> Film Purchased
+          </div>
+        );
+      case SESSION_ACTIVITY_TYPES.FILM_DROP:
+        return (
+          <div className="flex items-center">
+            <XCircle className="mr-1 text-red-600" /> Film Dropped
+          </div>
+        );
+      case SESSION_ACTIVITY_TYPES.STUDIO_UPDATE:
+        return (
+          <div className="flex items-center">
+            <Pencil className="mr-1 text-white" /> Studio Updated
+          </div>
+        );
+    }
+
+    return "";
+  };
+
+  function getMessage(activity: Activty) {
+    const regex = /{(STUDIO|FILM)}/g;
+    const parts = activity.message.split(regex);
+
+    return parts.map((part, index) => {
+      if (part === "STUDIO") {
+        const url =
+          activity.studio?.ownerId === sessionData?.user.id
+            ? `/fantasy-film/${activity.session.leagueId}/${activity.sessionId}?tab=my-studio`
+            : `/fantasy-film/${activity.session.leagueId}/${activity.sessionId}?tab=opposing-studios&studio=${activity.studioId}`;
+        return (
+          <Link key={index} href={url} className="text-primary font-bold">
+            {activity.studio?.name}
+          </Link>
+        );
+      } else if (part === "FILM") {
+        return <span className="text-primary font-bold">{activity.film?.title}</span>;
+      }
+
+      return <span key={index}>{part}</span>;
+    });
+  }
+
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[120px]">Date</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Details</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {logs?.map((activity, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium">{format(activity.timestamp, "E LLL dd h:mm aaa")}</TableCell>
+              <TableCell>{getType(activity.type)}</TableCell>
+              <TableCell>{getMessage(activity)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
+  );
 }
 
 function EditStudio({ studio, refetch }: { studio: Studio; refetch: () => void }) {
@@ -395,7 +512,7 @@ function EditStudio({ studio, refetch }: { studio: Studio; refetch: () => void }
             <div className="flex items-end space-x-4">
               <div className="flex w-full flex-col">
                 <Label className="mb-2 text-white">Studio Name</Label>
-                <Input type="input" value={studioName} onChange={(e) => setStudioName(e.target.value)} />
+                <Input type="input" value={studioName} disabled />
               </div>
               <Button onClick={save}>Save</Button>
             </div>

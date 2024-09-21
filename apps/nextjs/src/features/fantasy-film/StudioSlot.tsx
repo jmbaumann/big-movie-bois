@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { inferRouterOutputs } from "@trpc/server";
 import { format, sub } from "date-fns";
-import { ArrowRightLeft, ExternalLink, Lock, Shuffle, XCircle } from "lucide-react";
+import { ArrowRightLeft, ExternalLink, EyeOff, Lock, Shuffle, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
@@ -26,6 +26,7 @@ import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Label } from "~/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { ONE_DAY_IN_SECONDS } from "~/utils";
 
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
 type Studio = inferRouterOutputs<AppRouter>["ffStudio"]["getStudios"][number];
@@ -38,6 +39,7 @@ export default function StudioSlot({
   film,
   showScore,
   locked,
+  bidWar,
   refreshStudio,
 }: {
   session?: Session;
@@ -46,7 +48,7 @@ export default function StudioSlot({
   film?: StudioFilm;
   showScore?: boolean;
   locked?: boolean;
-  showManageTools?: boolean;
+  bidWar?: boolean;
   refreshStudio?: () => void;
 }) {
   const { data: sessionData } = useSession();
@@ -55,13 +57,18 @@ export default function StudioSlot({
   const [selectedSlot, setSelectedSlot] = useState<string>(
     String(session?.settings.teamStructure.find((e) => e.type === slot)?.pos),
   );
-  const canEdit = studio?.ownerId === sessionData?.user.id && !locked;
+  const isMyStudio = studio?.ownerId === sessionData?.user.id;
+  const canEdit = isMyStudio && !locked;
 
   const unlockedSlots = studio && session ? getUnlockedSlots(session, studio) : [];
 
   const { mutate: swap } = api.ffFilm.swap.useMutation();
   const { mutate: trade } = api.ffFilm.trade.useMutation();
   const { mutate: drop } = api.ffFilm.drop.useMutation();
+  const { data: bid } = api.ffFilm.getBid.useQuery(
+    { studioId: studio?.id ?? "", tmdbId: film?.tmdbId ?? 0 },
+    { enabled: bidWar && !!studio && !!film, staleTime: ONE_DAY_IN_SECONDS },
+  );
 
   function handleSwap() {
     if (film) {
@@ -84,10 +91,13 @@ export default function StudioSlot({
 
   async function handleDrop() {
     if (film) {
-      const ok = await confirm("Are you sure you want to drop this film from your studio?");
+      const ok = await confirm(
+        "Are you sure you want to drop this film from your studio?" +
+          (bidWar ? ` You will recoup $${Math.round((bid?.amount ?? 0) * 0.8)} back to your budget.` : ""),
+      );
       if (ok)
         drop(
-          { id: film.id },
+          { id: film.id, bidWar },
           {
             onSuccess: () => {
               toast({ title: "Film dropped" });
@@ -107,7 +117,7 @@ export default function StudioSlot({
           {slot}
         </p>
         <div className="flex aspect-[2/3] flex-col justify-center p-2">
-          {!!film ? (
+          {!!film && (!bidWar || isMyStudio) ? (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger className="flex">
                 <Image
@@ -218,8 +228,13 @@ export default function StudioSlot({
               </DialogContent>
             </Dialog>
           ) : (
-            <div className="flex h-full max-h-[300px] max-w-[200px] items-center justify-center bg-[#9ac] font-sans text-black">
-              <Label>Empty Slot</Label>
+            <div
+              className={cn(
+                "flex h-full max-h-[300px] max-w-[200px] items-center justify-center bg-[#9ac] font-sans text-black",
+                film && bidWar && "bg-primary",
+              )}
+            >
+              {film && bidWar ? <EyeOff size={48} /> : <Label>Empty Slot</Label>}
             </div>
           )}
         </div>

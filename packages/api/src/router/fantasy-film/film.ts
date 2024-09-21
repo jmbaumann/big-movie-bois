@@ -69,14 +69,41 @@ const trade = protectedProcedure
   .input(z.object({ fromPos: z.number(), toPos: z.number() }))
   .mutation(async ({ ctx, input }) => {});
 
-const drop = protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
-  return dropStudioFilmById(ctx, input.id);
-});
+const drop = protectedProcedure
+  .input(z.object({ id: z.string(), bidWar: z.boolean().optional() }))
+  .mutation(async ({ ctx, input }) => {
+    let recoup;
+    if (input.bidWar) {
+      const studioFilm = await ctx.prisma.studioFilm.findFirst({ include: { studio: true }, where: { id: input.id } });
+      const bid = await ctx.prisma.filmBid.findFirst({
+        where: { studioId: studioFilm?.studioId, tmdbId: studioFilm?.tmdbId },
+      });
+      if (!bid) throw "No bid in records";
+
+      recoup = Math.round(0.8 * bid.amount);
+      await ctx.prisma.leagueSessionStudio.update({
+        data: { budget: studioFilm!.studio.budget + recoup },
+        where: { id: studioFilm!.studioId },
+      });
+      await ctx.prisma.filmBid.delete({ where: { id: bid.id } });
+    }
+
+    return dropStudioFilmById(ctx, input.id, recoup);
+  });
+
+const getBid = protectedProcedure
+  .input(z.object({ studioId: z.string(), tmdbId: z.number() }))
+  .query(async ({ ctx, input }) => {
+    return await ctx.prisma.filmBid.findFirst({
+      where: { studioId: input.studioId, tmdbId: input.tmdbId },
+    });
+  });
 
 export const filmRouter = createTRPCRouter({
   swap,
   trade,
   drop,
+  getBid,
 });
 
 ////////////////
@@ -119,15 +146,12 @@ export async function getFilmScores(film: FilmWithTMDB) {
   };
 }
 
-export async function dropStudioFilmById(ctx: TRPCContext, id: string) {
+export async function dropStudioFilmById(ctx: TRPCContext, id: string, recoup?: number) {
   const film = await ctx.prisma.studioFilm.findFirst({
     include: { studio: true },
     where: { id },
   });
   if (!film) throw "Invalid";
-
-  console.log(id);
-  console.log(film);
 
   await ctx.prisma.studioFilm.delete({ where: { id } });
 
@@ -136,6 +160,6 @@ export async function dropStudioFilmById(ctx: TRPCContext, id: string) {
     studioId: film.studioId,
     tmdbId: film.tmdbId,
     type: SESSION_ACTIVITY_TYPES.FILM_DROP,
-    message: `{STUDIO} DROPPED {FILM}`,
+    message: `{STUDIO} DROPPED {FILM}` + (recoup ? ` and recouped $${recoup}` : ""),
   });
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
 import { useSession } from "next-auth/react";
@@ -6,8 +7,10 @@ import { useSession } from "next-auth/react";
 import { AppRouter } from "@repo/api";
 
 import { api } from "~/utils/api";
+import { getFilmsReleased } from "~/utils/fantasy-film-helpers";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { toast } from "~/components/ui/hooks/use-toast";
 import Layout from "~/layouts/main/Layout";
 import BiddingWarDialog from "./BiddingWarDialog";
 import LeagueInvitesDialog from "./LeagueInvitesDialog";
@@ -18,17 +21,26 @@ type League = Leagues[number];
 
 export default function FantasyFilmHomePage() {
   const { data: sessionData } = useSession();
+  const router = useRouter();
 
-  const {
-    data: leagues,
-    isLoading,
-    refetch,
-  } = api.ffLeague.getMyLeagues.useQuery(undefined, {
+  const { data: leagues, refetch } = api.ffLeague.getMyLeagues.useQuery(undefined, {
     enabled: !!sessionData?.user,
   });
-  const { data: biddingWarSessions } = api.ffLeague.getSiteWideSessions.useQuery(undefined, {
-    enabled: !!sessionData?.user,
-  });
+  const { data: biddingWarSessions } = api.ffLeague.getSiteWideSessions.useQuery(undefined);
+  const { mutate: join, isLoading: joining } = api.ffStudio.create.useMutation();
+
+  function handleJoin(sessionId: string) {
+    if (sessionData)
+      join(
+        { sessionId, ownerId: sessionData.user.id },
+        {
+          onSuccess: () => {
+            toast({ title: "Session joined" });
+            router.push(`/fantasy-film/bidding-war/${sessionId}`);
+          },
+        },
+      );
+  }
 
   const refresh = () => {
     void refetch();
@@ -58,7 +70,7 @@ export default function FantasyFilmHomePage() {
             <BiddingWarDialog className="ml-auto h-[40px] text-white" />
           </div>
           {biddingWarSessions?.map((session, i) => {
-            const sessionJoined = !!session.studios.length;
+            const myStudio = session.studios.find((e) => e.ownerId === sessionData?.user.id);
             return (
               <Card key={i}>
                 <CardHeader>
@@ -71,10 +83,29 @@ export default function FantasyFilmHomePage() {
                     <p className="inline-block text-sm">
                       {format(session.startDate, "LLL d, yyyy")} - {format(session.endDate, "LLL d, yyyy")}
                     </p>
-                    <p className="float-right">Studios: 38</p>
+                    <p className="float-right">Studios: {session._count.studios}</p>
                   </CardDescription>
                 </CardHeader>
-                <CardContent>{!sessionJoined && <Button>Join</Button>}</CardContent>
+                <CardContent>
+                  {myStudio ? (
+                    <>
+                      <div className="flex justify-between">
+                        <p>{myStudio.name}</p>
+                        <p className="text-sm text-slate-400">{myStudio.score} pts</p>
+                      </div>
+                      <div className="flex justify-between text-sm text-slate-400">
+                        <p className="inline">
+                          Films Released: {getFilmsReleased(myStudio.films)} / {session.settings.teamStructure.length}
+                        </p>
+                        <p className="inline">Budget: ${myStudio.budget}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <Button onClick={() => handleJoin(session.id)} isLoading={joining} disabled={!sessionData}>
+                      {(!sessionData ? "Sign in to " : "") + "Join"}
+                    </Button>
+                  )}
+                </CardContent>
               </Card>
             );
           })}

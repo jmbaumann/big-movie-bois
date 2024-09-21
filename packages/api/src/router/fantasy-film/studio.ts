@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { LeagueSessionStudio, Prisma } from "@repo/db";
 
-import { BID_STATUSES, SESSION_ACTIVITY_TYPES } from "../../enums";
+import { BID_STATUSES, FILM_ACQUISITION_TYPES, SESSION_ACTIVITY_TYPES } from "../../enums";
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { getByTMDBId } from "../tmdb";
 import { getFilmScore, getFilmScores } from "./film";
@@ -87,20 +87,7 @@ const getOpposingStudios = protectedProcedure
   });
 
 const create = protectedProcedure.input(createLeagueSessionStudioObj).mutation(async ({ ctx, input }) => {
-  const user = await ctx.prisma.user.findFirst({
-    where: { id: input.ownerId },
-  });
-  const name = `${user?.name}'s Studio`;
-  return await ctx.prisma.leagueSessionStudio.create({
-    data: {
-      sessionId: input.sessionId,
-      ownerId: input.ownerId,
-      name,
-      image: getRandomIcon(),
-      budget: 100,
-      createdAt: new Date(),
-    },
-  });
+  return await createStudio(ctx, input);
 });
 
 const update = protectedProcedure
@@ -161,18 +148,49 @@ const bid = protectedProcedure
       tmdbId: z.number(),
       amount: z.number(),
       slot: z.number(),
-      dropFilmId: z.string().optional(),
+      autoProcess: z.boolean().optional(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
     await getByTMDBId(ctx, input.tmdbId);
 
+    const { autoProcess, ...rest } = input;
     const data = {
-      ...input,
-      status: BID_STATUSES.PENDING,
+      ...rest,
+      status: BID_STATUSES.PURCHASE,
       createdAt: new Date(),
     };
-    return await ctx.prisma.filmBid.create({ data });
+    const bid = await ctx.prisma.filmBid.create({ data });
+
+    if (autoProcess) {
+      const studio = await ctx.prisma.leagueSessionStudio.findFirst({ where: { id: input.studioId } });
+      if (!studio) throw "Could not process purchase";
+
+      await ctx.prisma.leagueSessionStudio.update({
+        data: { budget: studio.budget - input.amount },
+        where: { id: input.studioId },
+      });
+
+      await ctx.prisma.studioFilm.create({
+        data: {
+          tmdbId: input.tmdbId,
+          studioId: input.studioId,
+          slot: input.slot,
+          acquiredAt: new Date(),
+          acquiredType: FILM_ACQUISITION_TYPES.PURCHASED,
+        },
+      });
+
+      await logSessionActivity(ctx, {
+        sessionId: studio.sessionId,
+        studioId: input.studioId,
+        tmdbId: input.tmdbId,
+        type: SESSION_ACTIVITY_TYPES.FILM_PURCHASED,
+        message: `{STUDIO} PURCHASED {FILM} for $${input.amount}`,
+      });
+    }
+
+    return bid;
   });
 
 const updateBid = protectedProcedure
@@ -247,6 +265,23 @@ async function getStudioFilmsAndScore(
   });
 }
 
+export async function createStudio(ctx: TRPCContext, input: z.infer<typeof createLeagueSessionStudioObj>) {
+  const user = await ctx.prisma.user.findFirst({
+    where: { id: input.ownerId },
+  });
+  const name = `${user?.name}'s Studio`;
+  return await ctx.prisma.leagueSessionStudio.create({
+    data: {
+      sessionId: input.sessionId,
+      ownerId: input.ownerId,
+      name,
+      image: getRandomIcon(),
+      budget: 100,
+      createdAt: new Date(),
+    },
+  });
+}
+
 export async function createManyStudios(ctx: TRPCContext, input: z.infer<typeof createLeagueSessionStudioObj>[]) {
   const users = await ctx.prisma.user.findMany({
     where: { id: { in: input.map((e) => e.ownerId) } },
@@ -277,6 +312,8 @@ function getStudiosRanks(studios: LeagueSessionStudio[]) {
 
   return list;
 }
+
+function autoProcessBid(ctx: TRPCContext, bidId: string) {}
 
 function getRandomIcon() {
   const colors = ["#000000", "#525252", "#dc2626", "#ea580c", "#84cc16", "#0ea5e9", "#9333ea", "#db2777"];

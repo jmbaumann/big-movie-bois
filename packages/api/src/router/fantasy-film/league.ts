@@ -7,12 +7,26 @@ import { LEAGUE_INVITE_STATUSES } from "../../enums";
 // import { movieList } from "../movies";
 import type { TRPCContext } from "../../trpc";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
+import { LeagueSessionSettings } from "./zod";
 
-const getSiteWideSessions = protectedProcedure.query(async ({ ctx }) => {
-  return await ctx.prisma.leagueSession.findMany({
+const getSiteWideSessions = publicProcedure.query(async ({ ctx }) => {
+  const list = await ctx.prisma.leagueSession.findMany({
     where: { leagueId: "cm18qkt8o00056e9iscpz7ym8" },
-    include: { league: true, studios: { where: { ownerId: ctx.session.user.id } } },
+    include: {
+      league: true,
+      studios: { include: { films: { include: { tmdb: true } } }, where: { ownerId: ctx.session?.user.id } },
+      _count: {
+        select: {
+          studios: true,
+        },
+      },
+    },
   });
+
+  return list.map((e) => ({
+    ...e,
+    settings: JSON.parse(e.settings as string) as LeagueSessionSettings,
+  }));
 });
 
 const getMyLeagues = publicProcedure.query(async ({ ctx }) => {

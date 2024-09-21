@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { inferRouterOutputs } from "@trpc/server";
 import { format, nextTuesday } from "date-fns";
 import {
   ChevronLeft,
@@ -26,7 +25,7 @@ import {
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
-import { AppRouter } from "@repo/api";
+import { RouterOutputs } from "@repo/api";
 import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 
@@ -60,9 +59,9 @@ import SessionForm from "./forms/Session";
 import StudioIcon from "./StudioIcon";
 import StudioSlot from "./StudioSlot";
 
-type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
-type Studio = inferRouterOutputs<AppRouter>["ffStudio"]["getStudios"][number];
-type Activty = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getLogs"][number];
+type Session = RouterOutputs["ffLeagueSession"]["getById"];
+type Studio = RouterOutputs["ffStudio"]["getStudios"][number];
+type Activty = RouterOutputs["ffLeagueSession"]["getLogs"][number];
 
 export default function SessionDetailsPage() {
   const { data: sessionData } = useSession();

@@ -223,7 +223,7 @@ model FilmBid {
     studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
     tmdb   TMDBDetails         @relation(fields: [tmdbId], references: [id])
 
-    @@unique([studioId, tmdbId])
+    @@unique([studioId, tmdbId, status])
     @@index([studioId])
     @@index([tmdbId])
 }

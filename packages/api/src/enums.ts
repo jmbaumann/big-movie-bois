@@ -29,10 +29,12 @@ export const BID_STATUSES = {
   WON: "won",
   LOST: "lost",
   INVALID: "invalid",
+  PURCHASE: "purchase",
 } as const;
 
 export const SESSION_ACTIVITY_TYPES = {
   FILM_SWAP: "film-swap",
+  FILM_PURCHASED: "film-purchased",
   FILM_DROP: "film-drop",
   BID_WON: "bid-won",
   STUDIO_UPDATE: "studio-update",
@@ -43,5 +45,6 @@ export const FILM_ACQUISITION_TYPES = {
   DRAFTED: "Drafted",
   WON_BID: "Won Bid",
   TRADED: "Traded",
+  PURCHASED: "Purchased",
   ADMIN_ADDED: "Admin Added",
 } as const;

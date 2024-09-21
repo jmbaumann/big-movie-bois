@@ -27,19 +27,21 @@ import { Label } from "~/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { ONE_DAY_IN_SECONDS } from "~/utils";
 
-type Film = TMDBDiscoverResult;
+type Film = TMDBDiscoverResult & { price?: number };
 type Session = RouterOutputs["ffLeagueSession"]["getById"];
 
 export default function AvailableFilms({
   session,
   films,
   studioId,
+  buyNow,
   isDraft,
   loadMoreFilms,
 }: {
   session: Session;
   films: Film[];
   studioId: string;
+  buyNow?: boolean;
   isDraft?: boolean;
   loadMoreFilms?: () => void;
 }) {
@@ -86,7 +88,7 @@ export default function AvailableFilms({
   const { data: bids, refetch: refreshBids } = api.ffStudio.getBids.useQuery(
     { studioId },
     {
-      enabled: !!studioId,
+      enabled: !!studioId && !isDraft && !buyNow,
       staleTime: ONE_DAY_IN_SECONDS,
     },
   );
@@ -110,6 +112,14 @@ export default function AvailableFilms({
   }, [filmList]);
 
   useEffect(() => {
+    if (buyNow && selectedFilm) {
+      setBidAmount(String(selectedFilm.price));
+    }
+  }, [selectedFilm]);
+
+  // console.log(films.map((e) => ({ popularity: e.popularity, price: e.price })));
+
+  useEffect(() => {
     setSelectedSlot(undefined);
   }, [open]);
 
@@ -127,10 +137,11 @@ export default function AvailableFilms({
           tmdbId: selectedFilm.id,
           amount: Number(bidAmount),
           slot: Number(selectedSlot),
+          autoProcess: !!buyNow,
         },
         {
           onSuccess: () => {
-            toast({ title: "Bid submitted" });
+            toast({ title: buyNow ? "Film added to Studio" : "Bid submitted" });
             setOpen(false);
           },
         },
@@ -190,6 +201,7 @@ export default function AvailableFilms({
                       height={300}
                     />
                     <p className="text-center">{film.title}</p>
+                    <p className="text-center">{film.price}</p>
                   </div>
                 </DialogTrigger>
               );
@@ -245,15 +257,22 @@ export default function AvailableFilms({
                             </div>
 
                             <div className="mt-4">
-                              <Label>Amount</Label>
-                              <Input
-                                className="w-2/3 text-black"
-                                value={bidAmount}
-                                onChange={(e) => setBidAmount(e.target.value)}
-                                type="number"
-                                min={0}
-                                startIcon={DollarSign}
-                              ></Input>
+                              <Label>{!buyNow ? "Amount" : "Price"}</Label>
+                              {!buyNow ? (
+                                <Input
+                                  className="w-2/3 text-black"
+                                  value={bidAmount}
+                                  onChange={(e) => setBidAmount(e.target.value)}
+                                  type="number"
+                                  min={0}
+                                  startIcon={DollarSign}
+                                ></Input>
+                              ) : (
+                                <p className="flex items-center text-2xl">
+                                  <DollarSign className="text-white" />
+                                  {bidAmount}
+                                </p>
+                              )}
                             </div>
                           </>
                         )}
@@ -298,7 +317,7 @@ export default function AvailableFilms({
                       disabled={!selectedFilm || !canPick || !selectedSlot || bidPlaced}
                       onClick={handleBid}
                     >
-                      Place Bid
+                      {buyNow ? "Buy" : "Place Bid"}
                     </Button>
                   )}
                 </div>

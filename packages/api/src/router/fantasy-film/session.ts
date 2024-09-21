@@ -55,6 +55,12 @@ const update = protectedProcedure.input(updateLeagueSessionInputObj).mutation(as
   return session;
 });
 
+const del = protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+  return await ctx.prisma.leagueSession.delete({
+    where: { id: input.id },
+  });
+});
+
 const getAcquiredFilms = protectedProcedure
   .input(z.object({ sessionId: z.string(), includeDetails: z.boolean().optional() }))
   .query(async ({ ctx, input }) => {
@@ -102,6 +108,7 @@ export const leagueSessionRouter = createTRPCRouter({
   getById,
   create,
   update,
+  delete: del,
   getAcquiredFilms,
   getStandings,
   getBids,

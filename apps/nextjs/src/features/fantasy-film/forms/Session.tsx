@@ -128,6 +128,7 @@ export default function SessionForm({
 }
 
 export function DetailsSection() {
+  const { data: sessionData } = useSession();
   const form = useFormContext();
   const { fields, append, remove } = useFieldArray({
     name: "settings.teamStructure",
@@ -187,7 +188,10 @@ export function DetailsSection() {
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    disabled={(date) => date < sub(new Date(), { days: 1 }) || date > add(new Date(), { days: 30 })}
+                    disabled={(date) =>
+                      !sessionData?.user.isAdmin &&
+                      (date < sub(new Date(), { days: 1 }) || date > add(new Date(), { days: 30 }))
+                    }
                     initialFocus
                   />
                 </PopoverContent>
@@ -232,8 +236,9 @@ export function DetailsSection() {
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) =>
-                      date < add(new Date(form.getValues().startDate), { days: 30 }) ||
-                      date > add(new Date(form.getValues().startDate), { days: 366 })
+                      !sessionData?.user.isAdmin &&
+                      (date < add(new Date(form.getValues().startDate), { days: 30 }) ||
+                        date > add(new Date(form.getValues().startDate), { days: 366 }))
                     }
                     initialFocus
                   />

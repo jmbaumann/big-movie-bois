@@ -1,3 +1,4 @@
+import { add, sub } from "date-fns";
 import { z } from "zod";
 
 import { Prisma } from "@repo/db";
@@ -11,7 +12,6 @@ import { LeagueSessionSettings } from "./zod";
 
 const getSiteWideSessions = publicProcedure.query(async ({ ctx }) => {
   const list = await ctx.prisma.leagueSession.findMany({
-    where: { leagueId: "cm18qkt8o00056e9iscpz7ym8" },
     include: {
       league: true,
       studios: { include: { films: { include: { tmdb: true } } }, where: { ownerId: ctx.session?.user.id } },
@@ -20,6 +20,31 @@ const getSiteWideSessions = publicProcedure.query(async ({ ctx }) => {
           studios: true,
         },
       },
+    },
+    where: {
+      leagueId: "cm18qkt8o00056e9iscpz7ym8",
+      OR: [
+        {
+          startDate: {
+            lte: new Date(),
+          },
+          endDate: {
+            gte: new Date(),
+          },
+        },
+        {
+          startDate: {
+            gte: new Date(),
+            lte: add(new Date(), { days: 30 }),
+          },
+        },
+        {
+          endDate: {
+            lte: new Date(),
+            gte: sub(new Date(), { days: 10 }),
+          },
+        },
+      ],
     },
   });
 

@@ -72,7 +72,7 @@ export default function FantasyFilmHomePage() {
           {biddingWarSessions?.map((session, i) => {
             const myStudio = session.studios.find((e) => e.ownerId === sessionData?.user.id);
             return (
-              <Card key={i}>
+              <Card key={i} className="mb-2">
                 <CardHeader>
                   <CardTitle>
                     <Link className="hover:text-primary" href={`/fantasy-film/bidding-war/${session.id}`}>

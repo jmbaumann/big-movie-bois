@@ -122,10 +122,10 @@ export async function getFilmScore(ctx: TRPCContext, session: Session, film: Fil
     case STUDIO_SLOT_TYPES.OPENING_WEEKEND_BOX_OFFICE:
       score = film.scores.openingWeekendBoxOffice;
       break;
-    case STUDIO_SLOT_TYPES.IMDB_RATING:
+    case STUDIO_SLOT_TYPES.TMDB_RATING:
       score = film.scores.rating;
       break;
-    case STUDIO_SLOT_TYPES.REVERSE_IMDB_RATING:
+    case STUDIO_SLOT_TYPES.REVERSE_TMDB_RATING:
       score = film.scores.reverseRating;
       break;
   }

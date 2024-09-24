@@ -41,8 +41,7 @@ const getStudios = protectedProcedure.input(z.object({ sessionId: z.string() }))
     take: 20,
   });
 
-  for (const studio of list) await getStudioFilmsAndScore(ctx, studio, input.sessionId);
-
+  for (const studio of list) await getStudioFilmScores(ctx, studio, input.sessionId);
   const studios = getStudiosRanks(list);
 
   return studios as Studio[];
@@ -60,7 +59,7 @@ const getMyStudio = protectedProcedure.input(z.object({ sessionId: z.string() })
   });
   if (!studio) throw "No studio found";
 
-  await getStudioFilmsAndScore(ctx, studio, input.sessionId);
+  await getStudioFilmScores(ctx, studio, input.sessionId);
 
   return studio as LeagueSessionStudio & { films: StudioFilm[] };
 });
@@ -78,12 +77,29 @@ const getOpposingStudios = protectedProcedure
 
     const opposing = list.map((e, i) => ({ ...e, rank: i + 1 })).filter((e) => e.ownerId !== ctx.session.user.id);
 
-    for (const studio of opposing) await getStudioFilmsAndScore(ctx, studio, input.sessionId);
+    for (const studio of opposing) await getStudioFilmScores(ctx, studio, input.sessionId);
 
     return opposing as (LeagueSessionStudio & {
       rank: number;
       films: StudioFilm[];
     })[];
+  });
+
+const search = protectedProcedure
+  .input(z.object({ sessionId: z.string(), keyword: z.string() }))
+  .query(async ({ ctx, input }) => {
+    const list = await ctx.prisma.leagueSessionStudio.findMany({
+      include: {
+        owner: { select: { name: true } },
+        films: { include: { tmdb: true } },
+      },
+      where: { sessionId: input.sessionId, name: { contains: input.keyword, mode: "insensitive" } },
+    });
+
+    for (const studio of list) await getStudioFilmScores(ctx, studio, input.sessionId);
+    const studios = getStudiosRanks(list);
+
+    return studios as Studio[];
   });
 
 const create = protectedProcedure.input(createLeagueSessionStudioObj).mutation(async ({ ctx, input }) => {
@@ -220,6 +236,7 @@ export const studioRouter = createTRPCRouter({
   getStudios,
   getMyStudio,
   getOpposingStudios,
+  search,
   create,
   update,
   getFavorites,
@@ -233,7 +250,7 @@ export const studioRouter = createTRPCRouter({
 
 ////////////////
 
-async function getStudioFilmsAndScore(
+async function getStudioFilmScores(
   ctx: TRPCContext,
   studio: Prisma.LeagueSessionStudioGetPayload<{
     include: { films: { include: { tmdb: true } } };

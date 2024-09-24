@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { format } from "date-fns";
 import {
+  ChevronsUpDown,
   CircleDollarSign,
   Clapperboard,
   Disc3,
@@ -12,6 +13,7 @@ import {
   Pencil,
   Popcorn,
   Projector,
+  Search,
   ShieldEllipsis,
   Shuffle,
   Sofa,
@@ -31,6 +33,7 @@ import { api } from "~/utils/api";
 import { getFilmsReleased, isSlotLocked } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +45,7 @@ import {
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
@@ -272,10 +276,16 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
   const router = useRouter();
 
   const [selectedStudio, setSelectedStudio] = useState<Studio | undefined>(undefined);
+  const [keyword, setKeyword] = useState("");
 
   useEffect(() => {
     if (studios) setSelectedStudio(studios.find((e) => e.id === router.query.studio));
   }, [router.query, studios]);
+
+  const { data: searchResult, isLoading: searching } = api.ffStudio.search.useQuery(
+    { sessionId: session?.id ?? "", keyword },
+    { enabled: !!session && !!keyword.length },
+  );
 
   if (selectedStudio)
     return (
@@ -284,7 +294,44 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
       </div>
     );
 
-  return <p>opposing studios</p>;
+  return (
+    <div>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button role="combobox">
+            <Search size={20} className="mr-1" />
+            Find a Studio
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <Command shouldFilter={false}>
+            <CommandInput placeholder="Enter a username" onValueChange={setKeyword} />
+            {searching && !!keyword.length ? (
+              <CommandEmpty>Loading...</CommandEmpty>
+            ) : (
+              <CommandEmpty>No results</CommandEmpty>
+            )}
+            <CommandList className="w-[400px]">
+              <CommandGroup>
+                {searchResult?.map((result) => (
+                  <CommandItem
+                    key={result.id}
+                    value={String(result.id)}
+                    onSelect={() => {
+                      setSelectedStudio(result);
+                      setKeyword("");
+                    }}
+                  >
+                    {result.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 }
 
 function Films({ session, myStudio }: { session: Session; myStudio: Studio | undefined }) {

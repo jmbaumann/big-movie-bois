@@ -97,7 +97,13 @@ export default function AvailableFilms({
   const { mutate: makeBid, isLoading: bidding } = api.ffStudio.bid.useMutation();
   const { mutate: makePick } = api.ffDraft.pick.useMutation();
 
-  const availableSlots = myStudio && session ? getUnlockedSlots(session, myStudio) : [];
+  const slotsFilled = new Set(myStudio?.films.map((e) => e.slot));
+  const availableSlots =
+    myStudio && session
+      ? buyNow
+        ? session.settings.teamStructure.filter((e) => !slotsFilled.has(e.pos))
+        : getUnlockedSlots(session, myStudio)
+      : [];
   const canPick = !!availableSlots?.length;
   const isFavorite = selectedFilm ? favorites?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
   const bidPlaced = selectedFilm ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;

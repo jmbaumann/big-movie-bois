@@ -51,16 +51,53 @@ const getById = publicProcedure.input(z.object({ id: z.number() })).query(async 
 });
 
 const getFilmsForSession = publicProcedure
-  .input(z.object({ sessionId: z.string(), page: z.number(), today: z.boolean().optional() }))
+  .input(
+    z.object({
+      sessionId: z.string(),
+      studioId: z.string(),
+      page: z.number(),
+      options: z
+        .object({
+          today: z.boolean().optional(),
+          excludeMyFilms: z.boolean().optional(),
+          excludeAcquiredFilms: z.boolean().optional(),
+        })
+        .optional(),
+    }),
+  )
   .query(async ({ ctx, input }) => {
     const session = await ctx.prisma.leagueSession.findFirst({ where: { id: input.sessionId } });
     if (!session) throw "No session";
 
-    const from = input.today
+    const { today, excludeMyFilms, excludeAcquiredFilms } = input.options ?? {};
+
+    const from = today
       ? format(max([new Date(), session.startDate]), "yyyy-MM-dd")
       : format(session.startDate, "yyyy-MM-dd");
     const to = format(session.endDate, "yyyy-MM-dd");
-    const where = { AND: [{ releaseDate: { gte: from } }, { releaseDate: { lte: to } }] };
+    const defaultWhere = { AND: [{ releaseDate: { gte: from } }, { releaseDate: { lte: to } }] };
+
+    let where = {};
+    if (excludeMyFilms)
+      where = {
+        ...defaultWhere,
+        studioFilms: {
+          none: {
+            studioId: input.studioId,
+          },
+        },
+      };
+    else if (excludeAcquiredFilms)
+      where = {
+        ...defaultWhere,
+        studioFilms: {
+          none: {
+            studio: {
+              sessionId: input.sessionId,
+            },
+          },
+        },
+      };
 
     const total = await ctx.prisma.tMDBDetails.count({ where });
     const list = await ctx.prisma.tMDBDetails.findMany({

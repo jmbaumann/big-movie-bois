@@ -403,40 +403,11 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
 function Films({ session }: { session: Session }) {
   const { data: sessionData } = useSession();
 
-  const [films, setFilms] = useState<TMDBDetails[]>([]);
-  const [page, setPage] = useState(1);
-
-  const { data, refetch: refetchFilms } = api.tmdb.getFilmsForSession.useQuery(
-    { sessionId: session?.id ?? "", page, today: true },
-    { staleTime: ONE_DAY_IN_SECONDS, enabled: !!session?.id },
-  );
-  const { data: acquiredFilms } = api.ffLeagueSession.getAcquiredFilms.useQuery(
-    { sessionId: session?.id ?? "" },
-    { staleTime: ONE_DAY_IN_SECONDS, enabled: !!session?.id },
-  );
-
-  useEffect(() => {
-    if (data?.data) {
-      console.log(data.data);
-      setFilms((s) => [...s, ...data.data]);
-    }
-  }, [data]);
-
-  const acquiredIds = acquiredFilms?.map((e) => e.tmdbId);
-  const available = films.filter((e) => !acquiredIds?.includes(e.id));
-
   const myStudio = session?.studios.find((e) => e.ownerId === sessionData?.user.id);
 
-  if (!films || !myStudio || !available) return <p>no films</p>;
+  if (!myStudio) return <>no studio</>;
 
-  return (
-    <AvailableFilms
-      session={session}
-      films={available}
-      studioId={myStudio.id}
-      loadMoreFilms={() => setPage((s) => s + 1)}
-    />
-  );
+  return <AvailableFilms session={session} studioId={myStudio.id} />;
 }
 
 function Bids({ session }: { session: Session }) {

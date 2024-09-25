@@ -336,36 +336,9 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
 }
 
 function Films({ session, myStudio }: { session: Session; myStudio: Studio | undefined }) {
-  const [films, setFilms] = useState<(TMDBDetails & { price: number })[]>([]);
-  const [page, setPage] = useState(1);
+  if (!myStudio) return <>no studio</>;
 
-  const { data, isLoading } = api.tmdb.getFilmsForSession.useQuery(
-    { sessionId: session?.id ?? "", page, today: true },
-    { staleTime: ONE_DAY_IN_SECONDS, enabled: !!session?.id, keepPreviousData: true },
-  );
-
-  useEffect(() => {
-    if (data?.data) {
-      setFilms((s) =>
-        [...s, ...data.data].map((e) => ({ ...e, price: Math.min(Math.round((e.popularity / 100) * 40), 40) })),
-      );
-    }
-  }, [data]);
-
-  const acquiredIds = myStudio?.films.map((e) => e.tmdbId);
-  const available = films.filter((e) => !acquiredIds?.includes(e.id));
-
-  if (!data?.data || !myStudio || !films) return <p>no films</p>;
-
-  return (
-    <AvailableFilms
-      session={session}
-      films={available}
-      studioId={myStudio.id}
-      buyNow
-      loadMoreFilms={() => setPage((s) => s + 1)}
-    />
-  );
+  return <AvailableFilms session={session} studioId={myStudio.id} buyNow />;
 }
 
 function Activity({ session }: { session: Session }) {

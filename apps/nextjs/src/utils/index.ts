@@ -1,9 +1,6 @@
 export const ONE_DAY_IN_SECONDS = 1000 * 60 * 60 * 24;
 
-export function getById<T extends Record<string, any>>(
-  arr: T[],
-  key?: keyof T,
-): Record<string, T> {
+export function getById<T extends Record<string, any>>(arr: T[], key?: keyof T): Record<string, T> {
   const byId: Record<string, T> = {};
 
   if (key)
@@ -19,6 +16,10 @@ export function getById<T extends Record<string, any>>(
     });
 
   return byId;
+}
+
+export function unique<T extends { id: string | number }>(arr: T[]) {
+  return arr.filter((obj1, i, arr) => arr.findIndex((obj2) => obj2.id === obj1.id) === i);
 }
 
 export function toMoney(num: number) {

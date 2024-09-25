@@ -27,30 +27,28 @@ import { toast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { ONE_DAY_IN_SECONDS } from "~/utils";
+import { ONE_DAY_IN_SECONDS, unique } from "~/utils";
 
 type Film = TMDBDetails & { price?: number };
 type Session = RouterOutputs["ffLeagueSession"]["getById"];
 
 export default function AvailableFilms({
   session,
-  films,
   studioId,
   buyNow,
   isDraft,
   gridCols,
-  loadMoreFilms,
 }: {
   session: Session;
-  films: Film[];
   studioId: string;
   buyNow?: boolean;
   isDraft?: boolean;
   gridCols?: number;
-  loadMoreFilms?: () => void;
 }) {
-  const [filmList, setFilmList] = useState<Film[]>(films);
+  const [films, setFilms] = useState<Film[]>([]);
+  const [availableFilms, setAvailableFilms] = useState<Film[]>([]);
   const [showWatchlist, setShowWatchlist] = useState(false);
+  const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [selectedFilm, setSelectedFilm] = useState<Film>();
   const [selectedSlot, setSelectedSlot] = useState<string>();
@@ -74,6 +72,15 @@ export default function AvailableFilms({
     } else return 1;
   };
 
+  const { data: sessionFilms, refetch: refreshFilms } = api.tmdb.getFilmsForSession.useQuery(
+    {
+      sessionId: session?.id ?? "",
+      studioId,
+      page,
+      options: { today: true, excludeAcquiredFilms: !buyNow, excludeMyFilms: buyNow },
+    },
+    { staleTime: ONE_DAY_IN_SECONDS, enabled: !!session?.id },
+  );
   const { data: myStudio } = api.ffStudio.getMyStudio.useQuery(
     { sessionId: session?.id ?? "" },
     {
@@ -113,8 +120,23 @@ export default function AvailableFilms({
   const insufficientFunds = selectedFilm && myStudio ? (selectedFilm.price ?? 0) > myStudio?.budget : false;
 
   useEffect(() => {
-    if (films) setFilmList(films);
+    if (sessionFilms?.data) {
+      const films = sessionFilms.data.map((e) => ({
+        ...e,
+        price: Math.min(Math.round((e.popularity / 100) * 40), 40),
+      }));
+      setFilms((s) => unique([...s, ...films]));
+    }
+  }, [sessionFilms]);
+
+  useEffect(() => {
+    if (!showWatchlist) setAvailableFilms(films);
   }, [films]);
+
+  useEffect(() => {
+    if (showWatchlist) setAvailableFilms(favorites ?? []);
+    else setAvailableFilms(films);
+  }, [showWatchlist]);
 
   useEffect(() => {
     if (buyNow && selectedFilm) {
@@ -125,12 +147,6 @@ export default function AvailableFilms({
   useEffect(() => {
     setSelectedSlot(undefined);
   }, [open]);
-
-  useEffect(() => {
-    return () => {
-      setFilmList([]);
-    };
-  }, []);
 
   function handleFavorite() {
     if (selectedFilm)
@@ -177,8 +193,8 @@ export default function AvailableFilms({
     <>
       <div className="flex items-center">
         <SortChips
-          items={filmList}
-          setItems={setFilmList}
+          items={availableFilms}
+          setItems={setAvailableFilms}
           options={sortOptions}
           sortFunc={sort}
           def={{ value: "popularity", desc: true }}
@@ -193,7 +209,7 @@ export default function AvailableFilms({
       <div className="max-h-[calc(100%-40px)] overflow-y-auto">
         <Dialog open={open} onOpenChange={setOpen}>
           <div className={cn("grid", gridCols ? `grid-cols-${gridCols}` : "grid-cols-5")}>
-            {(showWatchlist ? favorites ?? [] : filmList).map((film, i) => {
+            {availableFilms.map((film, i) => {
               const price = Math.min(Math.round((film.popularity / 100) * 40), 40);
 
               return (
@@ -384,9 +400,9 @@ export default function AvailableFilms({
           </div>
         </Dialog>
 
-        {!!filmList.length && !!loadMoreFilms && !showWatchlist && (
+        {!!films.length && !showWatchlist && (
           <div className="flex w-full">
-            <Button className="mx-auto" onClick={() => loadMoreFilms()}>
+            <Button className="mx-auto" onClick={() => setPage((s) => s + 1)}>
               Load More
             </Button>
           </div>

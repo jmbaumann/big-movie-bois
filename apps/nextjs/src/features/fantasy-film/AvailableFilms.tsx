@@ -200,33 +200,46 @@ export default function AvailableFilms({
                       setOpen(true);
                     }}
                   >
-                    <Image
-                      className="group-hover:border-primary inset-0 border-4 border-transparent"
-                      src={`https://image.tmdb.org/t/p/w1280${film.poster}`}
-                      alt={`${film.title} poster`}
-                      width={200}
-                      height={300}
-                    />
+                    {film.poster ? (
+                      <Image
+                        className="group-hover:border-primary inset-0 border-4 border-transparent"
+                        src={`https://image.tmdb.org/t/p/w1280${film.poster}`}
+                        alt={`${film.title} poster`}
+                        width={200}
+                        height={300}
+                      />
+                    ) : (
+                      <div className="h-[190px] w-[130px] bg-slate-300"> no poster </div>
+                    )}
                     <p className="text-center">{film.title}</p>
                     <p className="text-center">{film.price}</p>
                   </div>
                 </DialogTrigger>
               );
             })}
-            <DialogContent className="max-w-2/3 w-1/2 rounded-sm" forceMount>
+            <DialogContent
+              className="max-w-2/3 w-1/2 rounded-sm"
+              forceMount
+              autoFocus={false}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
               <DialogHeader>
                 <DialogTitle className="text-white">{selectedFilm?.title}</DialogTitle>
                 <DialogDescription>
                   {selectedFilm && (
                     <div className="flex">
                       <div className="flex flex-col">
-                        <Image
-                          className="group-hover:border-primary inset-0 min-w-[200px] border-4 border-transparent"
-                          src={`https://image.tmdb.org/t/p/w1280${selectedFilm.poster}`}
-                          alt={`${selectedFilm.title} poster`}
-                          width={200}
-                          height={300}
-                        />
+                        {selectedFilm.poster ? (
+                          <Image
+                            className="group-hover:border-primary inset-0 min-w-[200px] border-4 border-transparent"
+                            src={`https://image.tmdb.org/t/p/w1280${selectedFilm.poster}`}
+                            alt={`${selectedFilm.title} poster`}
+                            width={200}
+                            height={300}
+                          />
+                        ) : (
+                          <div className="h-[190px] w-[130px] bg-slate-300"> no poster </div>
+                        )}
                       </div>
                       <div className="ml-4 w-full text-white">
                         <p className="mb-2 text-lg">

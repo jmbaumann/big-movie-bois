@@ -2,7 +2,13 @@ import { z } from "zod";
 
 export const getFilmsForSessionObj = z.object({
   sessionId: z.string(),
+  studioId: z.string(),
   page: z.number(),
-  today: z.boolean().optional(),
-  maxPopularity: z.number().optional(),
+  options: z
+    .object({
+      today: z.boolean().optional(),
+      excludeMyFilms: z.boolean().optional(),
+      excludeAcquiredFilms: z.boolean().optional(),
+    })
+    .optional(),
 });

@@ -3,9 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { format, sub } from "date-fns";
 import { CircleDollarSign, DollarSign, ExternalLink, Lock, Star } from "lucide-react";
+import { io } from "socket.io-client";
 
 import { RouterOutputs } from "@repo/api";
-import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
+import { DraftState } from "@repo/api/src/router/fantasy-film/draft";
 import { TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
@@ -47,6 +48,7 @@ export default function AvailableFilms({
 }) {
   const [films, setFilms] = useState<Film[]>([]);
   const [availableFilms, setAvailableFilms] = useState<Film[]>([]);
+  const [draftedFilmIds, setDraftedFilmIds] = useState<number[]>([]);
   const [showWatchlist, setShowWatchlist] = useState(false);
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
@@ -72,12 +74,16 @@ export default function AvailableFilms({
     } else return 1;
   };
 
-  const { data: sessionFilms, refetch: refreshFilms } = api.tmdb.getFilmsForSession.useQuery(
+  const {
+    data: sessionFilms,
+    refetch: refreshFilms,
+    isLoading: loadingFilms,
+  } = api.tmdb.getFilmsForSession.useQuery(
     {
       sessionId: session?.id ?? "",
       studioId,
       page,
-      options: { today: true, excludeAcquiredFilms: !buyNow, excludeMyFilms: buyNow },
+      options: { today: !isDraft, excludeAcquiredFilms: !buyNow, excludeMyFilms: buyNow },
     },
     { staleTime: ONE_DAY_IN_SECONDS, enabled: !!session?.id },
   );
@@ -125,7 +131,8 @@ export default function AvailableFilms({
         ...e,
         price: Math.min(Math.round((e.popularity / 100) * 40), 40),
       }));
-      setFilms((s) => unique([...s, ...films]));
+      const ids = new Set(draftedFilmIds);
+      setFilms((s) => unique([...s, ...films]).filter((e) => !ids.has(e.id)));
     }
   }, [sessionFilms]);
 
@@ -139,6 +146,11 @@ export default function AvailableFilms({
   }, [showWatchlist]);
 
   useEffect(() => {
+    const ids = new Set(draftedFilmIds);
+    setAvailableFilms((s) => s.filter((e) => !ids.has(e.id)));
+  }, [draftedFilmIds]);
+
+  useEffect(() => {
     if (buyNow && selectedFilm) {
       setBidAmount(String(selectedFilm.price));
     }
@@ -147,6 +159,25 @@ export default function AvailableFilms({
   useEffect(() => {
     setSelectedSlot(undefined);
   }, [open]);
+
+  useEffect(() => {
+    console.log("SCOKET");
+    const socket = io("ws://localhost:8080", {
+      // withCredentials: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to the WebSocket server");
+    });
+
+    socket.on(`draft:${session!.id}:draft-update`, (data: DraftState) => {
+      if (data.lastPick) setDraftedFilmIds((s) => [...s, data.lastPick!.tmdbId]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [session]);
 
   function handleFavorite() {
     if (selectedFilm)
@@ -400,9 +431,9 @@ export default function AvailableFilms({
           </div>
         </Dialog>
 
-        {!!films.length && !showWatchlist && (
+        {!!films.length && !showWatchlist && films.length < (sessionFilms?.total ?? 0) && (
           <div className="flex w-full">
-            <Button className="mx-auto" onClick={() => setPage((s) => s + 1)}>
+            <Button className="mx-auto" onClick={() => setPage((s) => s + 1)} isLoading={loadingFilms}>
               Load More
             </Button>
           </div>

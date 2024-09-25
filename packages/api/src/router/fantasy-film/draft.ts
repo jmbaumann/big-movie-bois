@@ -150,15 +150,19 @@ export async function autoDraft(ctx: TRPCContext, sessionId: string, studioId: s
   if (!session) throw "No session";
   if (picks.length === session?.settings.draft.numRounds * session?.studios.length) return;
 
-  const films = await getFilmsBySessionId(ctx, sessionId, 1);
+  const films = await getFilmsBySessionId(ctx, {
+    sessionId,
+    studioId,
+    page: 1,
+    options: { excludeAcquiredFilms: true },
+  });
+  const bestAvailable = films?.data[0];
+  if (!bestAvailable) throw "No available films";
+
   const unavailable = await ctx.prisma.studioFilm.findMany({
     where: { studio: { sessionId } },
     orderBy: { slot: "asc" },
   });
-  const unavailableIds = unavailable.map((e) => e.tmdbId);
-  const bestAvailable = films?.results.filter((e) => !unavailableIds.includes(e.id))[0];
-  if (!bestAvailable) throw "No available films";
-
   const drafted = unavailable.filter((e) => e.studioId === studioId);
   let openSlot = 1;
   for (const film of drafted)

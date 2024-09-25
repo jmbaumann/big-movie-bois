@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { getByDateRange, getDetailsById, getMovieFromTMDB } from "./tmdb";
 import { TMDBSearchResponse } from "./types";
+import { getFilmsForSessionObj } from "./zod";
 
 const POPULARITY_THRESHOLD = 10;
 
@@ -50,68 +51,9 @@ const getById = publicProcedure.input(z.object({ id: z.number() })).query(async 
   return getByTMDBId(ctx, input.id);
 });
 
-const getFilmsForSession = publicProcedure
-  .input(
-    z.object({
-      sessionId: z.string(),
-      studioId: z.string(),
-      page: z.number(),
-      options: z
-        .object({
-          today: z.boolean().optional(),
-          excludeMyFilms: z.boolean().optional(),
-          excludeAcquiredFilms: z.boolean().optional(),
-        })
-        .optional(),
-    }),
-  )
-  .query(async ({ ctx, input }) => {
-    const session = await ctx.prisma.leagueSession.findFirst({ where: { id: input.sessionId } });
-    if (!session) throw "No session";
-
-    const { today, excludeMyFilms, excludeAcquiredFilms } = input.options ?? {};
-
-    const from = today
-      ? format(max([new Date(), session.startDate]), "yyyy-MM-dd")
-      : format(session.startDate, "yyyy-MM-dd");
-    const to = format(session.endDate, "yyyy-MM-dd");
-    const defaultWhere = { AND: [{ releaseDate: { gte: from } }, { releaseDate: { lte: to } }] };
-
-    let where = {};
-    if (excludeMyFilms)
-      where = {
-        ...defaultWhere,
-        studioFilms: {
-          none: {
-            studioId: input.studioId,
-          },
-        },
-      };
-    else if (excludeAcquiredFilms)
-      where = {
-        ...defaultWhere,
-        studioFilms: {
-          none: {
-            studio: {
-              sessionId: input.sessionId,
-            },
-          },
-        },
-      };
-
-    const total = await ctx.prisma.tMDBDetails.count({ where });
-    const list = await ctx.prisma.tMDBDetails.findMany({
-      where,
-      skip: (input.page - 1) * 20,
-      take: 20,
-      orderBy: { popularity: "desc" },
-    });
-
-    return {
-      data: list,
-      total,
-    };
-  });
+const getFilmsForSession = publicProcedure.input(getFilmsForSessionObj).query(async ({ ctx, input }) => {
+  return await getFilmsBySessionId(ctx, input);
+});
 
 const getActive = protectedProcedure.input(z.object({ page: z.number().min(1) })).query(async ({ ctx, input }) => {
   const where = {
@@ -168,6 +110,54 @@ export async function getByTMDBId(ctx: TRPCContext, id: number, noReturn?: boole
   if (noReturn) return;
 
   return await ctx.prisma.tMDBDetails.findFirst({ include: { cast: true, crew: true }, where: { id } });
+}
+
+export async function getFilmsBySessionId(ctx: TRPCContext, input: z.infer<typeof getFilmsForSessionObj>) {
+  const session = await ctx.prisma.leagueSession.findFirst({ where: { id: input.sessionId } });
+  if (!session) throw "No session";
+
+  const { today, excludeMyFilms, excludeAcquiredFilms } = input.options ?? {};
+
+  const from = today
+    ? format(max([new Date(), session.startDate]), "yyyy-MM-dd")
+    : format(session.startDate, "yyyy-MM-dd");
+  const to = format(session.endDate, "yyyy-MM-dd");
+  const defaultWhere = { AND: [{ releaseDate: { gte: from } }, { releaseDate: { lte: to } }] };
+
+  let where = {};
+  if (excludeMyFilms)
+    where = {
+      ...defaultWhere,
+      studioFilms: {
+        none: {
+          studioId: input.studioId,
+        },
+      },
+    };
+  else if (excludeAcquiredFilms)
+    where = {
+      ...defaultWhere,
+      studioFilms: {
+        none: {
+          studio: {
+            sessionId: input.sessionId,
+          },
+        },
+      },
+    };
+
+  const total = await ctx.prisma.tMDBDetails.count({ where });
+  const list = await ctx.prisma.tMDBDetails.findMany({
+    where,
+    skip: (input.page - 1) * 20,
+    take: 20,
+    orderBy: { popularity: "desc" },
+  });
+
+  return {
+    data: list,
+    total,
+  };
 }
 
 async function updateMasterFantasyFilmList(ctx: TRPCContext) {

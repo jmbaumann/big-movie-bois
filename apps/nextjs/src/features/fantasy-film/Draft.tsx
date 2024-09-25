@@ -1,43 +1,28 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { inferRouterOutputs } from "@trpc/server";
 import { ArrowLeftFromLine, ArrowRightFromLine, ExternalLink, HelpCircle, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import io from "socket.io-client";
 
-import { AppRouter, RouterOutputs } from "@repo/api";
+import { RouterOutputs } from "@repo/api";
 import { DraftState } from "@repo/api/src/router/fantasy-film/draft";
-import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { LeagueSessionSettings } from "@repo/api/src/zod";
-import { LeagueSessionStudio, StudioFilm, TMDBDetails } from "@repo/db";
+import { LeagueSessionStudio, StudioFilm } from "@repo/db";
 
 // import io from "socket.io-client";
 
 import { api } from "~/utils/api";
-import { getAvailableFilms, getStudioOwnerByPick, getUpcomingPicks } from "~/utils/fantasy-film-helpers";
+import { getStudioOwnerByPick, getUpcomingPicks } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { env } from "~/env.mjs";
 import Layout from "~/layouts/main/Layout";
 import { getById } from "~/utils";
 import AvailableFilms from "./AvailableFilms";
-// import StudioIcon from "~/components/StudioIcon";
+import StudioIcon from "./StudioIcon";
 import StudioSlot from "./StudioSlot";
 
-type Films = RouterOutputs["tmdb"]["getFilmsForSession"];
 type StudioFilmTMDB = RouterOutputs["ffStudio"]["getMyStudio"]["films"][number];
 
 export default function Draft() {
@@ -54,8 +39,6 @@ export default function Draft() {
   const [picks, setPicks] = useState<StudioFilm[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
   const [expand, setExpand] = useState(false);
-  const [films, setFilms] = useState<TMDBDetails[]>([]);
-  const [page, setPage] = useState(1);
 
   const { data: session, isLoading } = api.ffLeagueSession.getById.useQuery(
     {
@@ -76,35 +59,11 @@ export default function Draft() {
     { staleTime: 1000 * 60 * 60 * 24, enabled: !!sessionId },
   );
 
-  const { data, refetch: refetchFilms } = api.tmdb.getFilmsForSession.useQuery(
-    { sessionId: session?.id ?? "", page, today: true },
-    { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
-  );
   const startDraft = api.ffDraft.start.useMutation();
-  const makePick = api.ffDraft.pick.useMutation();
 
   const studiosById = getById<LeagueSessionStudio>(session?.studios ?? [], "ownerId");
-  const availableFilms = getAvailableFilms(picks ?? [], films ?? []);
-  const availableSlots = session?.settings.teamStructure.filter(
-    (slot) => !myStudio?.films.map((e) => e.slot).includes(slot.pos),
-  );
   const draftOver = picks.length === (session?.settings.draft.numRounds ?? 0) * (session?.studios.length ?? 0);
   const draftCannotStart = session?.settings.draft.order.length === 0;
-
-  useEffect(() => {
-    if (data?.data) setFilms((s) => [...s, ...data.data]);
-  }, [data]);
-
-  const handleTimeout = () => {
-    if (session && getStudioOwnerByPick(session?.settings.draft.order ?? [], currentPick.num) === myStudio?.id)
-      makePick.mutate({
-        sessionId: session.id,
-        tmdbId: availableFilms?.[0]?.id ?? 0,
-        title: availableFilms?.[0]?.title ?? "",
-        studioId: myStudio?.id ?? "",
-        slot: availableSlots?.[0]?.pos ?? 0,
-      });
-  };
 
   useEffect(() => {
     const socket = io("ws://localhost:8080", {
@@ -176,7 +135,7 @@ export default function Draft() {
         ) : (
           <div className="flex items-center">
             {started ? (
-              <Countdown currentPick={currentPick} leagueSettings={session.settings} handleTimeout={handleTimeout} />
+              <Countdown currentPick={currentPick} leagueSettings={session.settings} />
             ) : session?.league.ownerId === sessionData?.user.id ? (
               <Button className="ml-2 font-sans" onClick={() => startDraft.mutate({ sessionId: session!.id })}>
                 Start Draft
@@ -215,22 +174,8 @@ export default function Draft() {
               expand ? "w-[calc(100vw-736px)]" : "w-[calc(100vw-518px)]",
             )}
           >
-            {myStudio && availableFilms && (
-              <AvailableFilms
-                session={session}
-                films={availableFilms}
-                studioId={myStudio.id}
-                // locked={
-                //   !(
-                //     started &&
-                //     !draftOver &&
-                //     getStudioOwnerByPick(session.settings.draft.order, currentPick.num) === myStudio.ownerId
-                //   )
-                // }
-                isDraft={true}
-                gridCols={expand ? 4 : 5}
-                loadMoreFilms={() => setPage((s) => s + 1)}
-              />
+            {myStudio && (
+              <AvailableFilms session={session} studioId={myStudio.id} isDraft={true} gridCols={expand ? 4 : 5} />
             )}
           </div>
           <div className="w-[300px] border-t-2 border-[#9ac] px-4 py-2">
@@ -245,7 +190,6 @@ export default function Draft() {
 function Countdown({
   currentPick,
   leagueSettings,
-  handleTimeout,
 }: {
   currentPick: {
     num: number;
@@ -253,7 +197,6 @@ function Countdown({
     endTimestamp: number;
   };
   leagueSettings: LeagueSessionSettings;
-  handleTimeout: () => void;
 }) {
   const [timer, setTimer] = useState("");
   const [seconds, setSeconds] = useState(1);
@@ -268,7 +211,7 @@ function Countdown({
         const minutes = Math.floor((distance / 60) % 60);
         const seconds = Math.floor(distance % 60);
         setTimer(`${minutes}m ${seconds < 10 ? "0" + seconds : seconds}s`);
-      } else if (distance === -3) handleTimeout();
+      }
     }
   };
 
@@ -306,7 +249,7 @@ function OnTheClock({ pick, studio }: { pick: number; studio?: LeagueSessionStud
         studio.ownerId === sessionData?.user.id ? "bg-green-500" : "",
       )}
     >
-      {/* <StudioIcon icon={studio.image} /> */}
+      <StudioIcon image={studio.image} />
       <div className="flex flex-col font-sans">
         <div className="text-sm uppercase">On the Clock: Pick {pick}</div>
         <div className="text-2xl">{studio.name}</div>
@@ -320,7 +263,7 @@ function UpcomingPick({ num, studio }: { num: number; studio?: LeagueSessionStud
   return (
     <div className="border-lb-blue flex w-[104px] max-w-[104px] flex-col items-center self-center border-2 px-2 py-1 font-sans text-white">
       <div className="text-sm uppercase">Pick {num}</div>
-      {/* <StudioIcon icon={studio.image} /> */}
+      <StudioIcon image={studio.image} />
       <div className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-xs">
         {studio.name}
       </div>

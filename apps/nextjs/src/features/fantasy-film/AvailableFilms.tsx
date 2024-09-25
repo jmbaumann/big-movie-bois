@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { format, sub } from "date-fns";
 import { CircleDollarSign, DollarSign, ExternalLink, Lock, Star } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { io } from "socket.io-client";
 
 import { RouterOutputs } from "@repo/api";
@@ -12,6 +13,7 @@ import { TMDBDetails } from "@repo/db";
 import { api } from "~/utils/api";
 import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
+import AdminMenu from "~/components/AdminMenu";
 import SortChips from "~/components/SortChips";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
@@ -24,6 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -46,9 +49,11 @@ export default function AvailableFilms({
   isDraft?: boolean;
   gridCols?: number;
 }) {
+  const { data: sessionData } = useSession();
+
   const [films, setFilms] = useState<Film[]>([]);
   const [availableFilms, setAvailableFilms] = useState<Film[]>([]);
-  const [draftedFilmIds, setDraftedFilmIds] = useState<number[]>([]);
+  const [acquiredFilms, setAcquiredFilms] = useState<number[]>([]);
   const [showWatchlist, setShowWatchlist] = useState(false);
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
@@ -56,6 +61,7 @@ export default function AvailableFilms({
   const [selectedSlot, setSelectedSlot] = useState<string>();
   const [bidAmount, setBidAmount] = useState("0");
 
+  const isAdmin = session?.league.ownerId === sessionData?.user.id;
   const sortOptions = [
     { label: "Popularity", value: "popularity" },
     { label: "Release Date", value: "releaseDate" },
@@ -108,10 +114,15 @@ export default function AvailableFilms({
       staleTime: ONE_DAY_IN_SECONDS,
     },
   );
+  const { data: studios } = api.ffStudio.getStudios.useQuery(
+    { sessionId: session?.id ?? "" },
+    { enabled: !!session?.id && isAdmin, staleTime: ONE_DAY_IN_SECONDS },
+  );
   const { mutate: addFavorite } = api.ffStudio.addFavorite.useMutation();
   const { mutate: removeFavorite } = api.ffStudio.removeFavorite.useMutation();
   const { mutate: makeBid, isLoading: bidding } = api.ffStudio.bid.useMutation();
   const { mutate: makePick } = api.ffDraft.pick.useMutation();
+  const { mutate: adminAdd } = api.ffAdmin.addStudioFilm.useMutation();
 
   const slotsFilled = new Set(myStudio?.films.map((e) => e.slot));
   const availableSlots =
@@ -131,7 +142,7 @@ export default function AvailableFilms({
         ...e,
         price: Math.min(Math.round((e.popularity / 100) * 40), 40),
       }));
-      const ids = new Set(draftedFilmIds);
+      const ids = new Set(acquiredFilms);
       setFilms((s) => unique([...s, ...films]).filter((e) => !ids.has(e.id)));
     }
   }, [sessionFilms]);
@@ -146,9 +157,9 @@ export default function AvailableFilms({
   }, [showWatchlist]);
 
   useEffect(() => {
-    const ids = new Set(draftedFilmIds);
+    const ids = new Set(acquiredFilms);
     setAvailableFilms((s) => s.filter((e) => !ids.has(e.id)));
-  }, [draftedFilmIds]);
+  }, [acquiredFilms]);
 
   useEffect(() => {
     if (buyNow && selectedFilm) {
@@ -170,7 +181,7 @@ export default function AvailableFilms({
     });
 
     socket.on(`draft:${session!.id}:draft-update`, (data: DraftState) => {
-      if (data.lastPick) setDraftedFilmIds((s) => [...s, data.lastPick!.tmdbId]);
+      if (data.lastPick) setAcquiredFilms((s) => [...s, data.lastPick!.tmdbId]);
     });
 
     return () => {
@@ -198,6 +209,24 @@ export default function AvailableFilms({
           onSuccess: () => {
             toast({ title: buyNow ? "Film added to Studio" : "Bid submitted" });
             setOpen(false);
+          },
+          onError: (e) => {
+            toast({ title: e.message, variant: "destructive" });
+          },
+        },
+      );
+  }
+
+  function handleAdminAdd(studioId: string) {
+    if (selectedFilm && selectedSlot)
+      adminAdd(
+        { studioId, tmdbId: selectedFilm.id, slot: Number(selectedSlot) },
+        {
+          onSuccess: () => {
+            toast({ title: "Film added to studio" });
+            setAcquiredFilms((s) => [...s, selectedFilm.id]);
+            setOpen(false);
+            refreshFilms();
           },
           onError: (e) => {
             toast({ title: e.message, variant: "destructive" });
@@ -409,7 +438,25 @@ export default function AvailableFilms({
                   </Button>
                 </div>
 
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center">
+                  {isAdmin && (
+                    <AdminMenu className="mr-4">
+                      <DropdownMenuContent side="top">
+                        {studios?.map((studio, i) => {
+                          const slotUsed = !!studio.films.find((e) => e.slot === Number(selectedSlot));
+                          return (
+                            <DropdownMenuItem
+                              key={i}
+                              disabled={!selectedSlot || slotUsed}
+                              onClick={() => handleAdminAdd(studio.id)}
+                            >
+                              Add to {studio.name}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </AdminMenu>
+                  )}
                   {isDraft && (
                     <Button disabled={!selectedFilm || !selectedSlot || !canPick} onClick={handleDraft}>
                       Draft

@@ -11,6 +11,7 @@ import { AppRouter } from "@repo/api";
 import { api } from "~/utils/api";
 import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
+import AdminMenu from "~/components/AdminMenu";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import {
@@ -22,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Label } from "~/components/ui/label";
@@ -57,6 +59,8 @@ export default function StudioSlot({
   const [selectedSlot, setSelectedSlot] = useState<string>(
     String(session?.settings.teamStructure.find((e) => e.type === slot)?.pos),
   );
+
+  const isAdmin = session?.league.ownerId === sessionData?.user.id;
   const isMyStudio = studio?.ownerId === sessionData?.user.id;
   const canEdit = isMyStudio && !locked;
 
@@ -92,7 +96,7 @@ export default function StudioSlot({
   async function handleDrop() {
     if (film) {
       const ok = await confirm(
-        "Are you sure you want to drop this film from your studio?" +
+        "Are you sure you want to drop this film?" +
           (bidWar ? ` You will recoup $${Math.round((bid?.amount ?? 0) * 0.8)} back to your budget.` : ""),
       );
       if (ok)
@@ -173,7 +177,7 @@ export default function StudioSlot({
                             </AlertTitle>
                           </Alert>
                         )}
-                        {canEdit && (
+                        {(canEdit || isAdmin) && (
                           <div className="flex items-center">
                             <Select value={selectedSlot} onValueChange={setSelectedSlot}>
                               <SelectTrigger className="w-2/3 text-black">
@@ -187,15 +191,17 @@ export default function StudioSlot({
                                 ))}
                               </SelectContent>
                             </Select>
-                            <Button
-                              className="ml-2"
-                              disabled={slot === session?.settings.teamStructure[Number(selectedSlot) - 1]?.type}
-                              onClick={handleSwap}
-                              isLoading={swapping}
-                            >
-                              <Shuffle className="mr-1" />
-                              Swap
-                            </Button>
+                            {!isAdmin && (
+                              <Button
+                                className="ml-2"
+                                disabled={slot === session?.settings.teamStructure[Number(selectedSlot) - 1]?.type}
+                                onClick={handleSwap}
+                                isLoading={swapping}
+                              >
+                                <Shuffle className="mr-1" />
+                                Swap
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -213,18 +219,37 @@ export default function StudioSlot({
                     </Link>
                   </div>
 
-                  {canEdit && (
-                    <div className="ml-auto">
-                      {/* <Button className="mx-1">
+                  <div className="ml-auto flex items-center">
+                    {isAdmin && (
+                      <AdminMenu className="mr-4">
+                        <DropdownMenuContent side="top">
+                          <DropdownMenuItem
+                            disabled={film.slot === session?.settings.teamStructure[Number(selectedSlot) - 1]?.pos}
+                            onClick={handleDrop}
+                          >
+                            <Shuffle className="mr-1" />
+                            Swap
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={handleDrop}>
+                            <XCircle className="mr-1 text-red-600" />
+                            Drop
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </AdminMenu>
+                    )}
+                    {canEdit && (
+                      <>
+                        {/* <Button className="mx-1">
                       <ArrowRightLeft className="mr-1" />
                       Trade
                     </Button> */}
-                      <Button className="mx-1" variant="destructive" onClick={handleDrop} isLoading={dropping}>
-                        <XCircle className="mr-1" />
-                        Drop
-                      </Button>
-                    </div>
-                  )}
+                        <Button className="mx-1" variant="destructive" onClick={handleDrop} isLoading={dropping}>
+                          <XCircle className="mr-1" />
+                          Drop
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

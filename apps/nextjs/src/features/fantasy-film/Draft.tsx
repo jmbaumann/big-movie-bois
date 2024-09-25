@@ -11,7 +11,7 @@ import { AppRouter, RouterOutputs } from "@repo/api";
 import { DraftState } from "@repo/api/src/router/fantasy-film/draft";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
 import { LeagueSessionSettings } from "@repo/api/src/zod";
-import { LeagueSessionStudio, StudioFilm } from "@repo/db";
+import { LeagueSessionStudio, StudioFilm, TMDBDetails } from "@repo/db";
 
 // import io from "socket.io-client";
 
@@ -54,7 +54,7 @@ export default function Draft() {
   const [picks, setPicks] = useState<StudioFilm[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
   const [expand, setExpand] = useState(false);
-  const [films, setFilms] = useState<TMDBDiscoverResult[]>([]);
+  const [films, setFilms] = useState<TMDBDetails[]>([]);
   const [page, setPage] = useState(1);
 
   const { data: session, isLoading } = api.ffLeagueSession.getById.useQuery(
@@ -92,7 +92,7 @@ export default function Draft() {
   const draftCannotStart = session?.settings.draft.order.length === 0;
 
   useEffect(() => {
-    if (data?.results) setFilms((s) => [...s, ...data.results]);
+    if (data?.data) setFilms((s) => [...s, ...data.data]);
   }, [data]);
 
   const handleTimeout = () => {
@@ -211,7 +211,7 @@ export default function Draft() {
           </div>
           <div
             className={cn(
-              "border-x-2 border-t-2 border-[#9ac] px-4 py-2",
+              "border-x-2 border-t-2 border-[#9ac] px-2 py-2",
               expand ? "w-[calc(100vw-736px)]" : "w-[calc(100vw-518px)]",
             )}
           >
@@ -228,6 +228,7 @@ export default function Draft() {
                 //   )
                 // }
                 isDraft={true}
+                gridCols={expand ? 4 : 5}
                 loadMoreFilms={() => setPage((s) => s + 1)}
               />
             )}

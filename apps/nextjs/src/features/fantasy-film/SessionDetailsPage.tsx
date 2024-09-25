@@ -408,15 +408,18 @@ function Films({ session }: { session: Session }) {
 
   const { data, refetch: refetchFilms } = api.tmdb.getFilmsForSession.useQuery(
     { sessionId: session?.id ?? "", page, today: true },
-    { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
+    { staleTime: ONE_DAY_IN_SECONDS, enabled: !!session?.id },
   );
   const { data: acquiredFilms } = api.ffLeagueSession.getAcquiredFilms.useQuery(
     { sessionId: session?.id ?? "" },
-    { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
+    { staleTime: ONE_DAY_IN_SECONDS, enabled: !!session?.id },
   );
 
   useEffect(() => {
-    if (data?.data) setFilms((s) => [...s, ...data.data]);
+    if (data?.data) {
+      console.log(data.data);
+      setFilms((s) => [...s, ...data.data]);
+    }
   }, [data]);
 
   const acquiredIds = acquiredFilms?.map((e) => e.tmdbId);

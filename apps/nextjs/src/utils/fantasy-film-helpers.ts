@@ -11,7 +11,7 @@ type Studios = RouterOutputs["ffStudio"]["getStudios"];
 type Studio = Studios[number] | RouterOutputs["ffStudio"]["getMyStudio"];
 type StudioFilmTMDB = Studios[number]["films"][number] | (StudioFilm & { tmdb: TMDBDetails });
 
-export function getAvailableFilms(picks: StudioFilm[], films: Film[]) {
+export function getAvailableFilms(picks: StudioFilm[], films: TMDBDetails[]) {
   const takenIds = picks.map((e) => e.tmdbId);
   return films.filter((e) => !takenIds.includes(e.id));
 }

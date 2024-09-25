@@ -135,10 +135,8 @@ export async function getByTMDBId(ctx: TRPCContext, id: number, noReturn?: boole
 
 async function updateMasterFantasyFilmList(ctx: TRPCContext) {
   // get top 100 films from tmdb (from today -> +400 days)
-  const from = "2024-12-01";
-  // const from = format(new Date(), "yyyy-MM-dd");
-  const to = "2025-12-31";
-  // const to = format(add(new Date(), { days: 400 }), "yyyy-MM-dd");
+  const from = format(new Date(), "yyyy-MM-dd");
+  const to = format(add(new Date(), { days: 400 }), "yyyy-MM-dd");
 
   const chunks = await Promise.all(Array.from({ length: 5 }).map((_, i) => getByDateRange(from, to, i + 1)));
   const films = chunks

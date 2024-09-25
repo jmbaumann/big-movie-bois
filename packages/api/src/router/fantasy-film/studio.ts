@@ -134,7 +134,8 @@ const update = protectedProcedure
   });
 
 const getFavorites = protectedProcedure.input(z.object({ studioId: z.string() })).query(async ({ ctx, input }) => {
-  return await ctx.prisma.studioFavorite.findMany({ where: input });
+  const favorites = await ctx.prisma.studioFavorite.findMany({ where: input });
+  return await ctx.prisma.tMDBDetails.findMany({ where: { id: { in: favorites.map((e) => e.tmdbId) } } });
 });
 
 const addFavorite = protectedProcedure
@@ -176,11 +177,14 @@ const bid = protectedProcedure
       status: BID_STATUSES.PURCHASE,
       createdAt: new Date(),
     };
-    const bid = await ctx.prisma.filmBid.create({ data });
 
     if (autoProcess) {
       const studio = await ctx.prisma.leagueSessionStudio.findFirst({ where: { id: input.studioId } });
       if (!studio) throw "Could not process purchase";
+
+      if (studio.budget < input.amount) throw new Error("Insufficient funds");
+
+      const bid = await ctx.prisma.filmBid.create({ data });
 
       await ctx.prisma.leagueSessionStudio.update({
         data: { budget: studio.budget - input.amount },
@@ -204,9 +208,12 @@ const bid = protectedProcedure
         type: SESSION_ACTIVITY_TYPES.FILM_PURCHASED,
         message: `{STUDIO} PURCHASED {FILM} for $${input.amount}`,
       });
-    }
 
-    return bid;
+      return bid;
+    } else {
+      const bid = await ctx.prisma.filmBid.create({ data });
+      return bid;
+    }
   });
 
 const updateBid = protectedProcedure

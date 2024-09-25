@@ -10,6 +10,7 @@ import { TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
+import { cn } from "~/utils/shadcn";
 import SortChips from "~/components/SortChips";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
@@ -37,6 +38,7 @@ export default function AvailableFilms({
   studioId,
   buyNow,
   isDraft,
+  gridCols,
   loadMoreFilms,
 }: {
   session: Session;
@@ -44,10 +46,10 @@ export default function AvailableFilms({
   studioId: string;
   buyNow?: boolean;
   isDraft?: boolean;
+  gridCols?: number;
   loadMoreFilms?: () => void;
 }) {
   const [filmList, setFilmList] = useState<Film[]>(films);
-  const [favoritesList, setFavoritesList] = useState<Film[]>([]);
   const [showWatchlist, setShowWatchlist] = useState(false);
   const [open, setOpen] = useState(false);
   const [selectedFilm, setSelectedFilm] = useState<Film>();
@@ -106,17 +108,13 @@ export default function AvailableFilms({
         : getUnlockedSlots(session, myStudio)
       : [];
   const canPick = !!availableSlots?.length;
-  const isFavorite = selectedFilm ? favorites?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
+  const isFavorite = selectedFilm ? favorites?.map((e) => e.id).includes(selectedFilm.id) : false;
   const bidPlaced = selectedFilm ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
+  const insufficientFunds = selectedFilm && myStudio ? (selectedFilm.price ?? 0) > myStudio?.budget : false;
 
   useEffect(() => {
     if (films) setFilmList(films);
   }, [films]);
-
-  useEffect(() => {
-    const favoriteIds = new Set(favorites?.map((e) => e.tmdbId));
-    setFavoritesList(films.filter((e) => favoriteIds?.has(e.id)));
-  }, [filmList]);
 
   useEffect(() => {
     if (buyNow && selectedFilm) {
@@ -124,11 +122,15 @@ export default function AvailableFilms({
     }
   }, [selectedFilm]);
 
-  // console.log(films.map((e) => ({ popularity: e.popularity, price: e.price })));
-
   useEffect(() => {
     setSelectedSlot(undefined);
   }, [open]);
+
+  useEffect(() => {
+    return () => {
+      setFilmList([]);
+    };
+  }, []);
 
   function handleFavorite() {
     if (selectedFilm)
@@ -150,6 +152,9 @@ export default function AvailableFilms({
           onSuccess: () => {
             toast({ title: buyNow ? "Film added to Studio" : "Bid submitted" });
             setOpen(false);
+          },
+          onError: (e) => {
+            toast({ title: e.message, variant: "destructive" });
           },
         },
       );
@@ -187,32 +192,49 @@ export default function AvailableFilms({
 
       <div className="max-h-[calc(100%-40px)] overflow-y-auto">
         <Dialog open={open} onOpenChange={setOpen}>
-          <div className="flex flex-wrap justify-around gap-4">
-            {(showWatchlist ? favoritesList : filmList).map((film, i) => {
+          <div className={cn("grid", gridCols ? `grid-cols-${gridCols}` : "grid-cols-5")}>
+            {(showWatchlist ? favorites ?? [] : filmList).map((film, i) => {
+              const price = Math.min(Math.round((film.popularity / 100) * 40), 40);
+
               return (
                 <DialogTrigger
                   key={i}
-                  className="hover:text-primary group flex w-[150px] flex-col p-2 hover:cursor-pointer"
+                  className="hover:text-primary group mx-auto flex w-[170px] flex-col p-2 text-white hover:cursor-pointer"
                 >
                   <div
+                    className="group-hover:border-primary relative flex h-full w-[170px] flex-col overflow-hidden rounded-lg border-4 border-transparent bg-white shadow-md"
                     onClick={() => {
                       setSelectedFilm(film);
                       setOpen(true);
                     }}
                   >
-                    {film.poster ? (
-                      <Image
-                        className="group-hover:border-primary inset-0 border-4 border-transparent"
-                        src={`https://image.tmdb.org/t/p/w1280${film.poster}`}
-                        alt={`${film.title} poster`}
-                        width={200}
-                        height={300}
-                      />
-                    ) : (
-                      <div className="h-[190px] w-[130px] bg-slate-300"> no poster </div>
+                    <div className="relative h-[240px]">
+                      {film.poster ? (
+                        <Image
+                          className="h-full w-full object-cover"
+                          src={`https://image.tmdb.org/t/p/w1280${film.poster}`}
+                          alt={`${film.title} poster`}
+                          width={200}
+                          height={300}
+                        />
+                      ) : (
+                        <div className="h-[190px] w-[130px] bg-slate-300"> no poster </div>
+                      )}
+                    </div>
+                    {buyNow && (
+                      <div
+                        className={cn(
+                          "bg-primary absolute left-1 top-1 rounded px-2 py-1 text-sm font-bold text-white",
+                          price > (myStudio?.budget ?? 0) && "bg-red-600",
+                        )}
+                      >
+                        ${price}
+                      </div>
                     )}
-                    <p className="text-center">{film.title}</p>
-                    <p className="text-center">{film.price}</p>
+                    <div className="flex-grow bg-neutral-700 px-2 py-2 text-left">
+                      <p className="text-balance break-words">{film.title}</p>
+                      <p className="text-xs text-slate-400">{format(film.releaseDate, "LLL dd, yyyy")}</p>
+                    </div>
                   </div>
                 </DialogTrigger>
               );
@@ -276,22 +298,38 @@ export default function AvailableFilms({
                               </Select>
                             </div>
 
-                            <div className="mt-4">
-                              <Label>{!buyNow ? "Amount" : "Price"}</Label>
-                              {!buyNow ? (
-                                <Input
-                                  className="w-2/3 text-black"
-                                  value={bidAmount}
-                                  onChange={(e) => setBidAmount(e.target.value)}
-                                  type="number"
-                                  min={0}
-                                  startIcon={DollarSign}
-                                ></Input>
-                              ) : (
-                                <p className="flex items-center text-2xl">
-                                  <DollarSign className="text-white" />
-                                  {bidAmount}
-                                </p>
+                            <div className="mt-4 flex justify-between">
+                              <div className="flex flex-col">
+                                <Label>{!buyNow ? "Amount" : "Price"}</Label>
+                                {!buyNow ? (
+                                  <Input
+                                    className="w-2/3 text-black"
+                                    value={bidAmount}
+                                    onChange={(e) => setBidAmount(e.target.value)}
+                                    type="number"
+                                    min={0}
+                                    startIcon={DollarSign}
+                                  ></Input>
+                                ) : (
+                                  <p
+                                    className={cn(
+                                      "flex items-center text-2xl text-white",
+                                      insufficientFunds && "text-red-600",
+                                    )}
+                                  >
+                                    <DollarSign />
+                                    {bidAmount}
+                                  </p>
+                                )}
+                              </div>
+                              {buyNow && !insufficientFunds && (
+                                <div className="flex flex-col">
+                                  <Label>Remaining Budget</Label>
+                                  <p className="flex items-center text-2xl text-white">
+                                    <DollarSign />
+                                    {(myStudio?.budget ?? 0) - Number(bidAmount)}
+                                  </p>
+                                </div>
                               )}
                             </div>
                           </>
@@ -331,7 +369,7 @@ export default function AvailableFilms({
                       Draft
                     </Button>
                   )}
-                  {!isDraft && canPick && (
+                  {!isDraft && canPick && !insufficientFunds && (
                     <Button
                       isLoading={bidding}
                       disabled={!selectedFilm || !canPick || !selectedSlot || bidPlaced}
@@ -346,7 +384,7 @@ export default function AvailableFilms({
           </div>
         </Dialog>
 
-        {!!filmList.length && !!loadMoreFilms && (
+        {!!filmList.length && !!loadMoreFilms && !showWatchlist && (
           <div className="flex w-full">
             <Button className="mx-auto" onClick={() => loadMoreFilms()}>
               Load More

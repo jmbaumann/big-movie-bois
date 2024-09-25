@@ -28,6 +28,7 @@ import { useSession } from "next-auth/react";
 import { RouterOutputs } from "@repo/api";
 import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
+import { StudioFilm, TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getFilmsReleased, isSlotLocked } from "~/utils/fantasy-film-helpers";
@@ -335,18 +336,18 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
 }
 
 function Films({ session, myStudio }: { session: Session; myStudio: Studio | undefined }) {
-  const [films, setFilms] = useState<(TMDBDiscoverResult & { price: number })[]>([]);
+  const [films, setFilms] = useState<(TMDBDetails & { price: number })[]>([]);
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = api.tmdb.getFilmsForSession.useQuery(
     { sessionId: session?.id ?? "", page, today: true },
-    { staleTime: 1000 * 60 * 60 * 24, enabled: !!session?.id },
+    { staleTime: ONE_DAY_IN_SECONDS, enabled: !!session?.id, keepPreviousData: true },
   );
 
   useEffect(() => {
-    if (data?.results) {
+    if (data?.data) {
       setFilms((s) =>
-        [...s, ...data.results].map((e) => ({ ...e, price: Math.min(Math.round((e.popularity / 100) * 40), 40) })),
+        [...s, ...data.data].map((e) => ({ ...e, price: Math.min(Math.round((e.popularity / 100) * 40), 40) })),
       );
     }
   }, [data]);
@@ -354,7 +355,7 @@ function Films({ session, myStudio }: { session: Session; myStudio: Studio | und
   const acquiredIds = myStudio?.films.map((e) => e.tmdbId);
   const available = films.filter((e) => !acquiredIds?.includes(e.id));
 
-  if (!data?.results || !myStudio || !films) return <p>no films</p>;
+  if (!data?.data || !myStudio || !films) return <p>no films</p>;
 
   return (
     <AvailableFilms

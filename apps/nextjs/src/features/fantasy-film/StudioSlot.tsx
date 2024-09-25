@@ -62,9 +62,9 @@ export default function StudioSlot({
 
   const unlockedSlots = studio && session ? getUnlockedSlots(session, studio) : [];
 
-  const { mutate: swap } = api.ffFilm.swap.useMutation();
+  const { mutate: swap, isLoading: swapping } = api.ffFilm.swap.useMutation();
   const { mutate: trade } = api.ffFilm.trade.useMutation();
-  const { mutate: drop } = api.ffFilm.drop.useMutation();
+  const { mutate: drop, isLoading: dropping } = api.ffFilm.drop.useMutation();
   const { data: bid } = api.ffFilm.getBid.useQuery(
     { studioId: studio?.id ?? "", tmdbId: film?.tmdbId ?? 0 },
     { enabled: bidWar && !!studio && !!film, staleTime: ONE_DAY_IN_SECONDS },
@@ -191,6 +191,7 @@ export default function StudioSlot({
                               className="ml-2"
                               disabled={slot === session?.settings.teamStructure[Number(selectedSlot) - 1]?.type}
                               onClick={handleSwap}
+                              isLoading={swapping}
                             >
                               <Shuffle className="mr-1" />
                               Swap
@@ -218,7 +219,7 @@ export default function StudioSlot({
                       <ArrowRightLeft className="mr-1" />
                       Trade
                     </Button> */}
-                      <Button className="mx-1" variant="destructive" onClick={handleDrop}>
+                      <Button className="mx-1" variant="destructive" onClick={handleDrop} isLoading={dropping}>
                         <XCircle className="mr-1" />
                         Drop
                       </Button>

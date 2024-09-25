@@ -82,7 +82,7 @@ const getStandings = protectedProcedure.input(z.object({ sessionId: z.string() }
 
 const getBids = protectedProcedure.input(z.object({ sessionId: z.string() })).query(async ({ ctx, input }) => {
   return await ctx.prisma.filmBid.findMany({
-    include: { tmdb: true, studio: { select: { name: true } } },
+    include: { tmdb: true, studio: { select: { name: true, ownerId: true } } },
     where: {
       studio: { sessionId: input.sessionId },
       status: BID_STATUSES.PENDING,

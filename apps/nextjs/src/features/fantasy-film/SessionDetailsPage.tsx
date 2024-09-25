@@ -11,6 +11,7 @@ import {
   Film,
   Heart,
   Info,
+  MoreVertical,
   Pencil,
   Popcorn,
   Projector,
@@ -18,6 +19,7 @@ import {
   Shuffle,
   Sofa,
   Star,
+  Trash,
   Tv,
   Video,
   Videotape,
@@ -44,7 +46,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
@@ -418,7 +425,26 @@ function Bids({ session }: { session: Session }) {
     { sessionId: session?.id ?? "" },
     { enabled: !!session, staleTime: ONE_DAY_IN_SECONDS },
   );
+  const { mutate: updateBid } = api.ffStudio.updateBid.useMutation();
+  const { mutate: deleteBid } = api.ffStudio.deleteBid.useMutation();
   const { mutate: processBids } = api.ffAdmin.processBids.useMutation();
+
+  async function handleDeleteBid(id: string) {
+    const ok = await confirm("Are you sure you want to delete this bid?");
+    if (ok)
+      deleteBid(
+        { id },
+        {
+          onSuccess: () => {
+            toast({ title: "Bid deleted" });
+            refreshBids();
+          },
+          onError: (e) => {
+            toast({ title: e.message, variant: "destructive" });
+          },
+        },
+      );
+  }
 
   async function handleProcessBids() {
     if (session) {
@@ -460,11 +486,46 @@ function Bids({ session }: { session: Session }) {
         <p>Current bids will be processed on {format(nextTuesday(new Date()), "LLL d, yyyy")} at 12:00pm ET</p>
       </div>
 
-      {bids?.map((bid, i) => (
-        <div key={i}>
-          {bid.studio.name} - {bid.tmdb.title} - ${bid.amount}
-        </div>
-      ))}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[120px]">Date</TableHead>
+            <TableHead>Studio</TableHead>
+            <TableHead>Details</TableHead>
+            <TableHead className="w-[40px]"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {bids?.map((bid, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium">{format(bid.createdAt, "E LLL dd h:mm aaa")}</TableCell>
+              <TableCell className="font-medium">{bid.studio.name}</TableCell>
+              <TableCell>
+                {bid.studio.ownerId === sessionData?.user.id
+                  ? `${bid.tmdb.title} - $${bid.amount}`
+                  : `${bid.studio.name} placed a bid`}
+              </TableCell>
+              <TableCell>
+                {bid.studio.ownerId === sessionData?.user.id && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="flex items-center rounded-lg hover:text-white">
+                      <MoreVertical />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="bottom">
+                      {/* <DropdownMenuItem>
+                        <Pencil size={20} className="mr-2" /> Edit
+                      </DropdownMenuItem> */}
+                      <DropdownMenuItem onClick={() => handleDeleteBid(bid.id)}>
+                        <Trash size={20} className="mr-2 text-red-600" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </>
   );
 }

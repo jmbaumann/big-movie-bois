@@ -161,7 +161,6 @@ export default function AvailableFilms({
   }, [open]);
 
   useEffect(() => {
-    console.log("SCOKET");
     const socket = io("ws://localhost:8080", {
       // withCredentials: true,
     });

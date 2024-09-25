@@ -174,7 +174,7 @@ const bid = protectedProcedure
     const { autoProcess, ...rest } = input;
     const data = {
       ...rest,
-      status: BID_STATUSES.PURCHASE,
+      status: autoProcess ? BID_STATUSES.PURCHASE : BID_STATUSES.PENDING,
       createdAt: new Date(),
     };
 

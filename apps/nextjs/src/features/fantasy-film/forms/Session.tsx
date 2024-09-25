@@ -45,7 +45,7 @@ export default function SessionForm({
   const router = useRouter();
   const { toast } = useToast();
 
-  const { isLoading, mutate: updateSession } = api.ffLeagueSession.update.useMutation();
+  const { mutate: updateSession, isLoading: saving } = api.ffLeagueSession.update.useMutation();
   const { data: league } = api.ffLeague.getById.useQuery({ id: leagueId });
 
   const sessionMembers = useArray<string>(league?.members.map((e) => e.userId) ?? []);
@@ -66,6 +66,8 @@ export default function SessionForm({
       settings: { ...session?.settings },
     },
   });
+
+  const showDraftFields = form.watch("settings.draft.conduct");
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (session) {
@@ -94,7 +96,7 @@ export default function SessionForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onInvalid)}>
-        <Button className="float-right block" type="submit" onClick={() => onSubmit(form.getValues())}>
+        <Button className="float-right" type="submit" onClick={() => onSubmit(form.getValues())} isLoading={saving}>
           Save
         </Button>
 
@@ -116,7 +118,7 @@ export default function SessionForm({
               <AccordionItem value="draft">
                 <AccordionTrigger>Draft</AccordionTrigger>
                 <AccordionContent className="mt-2 space-y-8 px-4">
-                  <DraftSection league={league} sessionMembers={sessionMembers} />
+                  <DraftSection league={league} sessionMembers={sessionMembers} showDraftFields={showDraftFields} />
                 </AccordionContent>
               </AccordionItem>
             </>
@@ -342,7 +344,15 @@ export function MembersSection({ league, sessionMembers }: { league: League; ses
   );
 }
 
-export function DraftSection({ league, sessionMembers }: { league: League; sessionMembers: UseArray<string> }) {
+export function DraftSection({
+  league,
+  sessionMembers,
+  showDraftFields,
+}: {
+  league: League;
+  sessionMembers: UseArray<string>;
+  showDraftFields: boolean;
+}) {
   const form = useFormContext();
   const members = sessionMembers.array.map((e) => ({
     id: e,
@@ -351,198 +361,216 @@ export function DraftSection({ league, sessionMembers }: { league: League; sessi
 
   return (
     <>
-      <div className="flex items-end space-x-4 px-4">
+      <div className="flex px-4">
         <FormField
           control={form.control}
-          name="settings.draft.date"
+          name="settings.draft.conduct"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Draft Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-[240px] pl-3 text-left font-normal text-black",
-                        !field.value && "text-muted-foreground",
-                      )}
-                    >
-                      {field.value ? format(field.value, "PPP") : <span className="text-black">Pick a date</span>}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 text-black" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) => date < sub(new Date(), { days: 1 })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="settings.draft.hour"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger className="w-[80px] text-black">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 12 }, (_, index) => (index + 1).toString().padStart(2, "0")).map((e) => {
-                      return (
-                        <SelectItem key={e} value={e}>
-                          {e}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="settings.draft.min"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger className="w-[80px] text-black">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 12 }, (_, index) => (index * 5).toString().padStart(2, "0")).map((e) => {
-                      return (
-                        <SelectItem key={e} value={e}>
-                          {e}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="settings.draft.ampm"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger className="w-[80px] text-black">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AM">AM</SelectItem>
-                    <SelectItem value="PM">PM</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
+            <FormItem className="flex items-center space-x-2">
+              <Switch id="draft" checked={field.value} onCheckedChange={field.onChange} />
+              <Label htmlFor="draft" className="ml-2">
+                Conduct a draft
+              </Label>
             </FormItem>
           )}
         />
       </div>
-      <div className="mb-4 space-y-4 px-4">
-        <FormField
-          control={form.control}
-          name="settings.draft.type"
-          render={({ field }) => (
-            <FormItem className="space-y-1">
-              <RadioGroup
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                className="grid max-w-md grid-cols-2 gap-8 pt-2"
-              >
-                {Object.values(DRAFT_TYPES).map((draftType, i) => (
-                  <FormItem key={i}>
-                    <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
-                      <FormControl>
-                        <RadioGroupItem value={draftType} className="sr-only" />
-                      </FormControl>
-                      <div className="border-muted hover:border-accent items-center rounded-md border-2 p-1 hover:cursor-pointer">
-                        <span className="block p-2 text-center font-normal">{draftType}</span>
-                      </div>
-                    </FormLabel>
-                  </FormItem>
-                ))}
-              </RadioGroup>
-            </FormItem>
-          )}
-        />
-      </div>
-      <div className="flex gap-x-8 px-4">
-        <FormField
-          control={form.control}
-          name="settings.draft.numRounds"
-          render={({ field }) => (
-            <FormItem className="">
-              <FormLabel>Number of Rounds</FormLabel>
-              <FormControl>
-                <Input {...field} className="w-[120px] text-black" type="number" min={0} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="settings.draft.timePerRound"
-          render={({ field }) => (
-            <FormItem className="">
-              <FormLabel>Time per Round (seconds)</FormLabel>
-              <FormControl>
-                <Input {...field} className="w-[120px] text-black" type="number" />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-      </div>
-      <div className="space-y-4 px-4">
-        <Label className="mb-2">Draft Order</Label>
-        {members.map((member, index) => {
-          return (
+      {showDraftFields && (
+        <>
+          <div className="flex items-end space-x-4 px-4">
             <FormField
               control={form.control}
-              key={index}
-              name={`settings.draft.order.${index}`}
+              name="settings.draft.date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Draft Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-[240px] pl-3 text-left font-normal text-black",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          {field.value ? format(field.value, "PPP") : <span className="text-black">Pick a date</span>}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 text-black" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < sub(new Date(), { days: 1 })}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="settings.draft.hour"
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="mt-2 flex w-auto items-center space-x-2">
-                      <span>{index + 1}</span>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger className="w-[300px] text-black">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {members.map((mem, i) => {
-                            return (
-                              <SelectItem key={i} value={mem.id}>
-                                {mem.name}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger className="w-[80px] text-black">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, index) => (index + 1).toString().padStart(2, "0")).map((e) => {
+                          return (
+                            <SelectItem key={e} value={e}>
+                              {e}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                 </FormItem>
               )}
             />
-          );
-        })}
-      </div>
+            <FormField
+              control={form.control}
+              name="settings.draft.min"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger className="w-[80px] text-black">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, index) => (index * 5).toString().padStart(2, "0")).map((e) => {
+                          return (
+                            <SelectItem key={e} value={e}>
+                              {e}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="settings.draft.ampm"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger className="w-[80px] text-black">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="mb-4 space-y-4 px-4">
+            <FormField
+              control={form.control}
+              name="settings.draft.type"
+              render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="grid max-w-md grid-cols-2 gap-8 pt-2"
+                  >
+                    {Object.values(DRAFT_TYPES).map((draftType, i) => (
+                      <FormItem key={i}>
+                        <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                          <FormControl>
+                            <RadioGroupItem value={draftType} className="sr-only" />
+                          </FormControl>
+                          <div className="border-muted hover:border-accent items-center rounded-md border-2 p-1 hover:cursor-pointer">
+                            <span className="block p-2 text-center font-normal">{draftType}</span>
+                          </div>
+                        </FormLabel>
+                      </FormItem>
+                    ))}
+                  </RadioGroup>
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex gap-x-8 px-4">
+            <FormField
+              control={form.control}
+              name="settings.draft.numRounds"
+              render={({ field }) => (
+                <FormItem className="">
+                  <FormLabel>Number of Rounds</FormLabel>
+                  <FormControl>
+                    <Input {...field} className="w-[120px] text-black" type="number" min={0} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="settings.draft.timePerRound"
+              render={({ field }) => (
+                <FormItem className="">
+                  <FormLabel>Time per Round (seconds)</FormLabel>
+                  <FormControl>
+                    <Input {...field} className="w-[120px] text-black" type="number" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="space-y-4 px-4">
+            <Label className="mb-2">Draft Order</Label>
+            {members.map((member, index) => {
+              return (
+                <FormField
+                  control={form.control}
+                  key={index}
+                  name={`settings.draft.order.${index}`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="mt-2 flex w-auto items-center space-x-2">
+                          <span>{index + 1}</span>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <SelectTrigger className="w-[300px] text-black">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {members.map((mem, i) => {
+                                return (
+                                  <SelectItem key={i} value={mem.id}>
+                                    {mem.name}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              );
+            })}
+          </div>
+        </>
+      )}
     </>
   );
 }

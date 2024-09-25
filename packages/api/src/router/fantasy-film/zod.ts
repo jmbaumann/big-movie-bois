@@ -4,6 +4,7 @@ import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "../../enums";
 import { toZodEnum } from "../../utils";
 
 const leagueSessionSettingsDraftObj = z.object({
+  conduct: z.boolean().default(true),
   date: z.date().optional(),
   hour: z.string().optional(),
   min: z.string().optional(),

@@ -29,8 +29,6 @@ import { useSession } from "next-auth/react";
 
 import { RouterOutputs } from "@repo/api";
 import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
-import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
-import { TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getDraftDate, getFilmsReleased, getMostRecentAndUpcoming, isSlotLocked } from "~/utils/fantasy-film-helpers";
@@ -107,11 +105,6 @@ export default function SessionDetailsPage() {
 
   const myStudio = studios?.find((e) => e.ownerId === sessionData?.user.id);
   const opposingStudios = studios?.filter((e) => e.ownerId !== sessionData?.user.id);
-
-  const draftComplete = true;
-  // const draftComplete = session
-  //   ? getDraftDate(session.settings.draft) < new Date()
-  //   : false;
 
   if (!session) return <Loading />;
 
@@ -196,7 +189,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
   const router = useRouter();
 
   const draftDate = getDraftDate(session!.settings.draft);
-  const draftIsOver = draftDate.getTime() < new Date().getTime();
+  const draftIsOver = studios.some((e) => !!e.films.length) || !session?.settings.draft.conduct;
 
   function handleStudioSelected(studio: Studio) {
     if (studio.ownerId === sessionData?.user.id)
@@ -216,8 +209,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
       {!draftIsOver && (
         <div className="mb-4 flex flex-col items-center">
           <DraftCountdown draftDate={draftDate} />
-
-          <Link href={`/fantasy-film/draft/${session!.id}`}>Go to Draft</Link>
+          <Button onClick={() => router.push(`/fantasy-film/draft/${session!.id}`)}>Go to Draft</Button>
         </div>
       )}
 

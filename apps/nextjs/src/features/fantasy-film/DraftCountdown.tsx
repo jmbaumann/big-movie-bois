@@ -4,6 +4,8 @@ import { format } from "date-fns";
 export default function DraftCountdown({ draftDate }: { draftDate: Date }) {
   const [timer, setTimer] = useState("");
 
+  const pastDate = new Date().getTime() > draftDate.getTime();
+
   const updateTimer = () => {
     if (draftDate) {
       // draftDate.setHours(24);
@@ -30,10 +32,8 @@ export default function DraftCountdown({ draftDate }: { draftDate: Date }) {
   return (
     <div className="mt-4 flex flex-row items-center justify-center text-2xl text-white">
       <div className="flex flex-col text-center tabular-nums">
-        <div className="text-sm">
-          Draft Scheduled for {format(draftDate, "PPP @ p")}
-        </div>
-        <span className="font-sans">{timer}</span>
+        <div className="text-sm">Draft Scheduled for {format(draftDate, "PPP @ p")}</div>
+        {!pastDate && <span className="font-sans">{timer}</span>}
       </div>
     </div>
   );

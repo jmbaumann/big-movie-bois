@@ -39,14 +39,17 @@ export async function getByDateRange(
   page: number,
 ): Promise<TMDBDiscoverResponse | undefined> {
   return await tmdb(
-    `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=${page}&primary_release_date.gte=${fromDate}&primary_release_date.lte=${toDate}&sort_by=popularity.desc&with_runtime.gte=1`,
+    `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&region=US&page=${page}&primary_release_date.gte=${fromDate}&primary_release_date.lte=${toDate}&release_date.gte=${fromDate}&release_date.lte=${toDate}&sort_by=popularity.desc&with_release_type=3`,
   );
 }
 
 export async function tmdb<T>(url: string, method?: "GET" | "POST") {
   const options = {
     method: method ?? "GET",
-    headers: getTMDBHeaders(),
+    headers: {
+      accept: "application/json",
+      Authorization: `Bearer ${process.env.TMDB_READ_ACCESS_TOKEN}`,
+    },
   };
 
   try {
@@ -56,13 +59,6 @@ export async function tmdb<T>(url: string, method?: "GET" | "POST") {
   } catch (error) {
     console.error(error);
   }
-}
-
-export function getTMDBHeaders() {
-  return {
-    accept: "application/json",
-    Authorization: `Bearer ${process.env.TMDB_READ_ACCESS_TOKEN}`,
-  };
 }
 
 function restructure(movie: {

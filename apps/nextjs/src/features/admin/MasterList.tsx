@@ -15,12 +15,12 @@ import { toast } from "~/components/ui/hooks/use-toast";
 import { Pagination, PaginationContent, PaginationItem } from "~/components/ui/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 
-export default function FilmDataAdmin() {
+export default function MasterListAdmin() {
   const confirm = useConfirm();
 
   const [page, setPage] = useState(1);
 
-  const { data: films } = api.tmdb.getActive.useQuery({ page });
+  const { data: films } = api.tmdb.getMasterFFList.useQuery({ page });
   const { mutate: updateFilmList, isLoading: updating } = api.tmdb.updateFantasyFilms.useMutation();
 
   const maxPages = films ? Math.ceil(films.total / 20) : 1;

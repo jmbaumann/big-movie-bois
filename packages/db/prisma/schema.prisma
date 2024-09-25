@@ -12,11 +12,11 @@ datasource db {
 }
 
 model TMDBDetails {
-    id            Int      @id
-    imdbId        String
+    id            Int       @id
+    imdbId        String?
     title         String
     overview      String
-    poster        String
+    poster        String?
     releaseDate   String
     runtime       Int
     certification String?
@@ -27,6 +27,8 @@ model TMDBDetails {
     tagline       String
     genres        String[]
     keywords      String[]
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime?
 
     cast           TMDBCast[]
     crew           TMDBCrew[]
@@ -66,7 +68,7 @@ model League {
     ownerId   String
     name      String
     public    Boolean   @default(false)
-    createdAt DateTime
+    createdAt DateTime  @default(now())
     createdBy String
     updatedAt DateTime?
     updatedBy String?
@@ -91,7 +93,7 @@ model LeagueInvitation {
     id        String   @id @default(cuid())
     leagueId  String
     userId    String
-    createdAt DateTime
+    createdAt DateTime @default(now())
     status    String
     updatedBy String?
 
@@ -157,7 +159,7 @@ model LeagueSessionStudio {
     image     String?
     score     Float     @default(0)
     budget    Int       @default(0)
-    createdAt DateTime
+    createdAt DateTime  @default(now())
     updatedAt DateTime?
     updatedBy String?
     deletedAt DateTime?
@@ -218,7 +220,7 @@ model FilmBid {
     amount    Int
     slot      Int
     status    String
-    createdAt DateTime
+    createdAt DateTime @default(now())
 
     studio LeagueSessionStudio @relation(fields: [studioId], references: [id])
     tmdb   TMDBDetails         @relation(fields: [tmdbId], references: [id])
@@ -237,7 +239,7 @@ model FilmTradeProposal {
     receivingFilmId   String
     receivingCash     Int
     status            String
-    createdAt         DateTime
+    createdAt         DateTime  @default(now())
     updatedAt         DateTime?
     updateBy          String
 

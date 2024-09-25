@@ -6,6 +6,7 @@ import { CircleDollarSign, DollarSign, ExternalLink, Lock, Star } from "lucide-r
 
 import { RouterOutputs } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
+import { TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
@@ -27,7 +28,7 @@ import { Label } from "~/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { ONE_DAY_IN_SECONDS } from "~/utils";
 
-type Film = TMDBDiscoverResult & { price?: number };
+type Film = TMDBDetails & { price?: number };
 type Session = RouterOutputs["ffLeagueSession"]["getById"];
 
 export default function AvailableFilms({
@@ -62,8 +63,8 @@ export default function AvailableFilms({
     if (value === "popularity") return desc ? b.popularity - a.popularity : a.popularity - b.popularity;
     if (value === "releaseDate")
       return desc
-        ? new Date(a.release_date).getTime() - new Date(b.release_date).getTime()
-        : new Date(b.release_date).getTime() - new Date(a.release_date).getTime();
+        ? new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime()
+        : new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
     if (value === "abc") {
       const compTitleA = a.title.toLowerCase().startsWith("the ") ? a.title.slice(4) : a.title;
       const compTitleB = b.title.toLowerCase().startsWith("the ") ? b.title.slice(4) : b.title;
@@ -201,7 +202,7 @@ export default function AvailableFilms({
                   >
                     <Image
                       className="group-hover:border-primary inset-0 border-4 border-transparent"
-                      src={`https://image.tmdb.org/t/p/w1280${film.poster_path}`}
+                      src={`https://image.tmdb.org/t/p/w1280${film.poster}`}
                       alt={`${film.title} poster`}
                       width={200}
                       height={300}
@@ -221,7 +222,7 @@ export default function AvailableFilms({
                       <div className="flex flex-col">
                         <Image
                           className="group-hover:border-primary inset-0 min-w-[200px] border-4 border-transparent"
-                          src={`https://image.tmdb.org/t/p/w1280${selectedFilm.poster_path}`}
+                          src={`https://image.tmdb.org/t/p/w1280${selectedFilm.poster}`}
                           alt={`${selectedFilm.title} poster`}
                           width={200}
                           height={300}
@@ -229,7 +230,7 @@ export default function AvailableFilms({
                       </div>
                       <div className="ml-4 w-full text-white">
                         <p className="mb-2 text-lg">
-                          Release Date: {format(new Date(selectedFilm.release_date + "T00:00:00"), "LLL dd, yyyy")}
+                          Release Date: {format(new Date(selectedFilm.releaseDate + "T00:00:00"), "LLL dd, yyyy")}
                         </p>
                         <p className="mb-2">{selectedFilm.overview}</p>
 
@@ -238,7 +239,7 @@ export default function AvailableFilms({
                           <AlertTitle>
                             This film will no longer be available after{" "}
                             {format(
-                              sub(new Date(selectedFilm.release_date + "T00:00:00" ?? ""), { days: 8 }),
+                              sub(new Date(selectedFilm.releaseDate + "T00:00:00" ?? ""), { days: 8 }),
                               "LLL dd, yyyy",
                             )}
                           </AlertTitle>

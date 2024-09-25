@@ -28,6 +28,7 @@ import { useSession } from "next-auth/react";
 import { RouterOutputs } from "@repo/api";
 import { SESSION_ACTIVITY_TYPES } from "@repo/api/src/enums";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
+import { TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getDraftDate, getFilmsReleased, getMostRecentAndUpcoming, isSlotLocked } from "~/utils/fantasy-film-helpers";
@@ -402,7 +403,7 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
 function Films({ session }: { session: Session }) {
   const { data: sessionData } = useSession();
 
-  const [films, setFilms] = useState<TMDBDiscoverResult[]>([]);
+  const [films, setFilms] = useState<TMDBDetails[]>([]);
   const [page, setPage] = useState(1);
 
   const { data, refetch: refetchFilms } = api.tmdb.getFilmsForSession.useQuery(
@@ -415,7 +416,7 @@ function Films({ session }: { session: Session }) {
   );
 
   useEffect(() => {
-    if (data?.results) setFilms((s) => [...s, ...data.results]);
+    if (data?.data) setFilms((s) => [...s, ...data.data]);
   }, [data]);
 
   const acquiredIds = acquiredFilms?.map((e) => e.tmdbId);

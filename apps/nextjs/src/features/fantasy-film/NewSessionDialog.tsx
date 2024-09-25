@@ -47,11 +47,20 @@ import { DetailsSection, DraftSection, MembersSection } from "./forms/Session";
 type Steps = "details" | "draft" | "members";
 type League = inferRouterOutputs<AppRouter>["ffLeague"]["getById"];
 
-export default function NewSessionDialog({ className, league }: { className: string; league: League }) {
+export default function NewSessionDialog({
+  className,
+  league,
+  disabled,
+}: {
+  className: string;
+  league: League;
+  disabled?: boolean;
+}) {
   const { data: sessionData } = useSession();
   const router = useRouter();
   const { toast } = useToast();
 
+  const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState<Steps>("details");
   const sessionMembers = useArray<string>(league?.members.map((e) => e.userId) ?? []);
 
@@ -89,6 +98,8 @@ export default function NewSessionDialog({ className, league }: { className: str
     },
   });
 
+  const showDraftFields = form.watch("settings.draft.conduct");
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     const leagueId = (router.query.leagueId as string | undefined) ?? "";
     createSession(
@@ -116,7 +127,7 @@ export default function NewSessionDialog({ className, league }: { className: str
       case "members":
         return <MembersSection league={league} sessionMembers={sessionMembers} />;
       case "draft":
-        return <DraftSection league={league} sessionMembers={sessionMembers} />;
+        return <DraftSection league={league} sessionMembers={sessionMembers} showDraftFields={showDraftFields} />;
     }
   }
 
@@ -135,14 +146,11 @@ export default function NewSessionDialog({ className, league }: { className: str
   }
 
   return (
-    <Dialog>
-      <DialogTrigger
-        className={cn(
-          "bg-primary inline-flex h-10 items-center justify-center whitespace-nowrap rounded-3xl px-4 py-2 text-sm font-medium text-slate-50 hover:bg-teal-700/90",
-          className,
-        )}
-      >
-        + Create Session
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className={cn("", className)} disabled={disabled} onClick={() => setOpen(true)}>
+          + Create Session
+        </Button>
       </DialogTrigger>
 
       <Form {...form}>

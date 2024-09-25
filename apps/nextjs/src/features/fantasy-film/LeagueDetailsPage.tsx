@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
-import { format } from "date-fns";
+import { add, format } from "date-fns";
 import { ChevronLeft, Trash } from "lucide-react";
 import { useSession } from "next-auth/react";
 
@@ -55,6 +55,8 @@ export default function LeagueDetailsPage() {
     },
   );
   const isOwner = sessionData?.user.id === league?.ownerId;
+  const canAddSession =
+    isOwner && league?.sessions.some((e) => add(new Date(), { days: 30 }).getTime() > e.endDate.getTime());
 
   return (
     <Layout showFooter>
@@ -67,11 +69,13 @@ export default function LeagueDetailsPage() {
         {league && (
           <div className="flex">
             <h1 className="mb-2 text-2xl">{league.name}</h1>
-            {sessionData?.user.id === league.ownerId && (
-              <div className="ml-auto flex items-center">
-                <NewSessionDialog className="ml-auto" league={league} />
-              </div>
-            )}
+            <div className="ml-auto flex items-center">
+              <NewSessionDialog
+                className="ml-auto"
+                league={league}
+                disabled={!canAddSession && !sessionData?.user.isAdmin}
+              />
+            </div>
           </div>
         )}
 

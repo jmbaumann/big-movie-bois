@@ -91,17 +91,26 @@ const getBids = protectedProcedure.input(z.object({ sessionId: z.string() })).qu
 });
 
 const getLogs = protectedProcedure
-  .input(z.object({ sessionId: z.string(), studioId: z.string().optional() }))
+  .input(z.object({ sessionId: z.string(), page: z.number(), studioId: z.string().optional() }))
   .query(async ({ ctx, input }) => {
-    return ctx.prisma.leagueSessionActivity.findMany({
+    const where = { sessionId: input.sessionId, studioId: input.studioId };
+    const total = await ctx.prisma.leagueSessionActivity.count({ where });
+    const data = await ctx.prisma.leagueSessionActivity.findMany({
       include: {
         session: { select: { leagueId: true } },
         studio: { select: { name: true, ownerId: true } },
         film: true,
       },
+      where,
+      skip: (input.page - 1) * 20,
+      take: 20,
       orderBy: { timestamp: "desc" },
-      where: input,
     });
+
+    return {
+      data,
+      total,
+    };
   });
 
 export const leagueSessionRouter = createTRPCRouter({

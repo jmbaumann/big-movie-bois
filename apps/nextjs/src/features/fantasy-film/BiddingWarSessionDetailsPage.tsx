@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { format } from "date-fns";
 import {
+  ChevronLeft,
+  ChevronRight,
   ChevronsUpDown,
   CircleDollarSign,
   Clapperboard,
@@ -46,6 +48,7 @@ import {
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Pagination, PaginationContent, PaginationItem } from "~/components/ui/pagination";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -58,7 +61,7 @@ import StudioSlot from "./StudioSlot";
 
 type Session = RouterOutputs["ffLeagueSession"]["getById"];
 type Studio = RouterOutputs["ffStudio"]["getStudios"][number];
-type Activty = RouterOutputs["ffLeagueSession"]["getLogs"][number];
+type Activty = RouterOutputs["ffLeagueSession"]["getLogs"]["data"][number];
 
 export default function BiddingWarSessionDetailsPage() {
   const { data: sessionData } = useSession();
@@ -344,12 +347,16 @@ function Films({ session, myStudio }: { session: Session; myStudio: Studio | und
 function Activity({ session }: { session: Session }) {
   const { data: sessionData } = useSession();
 
+  const [page, setPage] = useState(1);
+
   const myStudio = session?.studios.find((e) => e.ownerId === sessionData?.user.id);
 
   const { data: logs } = api.ffLeagueSession.getLogs.useQuery(
-    { sessionId: session?.id ?? "", studioId: myStudio?.id ?? "" },
+    { sessionId: session?.id ?? "", page, studioId: myStudio?.id ?? "" },
     { enabled: !!session && !!myStudio, staleTime: ONE_DAY_IN_SECONDS },
   );
+
+  const maxPages = logs ? Math.ceil(logs.total / 20) : 1;
 
   const getType = (type: string) => {
     switch (type) {
@@ -416,7 +423,7 @@ function Activity({ session }: { session: Session }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {logs?.map((activity, i) => (
+          {logs?.data.map((activity, i) => (
             <TableRow key={i}>
               <TableCell className="font-medium">{format(activity.timestamp, "E LLL dd h:mm aaa")}</TableCell>
               <TableCell>{getType(activity.type)}</TableCell>
@@ -425,6 +432,38 @@ function Activity({ session }: { session: Session }) {
           ))}
         </TableBody>
       </Table>
+
+      {logs && logs.total > 20 && (
+        <div className="mb-4 flex justify-end">
+          <Pagination className="ml-auto mr-0">
+            <PaginationContent>
+              <PaginationItem>
+                <Button variant="link" disabled={page === 1} onClick={() => setPage((s) => s - 1)}>
+                  <ChevronLeft className="mr-1" size={18} />
+                  Prev
+                </Button>
+              </PaginationItem>
+
+              {Array.from({ length: maxPages }).map((_, index) => (
+                <PaginationItem key={index}>
+                  <Button
+                    className={page === index + 1 ? "text-primary" : ""}
+                    variant="link"
+                    onClick={() => setPage((s) => index + 1)}
+                  >
+                    {index + 1}
+                  </Button>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <Button variant="link" disabled={page === maxPages} onClick={() => setPage((s) => s + 1)}>
+                  Next <ChevronRight className="ml-1" size={18} />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </>
   );
 }

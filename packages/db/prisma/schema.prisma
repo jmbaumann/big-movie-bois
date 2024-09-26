@@ -36,6 +36,7 @@ model TMDBDetails {
     filmBids       FilmBid[]
     activity       LeagueSessionActivity[]
     overlapAnswers OverlapAnswer[]
+    polls          PollQuestion[]
 }
 
 model TMDBCast {
@@ -254,6 +255,43 @@ model FilmTradeProposal {
     @@index([receivingFilmId])
 }
 
+model PollQuestion {
+    id        String    @id @default(cuid())
+    text      String
+    tmdbId    Int?
+    startDate DateTime?
+    endDate   DateTime?
+
+    film    TMDBDetails? @relation(fields: [tmdbId], references: [id])
+    answers PollAnswer[]
+
+    @@index([tmdbId])
+}
+
+model PollAnswer {
+    id     String @id @default(cuid())
+    pollId String
+    text   String
+    seq    Int
+
+    question  PollQuestion   @relation(fields: [pollId], references: [id])
+    responses PollResponse[]
+
+    @@index([pollId])
+}
+
+model PollResponse {
+    id       String @id @default(cuid())
+    answerId String
+    userId   String
+
+    answer PollAnswer @relation(fields: [answerId], references: [id])
+    user   User       @relation(fields: [userId], references: [id])
+
+    @@index([answerId])
+    @@index([userId])
+}
+
 model OverlapAnswer {
     id     String @id @default(cuid())
     date   String @unique()
@@ -328,6 +366,7 @@ model User {
     leaguesDeleted    League[]              @relation("LeagueDeleter")
     studiosUpdated    LeagueSessionStudio[] @relation("StudioUpdater")
     studiosDeleted    LeagueSessionStudio[] @relation("StudioDeleter")
+    pollResponses     PollResponse[]
     overlapResults    OverlapResult[]
 }
 

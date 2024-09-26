@@ -7,6 +7,7 @@ import {
   ffLeagueSessionRouter,
   ffStudioRouter,
 } from "./router/fantasy-film";
+import { pollRouter } from "./router/poll";
 import { tmdbRouter } from "./router/tmdb";
 import { userRouter } from "./router/user";
 import { createTRPCRouter } from "./trpc";
@@ -20,6 +21,7 @@ export const appRouter = createTRPCRouter({
   ffDraft: ffDraftRouter,
   overlap: overlapRouter,
   tmdb: tmdbRouter,
+  poll: pollRouter,
   user: userRouter,
 });
 

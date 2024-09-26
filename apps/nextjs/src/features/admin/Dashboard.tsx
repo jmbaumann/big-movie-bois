@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 import FilmDataAdmin from "./FilmData";
 import MasterListAdmin from "./MasterList";
 import OverlapAdmin from "./OverlapAdmin";
+import PollsAdmin from "./PollsAdmin";
 import PublicSessionsAdmin from "./PublicSessions";
 
 export default function AdminDashboard() {
@@ -23,7 +24,7 @@ export default function AdminDashboard() {
     home: [
       { label: "Analytics", value: "analytics", component: <Analytics /> },
       { label: "Alerts", value: "alerts", component: <Alerts /> },
-      { label: "Polls", value: "polls", component: <Polls /> },
+      { label: "Polls", value: "polls", component: <PollsAdmin /> },
     ],
     users: [
       { label: "Users", value: "users", component: <Users /> },

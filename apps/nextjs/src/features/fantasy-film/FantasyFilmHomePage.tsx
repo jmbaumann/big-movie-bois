@@ -47,7 +47,7 @@ export default function FantasyFilmHomePage() {
   };
 
   return (
-    <Layout showFooter>
+    <Layout title="Fantasy Film" showFooter>
       <div className="flex w-full gap-x-4">
         <div className="w-2/3">
           <div className="mb-4 flex items-center">

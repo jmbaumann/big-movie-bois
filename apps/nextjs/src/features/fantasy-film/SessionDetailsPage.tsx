@@ -111,7 +111,7 @@ export default function SessionDetailsPage() {
   if (!session) return <Loading />;
 
   return (
-    <Layout showFooter>
+    <Layout title={session.name + " | Fantasy Film"} showFooter>
       <div>
         <Link href={`/fantasy-film/${session.leagueId}`}>
           <Button variant="link" className="px-0">

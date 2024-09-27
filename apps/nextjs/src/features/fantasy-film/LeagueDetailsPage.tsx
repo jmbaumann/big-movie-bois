@@ -22,6 +22,7 @@ import { toast } from "~/components/ui/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
+import Loading from "~/layouts/main/Loading";
 import NewSessionDialog from "./NewSessionDialog";
 
 type League = inferRouterOutputs<AppRouter>["ffLeague"]["getById"];
@@ -58,8 +59,10 @@ export default function LeagueDetailsPage() {
   const canAddSession =
     isOwner && league?.sessions.some((e) => add(new Date(), { days: 30 }).getTime() > e.endDate.getTime());
 
+  if (!league) return <Loading />;
+
   return (
-    <Layout showFooter>
+    <Layout title={league.name + " | Fantasy Film"} showFooter>
       <div>
         <Link href={"/fantasy-film"}>
           <Button variant="link" className="px-0">

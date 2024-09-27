@@ -122,7 +122,7 @@ export default function OverlapPage() {
   if (!answer) return <Loading />;
 
   return (
-    <Layout>
+    <Layout title="Overlap | Big Movie Bois">
       <main className="mb-72 flex flex-col items-center lg:mb-2">
         <div className="mb-1 flex w-full flex-row items-center p-2">
           <Link href={"/daily-games/overlap"}>

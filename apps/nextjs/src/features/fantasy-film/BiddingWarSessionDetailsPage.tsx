@@ -117,7 +117,7 @@ export default function BiddingWarSessionDetailsPage() {
   if (!session) return <Loading />;
 
   return (
-    <Layout showFooter>
+    <Layout title={session.name + " | Fantasy Film"} showFooter>
       <div>
         <div className="mb-4 flex items-end justify-between">
           <p className="inline-block text-2xl">{session.name}</p>
@@ -264,7 +264,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
               studio={studio}
               slot={slot.type}
               film={film}
-              showScore={true}
+              showScore={film ? locked : false}
               locked={locked}
               bidWar
               refreshStudio={refetch}

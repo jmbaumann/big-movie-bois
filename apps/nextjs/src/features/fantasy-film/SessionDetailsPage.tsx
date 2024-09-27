@@ -537,7 +537,7 @@ function Activity({ session }: { session: Session }) {
     { enabled: !!session, staleTime: ONE_DAY_IN_SECONDS },
   );
 
-  const maxPages = logs ? Math.ceil(logs.total / 20) : 1;
+  const maxPages = logs ? Math.ceil(logs.total / 10) : 1;
 
   const getType = (type: string) => {
     switch (type) {
@@ -620,7 +620,7 @@ function Activity({ session }: { session: Session }) {
         </TableBody>
       </Table>
 
-      {logs && logs.total > 20 && (
+      {logs && logs.total > 10 && (
         <div className="mb-4 flex justify-end">
           <Pagination className="ml-auto mr-0">
             <PaginationContent>

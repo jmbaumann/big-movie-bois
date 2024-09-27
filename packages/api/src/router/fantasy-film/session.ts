@@ -102,8 +102,8 @@ const getLogs = protectedProcedure
         film: true,
       },
       where,
-      skip: (input.page - 1) * 20,
-      take: 20,
+      skip: (input.page - 1) * 10,
+      take: 10,
       orderBy: { timestamp: "desc" },
     });
 

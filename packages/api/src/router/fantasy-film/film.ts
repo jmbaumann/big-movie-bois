@@ -1,3 +1,4 @@
+import { sub } from "date-fns";
 import { z } from "zod";
 
 import { Prisma } from "@repo/db";
@@ -138,11 +139,12 @@ export async function getFilmScore(ctx: TRPCContext, session: Session, film: Fil
 }
 
 export async function getFilmScores(film: FilmWithTMDB) {
+  const locked = sub(new Date(film?.tmdb?.releaseDate ?? ""), { days: 7 }).getTime() < new Date().getTime();
   return {
-    totalBoxOffice: getTotalBoxOfficeScore(film),
-    openingWeekendBoxOffice: getOpeningWeekendBoxOfficeScore(film),
-    rating: getRatingScore(film),
-    reverseRating: getReverseRatingScore(film),
+    totalBoxOffice: locked ? getTotalBoxOfficeScore(film) : 0,
+    openingWeekendBoxOffice: locked ? getOpeningWeekendBoxOfficeScore(film) : 0,
+    rating: locked ? getRatingScore(film) : 0,
+    reverseRating: locked ? getReverseRatingScore(film) : 0,
   };
 }
 

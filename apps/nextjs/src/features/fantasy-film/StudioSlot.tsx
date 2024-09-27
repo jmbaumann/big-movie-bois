@@ -124,12 +124,21 @@ export default function StudioSlot({
           {!!film && (!bidWar || isMyStudio) ? (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger className="flex">
-                <Image
-                  src={`https://image.tmdb.org/t/p/w1280${film?.tmdb?.poster}`}
-                  alt={`${film?.tmdb?.title} poster`}
-                  width={200}
-                  height={300}
-                />
+                <div className="relative">
+                  {showScore && (
+                    <div
+                      className={cn("bg-primary absolute right-1 top-1 rounded px-2 py-1 text-sm font-bold text-white")}
+                    >
+                      {film?.score} pts
+                    </div>
+                  )}
+                  <Image
+                    src={`https://image.tmdb.org/t/p/w1280${film?.tmdb?.poster}`}
+                    alt={`${film?.tmdb?.title} poster`}
+                    width={200}
+                    height={300}
+                  />
+                </div>
               </DialogTrigger>
               <DialogContent className="max-w-2/3 w-1/2 rounded-sm" forceMount>
                 <DialogHeader>
@@ -264,14 +273,6 @@ export default function StudioSlot({
             </div>
           )}
         </div>
-      </div>
-      <div className="flex flex-col justify-between">
-        {showScore && (
-          <div className="flex h-min flex-col rounded-sm rounded-l-none bg-[#9ac] px-2 text-center text-black">
-            <p className="text-2xl">{film?.score}</p>
-            <p className="text-md">pts</p>
-          </div>
-        )}
       </div>
     </div>
   );

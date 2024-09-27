@@ -253,7 +253,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
         <p className="ml-4 text-lg">${studio.budget}</p>
         <p className="ml-auto">{studio.score} pts</p>
       </div>
-      <div className="grid grid-cols-3 gap-x-2 gap-y-4">
+      <div className="grid grid-cols-5 gap-x-2 gap-y-4">
         {session?.settings.teamStructure.map((slot, i) => {
           const film = studio.films.find((e) => e.slot === slot.pos);
           const locked = isSlotLocked(film);
@@ -264,7 +264,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
               studio={studio}
               slot={slot.type}
               film={film}
-              showScore={film ? locked : false}
+              showScore={true}
               locked={locked}
               bidWar
               refreshStudio={refetch}

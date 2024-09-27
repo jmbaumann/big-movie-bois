@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { format, sub } from "date-fns";
 import { CircleDollarSign, DollarSign, ExternalLink, Lock, Star } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -50,6 +51,7 @@ export default function AvailableFilms({
   gridCols?: number;
 }) {
   const { data: sessionData } = useSession();
+  const trpc = api.useContext();
 
   const [films, setFilms] = useState<Film[]>([]);
   const [availableFilms, setAvailableFilms] = useState<Film[]>([]);
@@ -209,6 +211,9 @@ export default function AvailableFilms({
           onSuccess: () => {
             toast({ title: buyNow ? "Film added to Studio" : "Bid submitted" });
             setOpen(false);
+            refreshFilms();
+            trpc.ffStudio.getStudios.invalidate({ sessionId: session!.id });
+            trpc.ffLeagueSession.getBids.invalidate({ sessionId: session!.id });
           },
           onError: (e) => {
             toast({ title: e.message, variant: "destructive" });

@@ -118,8 +118,11 @@ export default function SessionDetailsPage() {
             <ChevronLeft /> League
           </Button>
         </Link>
-        <div className="mb-4 flex items-center">
-          <h1 className="text-2xl">{session.name}</h1>
+        <div className="mb-4 flex items-end justify-between">
+          <p className="text-2xl">{session.name}</p>
+          <p className="inline-block text-lg">
+            {format(session.startDate, "LLL d, yyyy")} - {format(session.endDate, "LLL d, yyyy")}
+          </p>
         </div>
 
         <div className="">
@@ -289,7 +292,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
         <p className="ml-4 text-lg">${studio.budget}</p>
         <p className="ml-auto">{studio.score} pts</p>
       </div>
-      <div className="grid grid-cols-3 gap-x-2 gap-y-4">
+      <div className="grid grid-cols-5 gap-x-2 gap-y-4">
         {session?.settings.teamStructure.map((slot, i) => {
           const film = studio.films.find((e) => e.slot === slot.pos);
           const locked = isSlotLocked(film);

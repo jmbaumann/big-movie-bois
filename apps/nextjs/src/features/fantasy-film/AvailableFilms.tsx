@@ -154,7 +154,7 @@ export default function AvailableFilms({
   useEffect(() => {
     if (showWatchlist) setAvailableFilms(favorites ?? []);
     else setAvailableFilms(films);
-  }, [showWatchlist]);
+  }, [showWatchlist, favorites]);
 
   useEffect(() => {
     const ids = new Set(acquiredFilms);

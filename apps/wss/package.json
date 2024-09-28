@@ -4,7 +4,8 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "pnpm with-env node src/index.js",
+    "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
     "axios": "^1.7.7",

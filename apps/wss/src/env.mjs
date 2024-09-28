@@ -3,11 +3,10 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    WEBSOCKET_SERVER: z.string(),
+    BMB_URL: z.string().url(),
   },
-  client: {},
   runtimeEnv: {
-    WEBSOCKET_SERVER: process.env.WEBSOCKET_SERVER,
+    BMB_URL: process.env.BMB_URL,
   },
   skipValidation: !!process.env.CI || !!process.env.SKIP_ENV_VALIDATION,
 });

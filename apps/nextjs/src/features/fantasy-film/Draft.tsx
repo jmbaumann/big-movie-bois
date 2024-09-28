@@ -17,6 +17,7 @@ import { getStudioOwnerByPick, getUpcomingPicks } from "~/utils/fantasy-film-hel
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
+import { env } from "~/env.mjs";
 import Layout from "~/layouts/main/Layout";
 import { getById } from "~/utils";
 import AvailableFilms from "./AvailableFilms";
@@ -66,7 +67,7 @@ export default function Draft() {
   const draftCannotStart = session?.settings.draft.order.length === 0;
 
   useEffect(() => {
-    const socket = io("ws://localhost:8080", {
+    const socket = io(env.NEXT_PUBLIC_WEBSOCKET_SERVER, {
       // withCredentials: true,
     });
 

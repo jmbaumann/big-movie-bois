@@ -5,5 +5,4 @@ packages:
   - packages/api
   - packages/auth
   - packages/db
-  - packages/ws
   - packages/config/*

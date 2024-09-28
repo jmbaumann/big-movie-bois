@@ -4,28 +4,30 @@ import bodyParser from "body-parser";
 import express from "express";
 import { Server } from "socket.io";
 
+import { env } from "./env.mjs";
+
 const app = express();
 const server = createServer(app);
 app.use(bodyParser.json({ limit: "20mb" }));
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: env.BMB_URL,
   },
 });
 
-app.post("/trigger-event", (req) => {
+app.post("/ws", (req) => {
   io.emit(req.body.eventName, req.body.eventData);
 });
 
-app.post("/draft-event", async (req) => {
+app.post("/draft", async (req) => {
   const data = req.body.eventData;
-  console.log(data);
+  // console.log(data);
   io.emit(req.body.eventName, data);
 
   setTimeout(
     async () => {
-      const url = "http://localhost:3000";
+      const url = env.BMB_URL;
 
       try {
         await axios.post(`${url}/api/auto-draft`, {

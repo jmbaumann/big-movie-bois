@@ -104,7 +104,7 @@ export default function SessionForm({
           <AccordionItem value="settings">
             <AccordionTrigger>General</AccordionTrigger>
             <AccordionContent className="mt-2 space-y-8 px-4">
-              <DetailsSection />
+              <DetailsSection session={session} />
             </AccordionContent>
           </AccordionItem>
           {league && (
@@ -129,13 +129,16 @@ export default function SessionForm({
   );
 }
 
-export function DetailsSection() {
+export function DetailsSection({ session }: { session: Session }) {
   const { data: sessionData } = useSession();
   const form = useFormContext();
   const { fields, append, remove } = useFieldArray({
     name: "settings.teamStructure",
     control: form.control,
   });
+
+  const sessionStarted = session && new Date().getTime() > session.startDate.getTime();
+  const numExistingSlots = session?.settings.teamStructure.length ?? 0;
 
   return (
     <>
@@ -179,6 +182,7 @@ export function DetailsSection() {
                         "w-[240px] pl-3 text-left font-normal text-black",
                         !field.value && "text-muted-foreground",
                       )}
+                      disabled={!!session?.id}
                     >
                       {field.value ? format(field.value, "PPP") : <span className="text-black">Pick a date</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 text-black opacity-50" />
@@ -226,6 +230,7 @@ export function DetailsSection() {
                         "w-[240px] pl-3 text-left font-normal text-black",
                         !field.value && "text-muted-foreground",
                       )}
+                      disabled={!!session?.id}
                     >
                       {field.value ? format(field.value, "PPP") : <span className="text-black">Pick a date</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 text-black opacity-50" />
@@ -268,7 +273,11 @@ export function DetailsSection() {
                     <FormControl>
                       <div className="mt-2 flex items-center space-x-2">
                         <span>{index + 1}</span>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          disabled={sessionStorage && index < numExistingSlots}
+                        >
                           <SelectTrigger className="w-1/2 text-black">
                             <SelectValue />
                           </SelectTrigger>
@@ -281,11 +290,12 @@ export function DetailsSection() {
                           </SelectContent>
                         </Select>
                         <Button
+                          className="bg-white text-black hover:bg-red-600 hover:text-white"
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="bg-white text-black hover:bg-red-600 hover:text-white"
                           onClick={() => remove(index)}
+                          disabled={sessionStorage && index < numExistingSlots}
                         >
                           <Trash className="h-4 w-4" />
                         </Button>

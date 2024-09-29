@@ -32,6 +32,7 @@ import { toast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { env } from "~/env.mjs";
 import { ONE_DAY_IN_SECONDS, unique } from "~/utils";
 
 type Film = TMDBDetails & { price?: number };
@@ -174,7 +175,7 @@ export default function AvailableFilms({
   }, [open]);
 
   useEffect(() => {
-    const socket = io("ws://localhost:8080", {
+    const socket = io(env.NEXT_PUBLIC_WEBSOCKET_SERVER, {
       // withCredentials: true,
     });
 

@@ -118,9 +118,8 @@ export async function getFilmsBySessionId(ctx: TRPCContext, input: z.infer<typeo
 
   const { today, excludeMyFilms, excludeAcquiredFilms } = input.options ?? {};
 
-  const from = today
-    ? format(max([new Date(), session.startDate]), "yyyy-MM-dd")
-    : format(session.startDate, "yyyy-MM-dd");
+  const fromDate = today ? max([new Date(), session.startDate]) : session.startDate;
+  const from = format(add(fromDate, { days: 7 }), "yyyy-MM-dd");
   const to = format(session.endDate, "yyyy-MM-dd");
   const defaultWhere = { AND: [{ releaseDate: { gte: from } }, { releaseDate: { lte: to } }] };
 

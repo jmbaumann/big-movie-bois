@@ -119,6 +119,12 @@ export default function BiddingWarSessionDetailsPage() {
   return (
     <Layout title={session.name + " | Fantasy Film"} showFooter>
       <div>
+        <Link href={`/fantasy-film`}>
+          <Button variant="link" className="px-0">
+            <ChevronLeft /> Fantasy Film
+          </Button>
+        </Link>
+
         <div className="mb-4 flex items-end justify-between">
           <p className="inline-block text-2xl">{session.name}</p>
           <p className="inline-block text-lg">

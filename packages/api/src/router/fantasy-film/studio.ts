@@ -268,26 +268,24 @@ async function getStudioFilmScores(
   const session = await getSessionById(ctx, sessionId);
 
   if (studio && studio.films.length > 0)
-    studio.films = await Promise.all(
-      studio.films.map(async (film) => {
-        const scores = await getFilmScores({ ...film });
-        const score = await getFilmScore(ctx, session!, {
-          ...film,
-          scores,
-        });
-        return {
-          ...film,
-          scores,
-          score,
-        };
-      }),
-    );
+    studio.films = studio.films.map((film) => {
+      const scores = getFilmScores({ ...film });
+      const score = getFilmScore(ctx, session!, {
+        ...film,
+        scores,
+      });
+      return {
+        ...film,
+        scores,
+        score,
+      };
+    });
 
   studio.score = Math.round(studio.films.map((e) => e.score).reduce((a, b) => a + b, 0) * 10) / 10;
-  await ctx.prisma.leagueSessionStudio.update({
-    data: { score: studio.score },
-    where: { id: studio.id },
-  });
+  // await ctx.prisma.leagueSessionStudio.update({
+  //   data: { score: studio.score },
+  //   where: { id: studio.id },
+  // });
 }
 
 export async function createStudio(ctx: TRPCContext, input: z.infer<typeof createLeagueSessionStudioObj>) {

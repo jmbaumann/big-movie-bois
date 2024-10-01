@@ -109,7 +109,7 @@ export const filmRouter = createTRPCRouter({
 
 ////////////////
 
-export async function getFilmScore(ctx: TRPCContext, session: Session, film: FilmWithScores) {
+export function getFilmScore(ctx: TRPCContext, session: Session, film: FilmWithScores) {
   let score = 0;
   if (film.scoreOverride) score = film.scoreOverride;
 
@@ -131,14 +131,14 @@ export async function getFilmScore(ctx: TRPCContext, session: Session, film: Fil
       break;
   }
 
-  await ctx.prisma.studioFilm.update({
-    data: { score },
-    where: { id: film.id },
-  });
+  // await ctx.prisma.studioFilm.update({
+  //   data: { score },
+  //   where: { id: film.id },
+  // });
   return score;
 }
 
-export async function getFilmScores(film: FilmWithTMDB) {
+export function getFilmScores(film: FilmWithTMDB) {
   const locked = sub(new Date(film?.tmdb?.releaseDate ?? ""), { days: 7 }).getTime() < new Date().getTime();
   return {
     totalBoxOffice: locked ? getTotalBoxOfficeScore(film) : 0,

@@ -56,6 +56,9 @@ const update = protectedProcedure.input(updateLeagueSessionInputObj).mutation(as
 });
 
 const del = protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+  await ctx.prisma.filmBid.deleteMany({ where: { studio: { sessionId: input.id } } });
+  await ctx.prisma.studioFilm.deleteMany({ where: { studio: { sessionId: input.id } } });
+  await ctx.prisma.leagueSessionStudio.deleteMany({ where: { sessionId: input.id } });
   return await ctx.prisma.leagueSession.delete({
     where: { id: input.id },
   });

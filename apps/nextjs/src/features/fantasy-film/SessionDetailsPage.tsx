@@ -73,13 +73,15 @@ type Activty = RouterOutputs["ffLeagueSession"]["getLogs"]["data"][number];
 
 export default function SessionDetailsPage() {
   const { data: sessionData } = useSession();
+  const confirm = useConfirm();
   const router = useRouter();
+  const leagueId = router.query.leagueId as string;
   const sessionId = router.query.sessionId as string;
 
   const [activeTab, setActiveTab] = useState("home");
   const handleTab = (tab: string) => {
     void router.push({
-      pathname: `/fantasy-film/${router.query.leagueId}/${router.query.sessionId}`,
+      pathname: `/fantasy-film/${leagueId}/${sessionId}`,
       query: { tab },
     });
   };
@@ -104,20 +106,47 @@ export default function SessionDetailsPage() {
       initialData: [],
     },
   );
+  const { mutate: deleteSession } = api.ffLeagueSession.delete.useMutation();
 
   const myStudio = studios?.find((e) => e.ownerId === sessionData?.user.id);
   const opposingStudios = studios?.filter((e) => e.ownerId !== sessionData?.user.id);
+
+  const handleDelete = async () => {
+    const ok = await confirm("Are you sure you want to delete this session? This action cannot be undone.");
+    if (ok) {
+      toast({ title: "Deleting..." });
+      deleteSession(
+        { id: sessionId },
+        {
+          onSuccess: () => {
+            toast({ title: "Session deleted" });
+            router.push(`/fantasy-film/${leagueId}`);
+          },
+        },
+      );
+    }
+  };
 
   if (!session) return <Loading />;
 
   return (
     <Layout title={session.name + " | Fantasy Film"} showFooter>
       <div>
-        <Link href={`/fantasy-film/${session.leagueId}`}>
-          <Button variant="link" className="px-0">
-            <ChevronLeft /> League
-          </Button>
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href={`/fantasy-film/${session.leagueId}`}>
+            <Button variant="link" className="px-0">
+              <ChevronLeft /> League
+            </Button>
+          </Link>
+          <AdminMenu className="float-right">
+            <DropdownMenuContent side="bottom">
+              <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
+                Delete Session
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </AdminMenu>
+        </div>
+
         <div className="mb-4 flex items-end justify-between">
           <p className="text-2xl">{session.name}</p>
           <p className="inline-block text-lg">

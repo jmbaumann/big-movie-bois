@@ -16,6 +16,7 @@ import { api } from "~/utils/api";
 import { getStudioOwnerByPick, getUpcomingPicks } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
+import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { Progress } from "~/components/ui/progress";
 import { env } from "~/env.mjs";
 import Layout from "~/layouts/main/Layout";
@@ -29,6 +30,7 @@ type StudioFilmTMDB = RouterOutputs["ffStudio"]["getMyStudio"]["films"][number];
 export default function Draft() {
   const { data: sessionData } = useSession();
   const router = useRouter();
+  const confirm = useConfirm();
   const sessionId = router.query.sessionId as string;
 
   const [started, setStarted] = useState(false);
@@ -84,6 +86,11 @@ export default function Draft() {
     };
   }, [sessionId]);
 
+  const handleStart = async () => {
+    const ok = await confirm("Are you sure you want to start the draft?");
+    if (ok) startDraft.mutate({ sessionId: session!.id });
+  };
+
   const handleDraftUpdate = (state: DraftState) => {
     console.log("UPDATE", state);
     setStarted(true);
@@ -138,7 +145,7 @@ export default function Draft() {
             {started ? (
               <Countdown currentPick={currentPick} leagueSettings={session.settings} />
             ) : session?.league.ownerId === sessionData?.user.id ? (
-              <Button className="ml-2 font-sans" onClick={() => startDraft.mutate({ sessionId: session!.id })}>
+              <Button className="ml-2 font-sans" onClick={() => handleStart()}>
                 Start Draft
               </Button>
             ) : (
@@ -225,16 +232,24 @@ function Countdown({
     return () => clearInterval(interval);
   }, [currentPick]);
 
+  const secondsRemaining = leagueSettings.draft.timePerRound - seconds;
+
   return (
     <div className="ml-4 mr-2 flex min-w-max flex-col items-center font-sans">
       <div className="text-sm">
         Round {round} of {leagueSettings.draft.numRounds}
       </div>
-      <div className="text-3xl tabular-nums">{timer}</div>
-      <Progress
-        className="h-2"
-        value={((leagueSettings.draft.timePerRound - seconds) / leagueSettings.draft.timePerRound) * 100}
-      />
+      {secondsRemaining !== leagueSettings.draft.timePerRound ? (
+        <>
+          <div className="text-3xl tabular-nums">{timer}</div>
+          <Progress className="h-2" value={(secondsRemaining / leagueSettings.draft.timePerRound) * 100} />
+        </>
+      ) : (
+        <>
+          <Loader2 className="mx-auto my-2 animate-spin" />
+          <p className="text-xs">Processing...</p>
+        </>
+      )}
     </div>
   );
 }

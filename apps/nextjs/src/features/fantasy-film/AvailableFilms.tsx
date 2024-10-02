@@ -175,21 +175,23 @@ export default function AvailableFilms({
   }, [open]);
 
   useEffect(() => {
-    const socket = io(env.NEXT_PUBLIC_WEBSOCKET_SERVER, {
-      // withCredentials: true,
-    });
+    if (isDraft) {
+      const socket = io(env.NEXT_PUBLIC_WEBSOCKET_SERVER, {
+        // withCredentials: true,
+      });
 
-    socket.on("connect", () => {
-      console.log("Connected to the WebSocket server");
-    });
+      socket.on("connect", () => {
+        console.log("Connected to the WebSocket server");
+      });
 
-    socket.on(`draft:${session!.id}:draft-update`, (data: DraftState) => {
-      if (data.lastPick) setAcquiredFilms((s) => [...s, data.lastPick!.tmdbId]);
-    });
+      socket.on(`draft:${session!.id}:draft-update`, (data: DraftState) => {
+        if (data.lastPick) setAcquiredFilms((s) => [...s, data.lastPick!.tmdbId]);
+      });
 
-    return () => {
-      socket.disconnect();
-    };
+      return () => {
+        socket.disconnect();
+      };
+    }
   }, [session]);
 
   function handleFavorite() {

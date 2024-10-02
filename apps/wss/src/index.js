@@ -16,6 +16,10 @@ const io = new Server(server, {
   },
 });
 
+app.get("/test", (req, res) => {
+  res.send("CONNECTED");
+});
+
 app.post("/ws", (req) => {
   io.emit(req.body.eventName, req.body.eventData);
 });

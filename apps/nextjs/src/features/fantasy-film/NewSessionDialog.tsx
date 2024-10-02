@@ -64,7 +64,7 @@ export default function NewSessionDialog({
   const [currentStep, setCurrentStep] = useState<Steps>("details");
   const sessionMembers = useArray<string>(league?.members.map((e) => e.userId) ?? []);
 
-  const { isLoading, mutate: createSession } = api.ffLeagueSession.create.useMutation();
+  const { isLoading: creating, mutate: createSession } = api.ffLeagueSession.create.useMutation();
 
   const formSchema = createLeagueSessionInputObj;
 
@@ -195,7 +195,7 @@ export default function NewSessionDialog({
                   <Button
                     type="submit"
                     className="float-right"
-                    isLoading={false}
+                    isLoading={creating}
                     onClick={() => onSubmit(form.getValues())}
                   >
                     Create Session

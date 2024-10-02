@@ -52,7 +52,7 @@ export default function Poll({ poll, refresh }: { poll: Poll; refresh: () => voi
               height={225}
             />
           )}
-          <div className="flex grow flex-col items-center justify-around">
+          <div className="flex grow items-center justify-around">
             {poll.answers.map((answer, j) => (
               <div className="flex items-center space-x-2">
                 <Button

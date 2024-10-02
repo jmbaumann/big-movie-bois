@@ -8,7 +8,7 @@ export default function HomePage() {
     <div className="flex">
       <div className="flex w-2/3 flex-col"></div>
 
-      <div className="flex w-1/3 flex-col">
+      <div className="flex w-1/3 flex-col space-y-2">
         {polls?.map((poll, i) => <Poll key={i} poll={poll} refresh={refreshPolls} />)}
       </div>
     </div>

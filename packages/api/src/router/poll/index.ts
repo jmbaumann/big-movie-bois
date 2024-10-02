@@ -8,6 +8,7 @@ const get = publicProcedure.input(z.object({ active: z.boolean().optional() })).
   return await ctx.prisma.pollQuestion.findMany({
     include: { answers: { include: { responses: true } }, film: true },
     where,
+    orderBy: { startDate: "desc" },
   });
 });
 

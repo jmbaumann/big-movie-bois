@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { StudioFilm } from "@repo/db";
 
+import { STUDIO_SLOT_TYPES } from "../../enums";
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { draftEvent } from "../../wss";
 import { getByTMDBId, getFilmsBySessionId } from "../tmdb";
@@ -14,22 +15,16 @@ const getState = protectedProcedure.input(z.object({ sessionId: z.string() })).q
     where: { sessionId: input.sessionId },
   });
   const picks = await ctx.prisma.studioFilm.findMany({
+    include: { tmdb: true },
     where: { studioId: { in: studios.map((e) => e.id) } },
     orderBy: { acquiredAt: "asc" },
   });
-
-  // const tmdbMovies =
-  // for (const pick of picks) {
-  // //   pick.details = movieList.find((e) => e.id === pick.tmdbId);
 
   const session = await getSessionById(ctx, input.sessionId);
   const activities = picks.map((pick) => {
     const studio = studios.find((e) => e.id === pick.studioId);
     const slot = session?.settings.teamStructure.find((e) => e.pos === pick.slot);
-    return "action";
-    // return `${studio?.name} drafted ${pick.details?.title}${
-    //   slot ? " in their " + slotTypes[slot.type] + " slot" : ""
-    // }`;
+    return `${studio?.name} drafted ${pick.tmdb.title}${slot ? " in their " + slot.type + " slot" : ""}`;
   });
   if (picks.length) activities.unshift("The draft has started!");
   return {
@@ -40,10 +35,7 @@ const getState = protectedProcedure.input(z.object({ sessionId: z.string() })).q
       endTimestamp:
         (picks[picks.length - 1]?.acquiredAt!.getTime() ?? 0) + (session?.settings.draft.timePerRound ?? 1) * 1000,
     },
-    picks: picks.map((e) => ({
-      ...e,
-      // details: movieList.find((m) => m.id === e.tmdbId),
-    })),
+    picks,
     activities,
   };
 });

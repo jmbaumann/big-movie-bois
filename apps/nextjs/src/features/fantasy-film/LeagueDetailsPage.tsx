@@ -9,10 +9,10 @@ import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
 import { LEAGUE_INVITE_STATUSES } from "@repo/api/src/enums";
-import { LeagueSession, StudioFilm } from "@repo/db";
+import { StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
-import { getMostRecentAndUpcoming } from "~/utils/fantasy-film-helpers";
+import { getDraftDate, getMostRecentAndUpcoming } from "~/utils/fantasy-film-helpers";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
@@ -23,9 +23,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 import Loading from "~/layouts/main/Loading";
+import DraftCountdown from "./DraftCountdown";
 import NewSessionDialog from "./NewSessionDialog";
 
 type League = inferRouterOutputs<AppRouter>["ffLeague"]["getById"];
+type LeagueSession = NonNullable<League>["sessions"][number];
 type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
 type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
 
@@ -116,11 +118,15 @@ export default function LeagueDetailsPage() {
 }
 
 function SessionCard({ session }: { session: LeagueSession }) {
+  const router = useRouter();
+
   const { data: films } = api.ffLeagueSession.getAcquiredFilms.useQuery({
     sessionId: session.id,
     includeDetails: true,
   });
 
+  const draftDate = getDraftDate(session.settings.draft);
+  const draftIsOver = session?.studios.some((e) => !!e.films.length) || !session?.settings.draft.conduct;
   const { mostRecent, upcoming } = getMostRecentAndUpcoming(films);
 
   return (
@@ -138,6 +144,13 @@ function SessionCard({ session }: { session: LeagueSession }) {
       </CardHeader>
       <CardContent>
         <div className="">
+          {!draftIsOver && (
+            <div className="flex flex-col items-center">
+              <DraftCountdown draftDate={draftDate} />
+              <Button onClick={() => router.push(`/fantasy-film/draft/${session!.id}`)}>Go to Draft</Button>
+            </div>
+          )}
+
           <div className="flex w-1/3">
             {mostRecent && (
               <div className="flex flex-col items-center">

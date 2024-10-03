@@ -99,13 +99,19 @@ const getById = protectedProcedure.input(z.object({ id: z.string() })).query(asy
   const league = await ctx.prisma.league.findFirst({
     where: { id: input.id },
     include: {
-      sessions: { orderBy: { endDate: "asc" } },
+      sessions: { include: { studios: { include: { films: true } } }, orderBy: { endDate: "asc" } },
       members: { include: { user: true } },
       invites: { include: { user: true } },
     },
   });
   if (!league) return null;
-  return league;
+  return {
+    ...league,
+    sessions: league.sessions.map((e) => ({
+      ...e,
+      settings: JSON.parse(e.settings as string) as LeagueSessionSettings,
+    })),
+  };
 });
 
 const create = protectedProcedure

@@ -76,9 +76,10 @@ const pick = protectedProcedure.input(makePickObj).mutation(async ({ ctx, input 
 const auto = publicProcedure
   .meta({ openapi: { method: "POST", path: "/auto-draft" } })
   .input(z.object({ sessionId: z.string(), studioId: z.string(), pick: z.number() }))
-  .output(z.void())
+  .output(z.boolean())
   .mutation(async ({ ctx, input }) => {
-    return await autoDraft(ctx, input.sessionId, input.studioId, input.pick);
+    await autoDraft(ctx, input.sessionId, input.studioId, input.pick);
+    return true;
   });
 
 export const draftRouter = createTRPCRouter({

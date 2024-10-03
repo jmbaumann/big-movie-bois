@@ -40,7 +40,7 @@ app.post("/draft", async (req) => {
           pick: data.currentPick.num,
         });
       } catch (e) {
-        // console.log(e);
+        console.log(e);
       }
     },
     data.currentPick.endTimestamp - data.currentPick.startTimestamp + 2500,

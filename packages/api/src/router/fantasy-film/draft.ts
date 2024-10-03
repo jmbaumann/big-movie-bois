@@ -136,7 +136,7 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
     lastPick: film,
   };
 
-  await draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
+  draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
   return input.sessionId;
 }
 

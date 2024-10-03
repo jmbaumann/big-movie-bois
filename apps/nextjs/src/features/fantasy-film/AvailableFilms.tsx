@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useQueryClient } from "@tanstack/react-query";
 import { format, sub } from "date-fns";
 import { CircleDollarSign, DollarSign, ExternalLink, Lock, Star } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -9,7 +8,7 @@ import { io } from "socket.io-client";
 
 import { RouterOutputs } from "@repo/api";
 import { DraftState } from "@repo/api/src/router/fantasy-film/draft";
-import { TMDBDetails } from "@repo/db";
+import { LeagueSessionStudio, TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
@@ -43,12 +42,16 @@ export default function AvailableFilms({
   studioId,
   buyNow,
   isDraft,
+  drafting,
+  draftDisabled = false,
   gridCols,
 }: {
   session: Session;
   studioId: string;
   buyNow?: boolean;
   isDraft?: boolean;
+  drafting?: LeagueSessionStudio;
+  draftDisabled?: boolean;
   gridCols?: number;
 }) {
   const { data: sessionData } = useSession();
@@ -124,17 +127,18 @@ export default function AvailableFilms({
   const { mutate: addFavorite } = api.ffStudio.addFavorite.useMutation();
   const { mutate: removeFavorite } = api.ffStudio.removeFavorite.useMutation();
   const { mutate: makeBid, isLoading: bidding } = api.ffStudio.bid.useMutation();
-  const { mutate: makePick } = api.ffDraft.pick.useMutation();
+  const { mutate: makePick, isLoading: picking } = api.ffDraft.pick.useMutation();
   const { mutate: adminAdd } = api.ffAdmin.addStudioFilm.useMutation();
 
   const slotsFilled = new Set(myStudio?.films.map((e) => e.slot));
   const availableSlots =
     myStudio && session
-      ? buyNow
+      ? buyNow || isDraft
         ? session.settings.teamStructure.filter((e) => !slotsFilled.has(e.pos))
         : getUnlockedSlots(session, myStudio)
       : [];
-  const canPick = !!availableSlots?.length;
+  const canPick =
+    (isDraft ? drafting?.id === studioId || isAdmin : true) && !!availableSlots?.length && !picking && !draftDisabled;
   const isFavorite = selectedFilm ? favorites?.map((e) => e.id).includes(selectedFilm.id) : false;
   const bidPlaced = selectedFilm ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
   const insufficientFunds = selectedFilm && myStudio ? (selectedFilm.price ?? 0) > myStudio?.budget : false;
@@ -245,11 +249,12 @@ export default function AvailableFilms({
 
   function handleDraft() {
     if (session && selectedFilm && myStudio && selectedSlot) {
+      const studioId = isAdmin && drafting && drafting?.id !== myStudio.id ? drafting.id : myStudio.id;
       makePick({
         sessionId: session.id,
         tmdbId: selectedFilm.id,
         title: selectedFilm.title,
-        studioId: myStudio.id,
+        studioId,
         slot: Number(selectedSlot),
       });
       setOpen(false);
@@ -382,29 +387,31 @@ export default function AvailableFilms({
                             </div>
 
                             <div className="mt-4 flex justify-between">
-                              <div className="flex flex-col">
-                                <Label>{!buyNow ? "Amount" : "Price"}</Label>
-                                {!buyNow ? (
-                                  <Input
-                                    className="w-2/3 text-black"
-                                    value={bidAmount}
-                                    onChange={(e) => setBidAmount(e.target.value)}
-                                    type="number"
-                                    min={0}
-                                    startIcon={DollarSign}
-                                  ></Input>
-                                ) : (
-                                  <p
-                                    className={cn(
-                                      "flex items-center text-2xl text-white",
-                                      insufficientFunds && "text-red-600",
-                                    )}
-                                  >
-                                    <DollarSign />
-                                    {bidAmount}
-                                  </p>
-                                )}
-                              </div>
+                              {!isDraft && (
+                                <div className="flex flex-col">
+                                  <Label>{!buyNow ? "Amount" : "Price"}</Label>
+                                  {!buyNow ? (
+                                    <Input
+                                      className="w-2/3 text-black"
+                                      value={bidAmount}
+                                      onChange={(e) => setBidAmount(e.target.value)}
+                                      type="number"
+                                      min={0}
+                                      startIcon={DollarSign}
+                                    ></Input>
+                                  ) : (
+                                    <p
+                                      className={cn(
+                                        "flex items-center text-2xl text-white",
+                                        insufficientFunds && "text-red-600",
+                                      )}
+                                    >
+                                      <DollarSign />
+                                      {bidAmount}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                               {buyNow && !insufficientFunds && (
                                 <div className="flex flex-col">
                                   <Label>Remaining Budget</Label>
@@ -447,7 +454,7 @@ export default function AvailableFilms({
                 </div>
 
                 <div className="ml-auto flex items-center">
-                  {isAdmin && (
+                  {isAdmin && !isDraft && (
                     <AdminMenu className="mr-4">
                       <DropdownMenuContent side="top">
                         {studios?.map((studio, i) => {
@@ -467,7 +474,7 @@ export default function AvailableFilms({
                   )}
                   {isDraft && (
                     <Button disabled={!selectedFilm || !selectedSlot || !canPick} onClick={handleDraft}>
-                      Draft
+                      Draft {isAdmin && drafting?.id !== studioId && `for ${drafting?.name}`}
                     </Button>
                   )}
                   {!isDraft && canPick && !insufficientFunds && (

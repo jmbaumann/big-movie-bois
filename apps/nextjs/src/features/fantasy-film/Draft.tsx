@@ -42,6 +42,7 @@ export default function Draft() {
   const [picks, setPicks] = useState<StudioFilm[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
   const [expand, setExpand] = useState(false);
+  const [draftDisabled, setDraftDisabled] = useState(false);
 
   const { data: session, isLoading } = api.ffLeagueSession.getById.useQuery(
     {
@@ -94,6 +95,7 @@ export default function Draft() {
   const handleDraftUpdate = (state: DraftState) => {
     console.log("UPDATE", state);
     setStarted(true);
+    setDraftDisabled(false);
     setCurrentPick(state.currentPick);
     setPicks((s) => {
       if (state.lastPick) return [...s, state.lastPick];
@@ -143,7 +145,11 @@ export default function Draft() {
         ) : (
           <div className="flex items-center">
             {started ? (
-              <Countdown currentPick={currentPick} leagueSettings={session.settings} />
+              <Countdown
+                currentPick={currentPick}
+                leagueSettings={session.settings}
+                setDraftDisabled={setDraftDisabled}
+              />
             ) : session?.league.ownerId === sessionData?.user.id ? (
               <Button className="ml-2 font-sans" onClick={() => handleStart()}>
                 Start Draft
@@ -183,7 +189,14 @@ export default function Draft() {
             )}
           >
             {myStudio && (
-              <AvailableFilms session={session} studioId={myStudio.id} isDraft={true} gridCols={expand ? 4 : 5} />
+              <AvailableFilms
+                session={session}
+                studioId={myStudio.id}
+                isDraft={true}
+                drafting={studiosById[getStudioOwnerByPick(session.settings.draft.order, currentPick.num)]}
+                draftDisabled={draftDisabled || draftOver}
+                gridCols={expand ? 4 : 5}
+              />
             )}
           </div>
           <div className="w-[300px] border-t-2 border-[#9ac] px-4 py-2">
@@ -198,6 +211,7 @@ export default function Draft() {
 function Countdown({
   currentPick,
   leagueSettings,
+  setDraftDisabled,
 }: {
   currentPick: {
     num: number;
@@ -205,6 +219,7 @@ function Countdown({
     endTimestamp: number;
   };
   leagueSettings: LeagueSessionSettings;
+  setDraftDisabled: Dispatch<SetStateAction<boolean>>;
 }) {
   const [timer, setTimer] = useState("");
   const [seconds, setSeconds] = useState(1);
@@ -219,7 +234,7 @@ function Countdown({
         const minutes = Math.floor((distance / 60) % 60);
         const seconds = Math.floor(distance % 60);
         setTimer(`${minutes}m ${seconds < 10 ? "0" + seconds : seconds}s`);
-      }
+      } else setDraftDisabled(true);
     }
   };
 

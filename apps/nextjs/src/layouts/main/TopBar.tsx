@@ -27,7 +27,7 @@ export default function TopBar() {
 
   return (
     <header className="flex h-[72px] items-center justify-around bg-neutral-900 font-sans">
-      <div className="flex w-full items-center lg:w-[80%]">
+      <div className="flex w-full items-center lg:w-[90%]">
         <Link href={"/"} className="mx-3 uppercase hover:text-white">
           <span className="text-3xl font-bold text-white">BMB</span>
         </Link>

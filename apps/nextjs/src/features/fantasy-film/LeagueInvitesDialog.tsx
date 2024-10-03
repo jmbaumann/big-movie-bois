@@ -8,22 +8,9 @@ import { api } from "~/utils/api";
 import { cn } from "~/utils/shadcn";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { useToast } from "~/components/ui/hooks/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 
 export default function LeagueInvitesDialog({
   refreshLeagues,
@@ -87,7 +74,7 @@ export default function LeagueInvitesDialog({
         Invites
         <Badge className="ml-1 bg-red-600">{invites.length}</Badge>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-1/2 w-1/2">
         <DialogHeader>
           <DialogTitle>League Invitations</DialogTitle>
         </DialogHeader>
@@ -96,8 +83,8 @@ export default function LeagueInvitesDialog({
             <TableRow>
               <TableHead>League</TableHead>
               <TableHead>Owner</TableHead>
-              <TableHead>Sent At</TableHead>
-              <TableHead>Action</TableHead>
+              <TableHead>Sent</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -106,9 +93,7 @@ export default function LeagueInvitesDialog({
                 <TableRow key={i}>
                   <TableCell>{invite.league.name}</TableCell>
                   <TableCell>{invite.league.owner.name}</TableCell>
-                  <TableCell>
-                    {format(invite.createdAt, "yyyy-MM-dd")}
-                  </TableCell>
+                  <TableCell>{format(invite.createdAt, "LLL dd, yyyy")}</TableCell>
                   <TableCell className="flex items-center">
                     <Button
                       className="mr-1 bg-green-500 hover:bg-green-700"
@@ -116,10 +101,7 @@ export default function LeagueInvitesDialog({
                     >
                       Accept
                     </Button>
-                    <Button
-                      className="ml-1 bg-red-600 hover:bg-red-800"
-                      onClick={() => handleDecline(invite.id)}
-                    >
+                    <Button className="ml-1 bg-red-600 hover:bg-red-800" onClick={() => handleDecline(invite.id)}>
                       Decline
                     </Button>
                   </TableCell>

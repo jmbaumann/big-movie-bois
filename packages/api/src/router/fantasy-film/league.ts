@@ -8,6 +8,7 @@ import { LEAGUE_INVITE_STATUSES } from "../../enums";
 // import { movieList } from "../movies";
 import type { TRPCContext } from "../../trpc";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
+import { tmdb } from "../tmdb/tmdb";
 import { LeagueSessionSettings } from "./zod";
 
 const getSiteWideSessions = publicProcedure.query(async ({ ctx }) => {
@@ -62,11 +63,31 @@ const getMyLeagues = publicProcedure.query(async ({ ctx }) => {
       where: { members: { some: { userId: user.id } } },
       include: {
         owner: { select: { name: true } },
-        sessions: true,
+        sessions: {
+          include: {
+            league: { select: { name: true } },
+            studios: {
+              include: { films: { include: { tmdb: true } }, owner: { select: { name: true } } },
+              where: { ownerId: user.id },
+            },
+            _count: {
+              select: {
+                studios: true,
+              },
+            },
+          },
+        },
         members: true,
       },
     });
-    return leagues;
+
+    return leagues.map((e) => ({
+      ...e,
+      sessions: e.sessions.map((s) => ({
+        ...s,
+        settings: JSON.parse(s.settings as string) as LeagueSessionSettings,
+      })),
+    }));
   } else return [];
 });
 

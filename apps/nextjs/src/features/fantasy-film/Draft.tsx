@@ -74,7 +74,9 @@ export default function Draft() {
   const draftingStudio = session
     ? studiosById[getStudioOwnerByPick(session.settings.draft.order, currentPick.num)]
     : undefined;
-  const draftOver = picks.length === (session?.settings.draft.numRounds ?? 0) * (session?.studios.length ?? 0);
+  const draftOver =
+    session?.settings.draft.complete ||
+    picks.length === (session?.settings.draft.numRounds ?? 0) * (session?.studios.length ?? 0);
   const draftCannotStart = session?.settings.draft.order.length === 0;
 
   useEffect(() => {

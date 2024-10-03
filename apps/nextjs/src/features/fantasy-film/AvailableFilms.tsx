@@ -141,7 +141,11 @@ export default function AvailableFilms({
         : getUnlockedSlots(session, myStudio)
       : [];
   const canPick =
-    (isDraft ? drafting?.id === studioId || isAdmin : true) && !!availableSlots?.length && !picking && !draftDisabled;
+    (isDraft ? drafting?.id === studioId || isAdmin : true) &&
+    (isDraft || buyNow || !session?.settings.draft.conduct || session.settings.draft.complete) &&
+    !!availableSlots?.length &&
+    !picking &&
+    !draftDisabled;
   const isFavorite = selectedFilm ? favorites?.map((e) => e.id).includes(selectedFilm.id) : false;
   const bidPlaced = selectedFilm ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
   const insufficientFunds = selectedFilm && myStudio ? (selectedFilm.price ?? 0) > myStudio?.budget : false;

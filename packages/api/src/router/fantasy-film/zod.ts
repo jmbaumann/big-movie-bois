@@ -5,6 +5,7 @@ import { toZodEnum } from "../../utils";
 
 const leagueSessionSettingsDraftObj = z.object({
   conduct: z.boolean().default(true),
+  complete: z.boolean().default(false),
   date: z.date().optional(),
   hour: z.string().optional(),
   min: z.string().optional(),

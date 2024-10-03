@@ -1,9 +1,7 @@
-import { format } from "date-fns";
 import { z } from "zod";
 
 import { StudioFilm } from "@repo/db";
 
-import { STUDIO_SLOT_TYPES } from "../../enums";
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { draftEvent } from "../../wss";
 import { getByTMDBId, getFilmsBySessionId } from "../tmdb";
@@ -64,6 +62,7 @@ const start = protectedProcedure
       },
       lastPick: undefined,
       newActivities: ["The draft has started!"],
+      complete: false,
     };
 
     draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
@@ -116,6 +115,8 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
   const nextStudio = session?.studios.find(
     (e) => e.ownerId === getStudioOwnerByPick(session!.settings.draft.order, sessionFilms.length + 1),
   );
+  const complete = sessionFilms.length === (session?.settings.draft.numRounds ?? 0) * (session?.studios.length ?? 0);
+
   const draftState = {
     sessionId: input.sessionId,
     currentPick: {
@@ -126,9 +127,16 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
     },
     newActivities: [`${studio?.name} drafted ${input.title}${slot ? " in their " + slot.type + " slot" : ""}`],
     lastPick: film,
+    complete,
   };
 
   draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
+
+  if (complete && session)
+    await ctx.prisma.leagueSession.update({
+      data: { settings: JSON.stringify({ ...session.settings, draft: { ...session.settings.draft, complete } }) },
+      where: { id: session.id },
+    });
   return input.sessionId;
 }
 
@@ -187,4 +195,5 @@ export type DraftState = {
   };
   newActivities: string[];
   lastPick: StudioFilm | undefined;
+  complete: boolean;
 };

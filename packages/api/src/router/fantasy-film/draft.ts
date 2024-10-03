@@ -65,7 +65,7 @@ const start = protectedProcedure
       complete: false,
     };
 
-    draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
+    await draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
     return input.sessionId;
   });
 
@@ -131,7 +131,7 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
     complete,
   };
 
-  draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
+  await draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
 
   if (complete && session)
     await ctx.prisma.leagueSession.update({

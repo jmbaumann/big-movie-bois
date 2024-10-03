@@ -13,6 +13,8 @@ export async function socketEvent<T>(eventName: string, eventData: T) {
   } catch (e) {
     console.log(e);
   }
+
+  return { done: true };
 }
 
 export async function draftEvent<T>(eventName: string, eventData: T) {
@@ -26,4 +28,6 @@ export async function draftEvent<T>(eventName: string, eventData: T) {
   } catch (e) {
     console.log(e);
   }
+
+  return { done: true };
 }

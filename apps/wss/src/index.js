@@ -26,7 +26,7 @@ app.post("/ws", (req) => {
 
 app.post("/draft", async (req) => {
   const data = req.body.eventData;
-  // console.log(data);
+  console.log("/draft", data);
   io.emit(req.body.eventName, data);
 
   setTimeout(

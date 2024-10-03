@@ -38,18 +38,18 @@ export default function SlotDescriptionDialog({ className, size }: { className?:
               </thead>
               <tbody className="text-white">
                 <tr className="border-b">
-                  <th className="px-2">{STUDIO_SLOT_TYPES.TOTAL_BOX_OFFICE}</th>
-                  <td className="px-6 py-4">
-                    The total amount of money made at the box office until the day your session ends
-                  </td>
-                  <td className="px-6 py-4">[TOTAL BOX OFFICE] / $10 million</td>
-                </tr>
-                <tr className="border-b">
                   <th className="px-2">{STUDIO_SLOT_TYPES.OPENING_WEEKEND_BOX_OFFICE}</th>
                   <td className="px-6 py-4">
                     The total amount of money made at the domestic (US) box office in its opening weekend
                   </td>
                   <td className="px-6 py-4">[OPENING WEEKEND BOX OFFICE] / $1 million</td>
+                </tr>
+                <tr className="border-b">
+                  <th className="px-2">{STUDIO_SLOT_TYPES.TOTAL_BOX_OFFICE}</th>
+                  <td className="px-6 py-4">
+                    The total amount of money made at the box office until the day your session ends
+                  </td>
+                  <td className="px-6 py-4">[TOTAL BOX OFFICE] / $10 million</td>
                 </tr>
                 <tr className="border-b">
                   <th className="px-2">{STUDIO_SLOT_TYPES.TMDB_RATING}</th>

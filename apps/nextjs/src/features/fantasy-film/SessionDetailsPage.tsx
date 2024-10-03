@@ -35,6 +35,7 @@ import { api } from "~/utils/api";
 import { getDraftDate, getFilmsReleased, getMostRecentAndUpcoming, isSlotLocked } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
 import AdminMenu from "~/components/AdminMenu";
+import SlotDescriptionDialog from "~/components/SlotDescriptionDialog";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import {
@@ -320,6 +321,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
         </p>
         <p className="ml-4 text-lg">${studio.budget}</p>
         <p className="ml-auto">{studio.score} pts</p>
+        <SlotDescriptionDialog className="mb-1 ml-2" size={20} />
       </div>
       <div className="grid grid-cols-5 gap-x-2 gap-y-4">
         {session?.settings.teamStructure.map((slot, i) => {

@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { inferRouterOutputs } from "@trpc/server";
 import { format, sub } from "date-fns";
-import { ArrowRightLeft, ExternalLink, EyeOff, Lock, Shuffle, XCircle } from "lucide-react";
+import { ExternalLink, EyeOff, Lock, Shuffle, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
@@ -12,7 +12,7 @@ import { api } from "~/utils/api";
 import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
 import AdminMenu from "~/components/AdminMenu";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { Alert, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -116,7 +116,7 @@ export default function StudioSlot({
   return (
     <div className={cn("flex h-[260px] w-[242px]")}>
       <div className="flex rounded-sm rounded-r-none border-2 border-[#9ac]">
-        <p className="bg-lb-blue flex h-full rotate-180 items-center justify-center text-white [writing-mode:vertical-lr]">
+        <p className="flex h-full rotate-180 items-center justify-center text-white [writing-mode:vertical-lr]">
           {locked && <Lock size={16} className="mb-2 inline-block rotate-90" />}
           {slot}
         </p>

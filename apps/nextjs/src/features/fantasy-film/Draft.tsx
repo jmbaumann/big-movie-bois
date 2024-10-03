@@ -26,6 +26,7 @@ import StudioIcon from "./StudioIcon";
 import StudioSlot from "./StudioSlot";
 
 type StudioFilmTMDB = RouterOutputs["ffStudio"]["getMyStudio"]["films"][number];
+type Studio = NonNullable<RouterOutputs["ffLeagueSession"]["getById"]>["studios"][number];
 
 export default function Draft() {
   const { data: sessionData } = useSession();
@@ -44,7 +45,11 @@ export default function Draft() {
   const [expand, setExpand] = useState(false);
   const [draftDisabled, setDraftDisabled] = useState(false);
 
-  const { data: session, isLoading } = api.ffLeagueSession.getById.useQuery(
+  const {
+    data: session,
+    isLoading,
+    refetch: refreshSession,
+  } = api.ffLeagueSession.getById.useQuery(
     {
       id: sessionId,
     },
@@ -65,7 +70,10 @@ export default function Draft() {
 
   const startDraft = api.ffDraft.start.useMutation();
 
-  const studiosById = getById<LeagueSessionStudio>(session?.studios ?? [], "ownerId");
+  const studiosById = getById<Studio>(session?.studios ?? [], "ownerId");
+  const draftingStudio = session
+    ? studiosById[getStudioOwnerByPick(session.settings.draft.order, currentPick.num)]
+    : undefined;
   const draftOver = picks.length === (session?.settings.draft.numRounds ?? 0) * (session?.studios.length ?? 0);
   const draftCannotStart = session?.settings.draft.order.length === 0;
 
@@ -102,6 +110,7 @@ export default function Draft() {
       return s;
     });
     setActivities((s) => [...s, ...state.newActivities]);
+    refreshSession();
     refreshStudio();
   };
 
@@ -157,10 +166,7 @@ export default function Draft() {
             ) : (
               <div className="text-center">Waiting on owner to start draft</div>
             )}
-            <OnTheClock
-              pick={currentPick.num}
-              studio={studiosById[getStudioOwnerByPick(session.settings.draft.order, currentPick.num)]}
-            />
+            <OnTheClock pick={currentPick.num} studio={draftingStudio} />
             <div className="flex space-x-4 overflow-hidden">
               {getUpcomingPicks(currentPick.num, session.settings.draft.numRounds, session.settings.draft.order).map(
                 (pick, i) => {
@@ -193,7 +199,7 @@ export default function Draft() {
                 session={session}
                 studioId={myStudio.id}
                 isDraft={true}
-                drafting={studiosById[getStudioOwnerByPick(session.settings.draft.order, currentPick.num)]}
+                drafting={draftingStudio}
                 draftDisabled={draftDisabled || draftOver}
                 gridCols={expand ? 4 : 5}
               />

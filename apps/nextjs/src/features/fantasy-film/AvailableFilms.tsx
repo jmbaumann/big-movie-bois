@@ -36,6 +36,7 @@ import { ONE_DAY_IN_SECONDS, unique } from "~/utils";
 
 type Film = TMDBDetails & { price?: number };
 type Session = RouterOutputs["ffLeagueSession"]["getById"];
+type Studio = NonNullable<Session>["studios"][number];
 
 export default function AvailableFilms({
   session,
@@ -50,7 +51,7 @@ export default function AvailableFilms({
   studioId: string;
   buyNow?: boolean;
   isDraft?: boolean;
-  drafting?: LeagueSessionStudio;
+  drafting?: Studio;
   draftDisabled?: boolean;
   gridCols?: number;
 }) {
@@ -130,7 +131,9 @@ export default function AvailableFilms({
   const { mutate: makePick, isLoading: picking } = api.ffDraft.pick.useMutation();
   const { mutate: adminAdd } = api.ffAdmin.addStudioFilm.useMutation();
 
-  const slotsFilled = new Set(myStudio?.films.map((e) => e.slot));
+  const slotsFilled = new Set(
+    isDraft && drafting?.id !== myStudio?.id ? drafting?.films.map((e) => e.slot) : myStudio?.films.map((e) => e.slot),
+  );
   const availableSlots =
     myStudio && session
       ? buyNow || isDraft

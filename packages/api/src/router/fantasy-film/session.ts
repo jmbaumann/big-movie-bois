@@ -132,7 +132,7 @@ export const leagueSessionRouter = createTRPCRouter({
 export async function getSessionById(ctx: TRPCContext, id: string) {
   const session = await ctx.prisma.leagueSession.findFirst({
     include: {
-      studios: { orderBy: { score: "desc" } },
+      studios: { include: { films: true }, orderBy: { score: "desc" } },
       league: { select: { ownerId: true } },
     },
     where: { id },

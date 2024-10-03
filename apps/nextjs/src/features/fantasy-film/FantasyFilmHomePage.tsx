@@ -72,7 +72,7 @@ export default function FantasyFilmHomePage() {
           {biddingWarSessions?.map((session, i) => {
             const myStudio = session.studios.find((e) => e.ownerId === sessionData?.user.id);
             return (
-              <Card key={i} className="mb-2">
+              <Card key={i} className="my-2">
                 <CardHeader>
                   <CardTitle>
                     <Link className="hover:text-primary" href={`/fantasy-film/bidding-war/${session.id}`}>
@@ -117,7 +117,7 @@ export default function FantasyFilmHomePage() {
 
 function LeagueCard({ league }: { league: League }) {
   return (
-    <Card>
+    <Card className="my-2">
       <CardHeader>
         <CardTitle>
           <Link className="hover:text-primary" href={`/fantasy-film/${league.id}`}>
@@ -129,10 +129,10 @@ function LeagueCard({ league }: { league: League }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <span>Active Session(s)</span>
+        <span>Active Session{league.sessions.length > 1 && "s"}</span>
 
         {league.sessions.map((session, i) => (
-          <Card key={i}>
+          <Card key={i} className="my-2">
             <CardHeader>
               <CardTitle>
                 <Link className="hover:text-primary" href={`/fantasy-film/${league.id}/${session.id}`}>
@@ -140,7 +140,7 @@ function LeagueCard({ league }: { league: League }) {
                 </Link>
               </CardTitle>
               <CardDescription>
-                {format(session.startDate, "yyyy-MM-dd")} - {format(session.endDate, "yyyy-MM-dd")}
+                {format(session.startDate, "LLL dd, yyyy")} - {format(session.endDate, "LLL dd, yyyy")}
               </CardDescription>
             </CardHeader>
             <CardContent>TEAM NAME</CardContent>

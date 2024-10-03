@@ -99,7 +99,7 @@ export default function AvailableFilms({
     },
     { staleTime: ONE_DAY_IN_SECONDS, enabled: !!session?.id },
   );
-  const { data: myStudio } = api.ffStudio.getMyStudio.useQuery(
+  const { data: myStudio, refetch: refreshMyStudio } = api.ffStudio.getMyStudio.useQuery(
     { sessionId: session?.id ?? "" },
     {
       enabled: !!session?.id,
@@ -219,6 +219,7 @@ export default function AvailableFilms({
             toast({ title: buyNow ? "Film added to Studio" : "Bid submitted" });
             setOpen(false);
             refreshFilms();
+            refreshMyStudio();
             trpc.ffStudio.getStudios.invalidate({ sessionId: session!.id });
             trpc.ffLeagueSession.getBids.invalidate({ sessionId: session!.id });
           },

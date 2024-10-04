@@ -170,16 +170,16 @@ async function updateMasterFantasyFilmList(ctx: TRPCContext) {
     .map((e) => e!.results)
     .flat();
 
-  console.log(
-    chunks
-      .map((e) => e?.results)
-      .flat()
-      .map((e) => e?.title),
-  );
+  // console.log(
+  //   chunks
+  //     .map((e) => e?.results)
+  //     .flat()
+  //     .map((e) => e?.title),
+  // );
 
-  for (const f of films) {
-    console.log(f.title);
-  }
+  // for (const f of films) {
+  //   console.log(f.title);
+  // }
 
   const inDb = await ctx.prisma.tMDBDetails.findMany({
     select: { id: true },
@@ -234,6 +234,7 @@ async function updateMasterFantasyFilmList(ctx: TRPCContext) {
       releaseDate: details.release_date,
       popularity: details.popularity,
       rating: details.vote_average,
+      revenue: details.revenue,
       updatedAt: new Date(),
     };
     await ctx.prisma.tMDBDetails.update({ data, where: { id: film.id } });

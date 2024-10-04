@@ -96,7 +96,6 @@ export default function PublicSessionsAdmin() {
   }
 
   function handleEdit(session: LeagueSession) {
-    console.log(JSON.parse(session.settings as string));
     form.setValue("id", session.id);
     form.setValue("name", session.name);
     form.setValue("startDate", session.startDate);

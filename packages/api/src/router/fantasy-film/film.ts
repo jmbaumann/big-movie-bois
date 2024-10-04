@@ -113,7 +113,7 @@ export function getFilmScore(ctx: TRPCContext, session: Session, film: FilmWithS
   let score = 0;
   if (film.scoreOverride) score = film.scoreOverride;
 
-  const slot = session?.settings.teamStructure[film.slot - 1];
+  const slot = session?.settings.teamStructure.find((e) => e.pos === film.slot);
   if (!slot) return 0;
 
   switch (slot.type) {

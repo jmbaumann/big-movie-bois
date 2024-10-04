@@ -196,7 +196,7 @@ async function updateMasterFantasyFilmList(ctx: TRPCContext) {
       poster: e.poster_path,
       releaseDate: e.release_date,
       popularity: e.popularity,
-      rating: e.vote_count,
+      rating: e.vote_average,
       updatedAt: new Date(),
     }));
 
@@ -233,7 +233,7 @@ async function updateMasterFantasyFilmList(ctx: TRPCContext) {
       poster: details.poster_path,
       releaseDate: details.release_date,
       popularity: details.popularity,
-      rating: details.vote_count,
+      rating: details.vote_average,
       updatedAt: new Date(),
     };
     await ctx.prisma.tMDBDetails.update({ data, where: { id: film.id } });

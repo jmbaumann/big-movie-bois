@@ -24,7 +24,7 @@ export default function Poll({ poll, refresh }: { poll: Poll; refresh: () => voi
       toast({ title: "Sign in to vote" });
       return;
     }
-    if (votedFor) return;
+    // if (votedFor) return;
     vote(
       { answerId },
       {
@@ -38,10 +38,7 @@ export default function Poll({ poll, refresh }: { poll: Poll; refresh: () => voi
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-center">{poll.text}</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pb-0 pl-0">
         <div className="mx-auto flex space-x-4">
           {poll.film && (
             <Image
@@ -52,28 +49,45 @@ export default function Poll({ poll, refresh }: { poll: Poll; refresh: () => voi
               height={225}
             />
           )}
-          <div className="flex grow items-center justify-around">
-            {poll.answers.map((answer, j) => (
-              <div className="flex items-center space-x-2">
-                <Button
-                  key={j}
-                  className={cn(
-                    "rounded-md border-2 border-white text-2xl",
-                    votedFor === answer.id && "border-primary border-4",
-                  )}
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleVote(answer.id)}
-                >
-                  {answer.text}
-                </Button>
-                {!!votedFor && <span className="">{answer.responses.length}</span>}
-              </div>
-            ))}
+          <div className="pt-2">
+            <p className="text-center text-xl">{poll.text}</p>
+            <div
+              className={cn("mt-2 flex w-full grow flex-col items-center justify-around", votedFor && "items-start")}
+            >
+              {poll.answers.map((answer, j) => {
+                const percentage = (answer.responses.length / poll.answers.map((e) => e.responses).flat().length) * 100;
+                return (
+                  <div className="my-2 flex w-full items-center">
+                    <Button
+                      key={j}
+                      className={cn(
+                        "rounded-md border-2 border-white text-2xl",
+                        votedFor === answer.id ? "border-primary bg-primary border-4" : "bg-white",
+                        votedFor && "rounded-r-none ",
+                      )}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleVote(answer.id)}
+                    >
+                      {answer.text}
+                    </Button>
+                    {!!votedFor && (
+                      <span
+                        className={cn(
+                          "h-10 rounded-md rounded-l-none",
+                          votedFor === answer.id ? "bg-primary" : "bg-white",
+                        )}
+                        style={{ width: `${percentage}%` }}
+                      ></span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between">
+      <CardFooter className="flex justify-between pb-2 pt-1">
         {voting && (
           <div className="flex text-slate-400">
             <Loader2 className="mr-1 animate-spin" /> Submitting vote...

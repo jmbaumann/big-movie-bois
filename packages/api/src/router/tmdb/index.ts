@@ -104,8 +104,8 @@ export async function getByTMDBId(ctx: TRPCContext, id: number, noReturn?: boole
 
   const tmdb = await getMovieFromTMDB(id);
   await ctx.prisma.tMDBDetails.create({ data: { ...tmdb.details, createdAt: new Date() } });
-  await ctx.prisma.tMDBCast.createMany({ data: tmdb.cast });
-  await ctx.prisma.tMDBCrew.createMany({ data: tmdb.crew });
+  await ctx.prisma.tMDBCast.createMany({ data: tmdb.cast! });
+  await ctx.prisma.tMDBCrew.createMany({ data: tmdb.crew! });
 
   if (noReturn) return;
 
@@ -165,51 +165,24 @@ async function updateMasterFantasyFilmList(ctx: TRPCContext) {
   const to = format(add(new Date(), { days: 400 }), "yyyy-MM-dd");
 
   const chunks = await Promise.all(Array.from({ length: 5 }).map((_, i) => getByDateRange(from, to, i + 1)));
-  const films = chunks
+  const topFilmIds = chunks
     .filter((e) => e !== undefined)
     .map((e) => e!.results)
-    .flat();
-
-  // console.log(
-  //   chunks
-  //     .map((e) => e?.results)
-  //     .flat()
-  //     .map((e) => e?.title),
-  // );
-
-  // for (const f of films) {
-  //   console.log(f.title);
-  // }
+    .flat()
+    .map((e) => e.id);
 
   const inDb = await ctx.prisma.tMDBDetails.findMany({
     select: { id: true },
-    where: { id: { in: films.map((e) => e?.id) } },
+    where: { id: { in: topFilmIds } },
   });
   const inDbIds = new Set(inDb.map((e) => e.id));
-  const toCreate = films.filter((e) => !inDbIds.has(e.id));
-  const toUpdate = films
-    .filter((e) => inDbIds.has(e.id))
-    .map((e) => ({
-      id: e.id,
-      title: e.title,
-      overview: e.overview,
-      poster: e.poster_path,
-      releaseDate: e.release_date,
-      popularity: e.popularity,
-      rating: e.vote_average,
-      updatedAt: new Date(),
-    }));
+  const toCreateIds = topFilmIds.filter((e) => !inDbIds.has(e));
+  const toUpdateIds = topFilmIds.filter((e) => inDbIds.has(e));
 
-  // update existing
-  for (const update of toUpdate) await ctx.prisma.tMDBDetails.update({ data: update, where: { id: update.id } });
-
-  // create new entries
-  for (const create of toCreate) await getByTMDBId(ctx, create.id, true);
-
-  // update active films outside of top 260
+  // update active films outside of top 100
   const remaining = await ctx.prisma.tMDBDetails.findMany({
     where: {
-      updatedAt: { lt: new Date() },
+      updatedAt: { lt: new Date("2024-11-17") },
       studioFilms: {
         some: {
           studio: {
@@ -221,22 +194,35 @@ async function updateMasterFantasyFilmList(ctx: TRPCContext) {
       },
     },
   });
+  for (const r of remaining) toUpdateIds.push(r.id);
 
-  for (const film of remaining) {
-    const details = await getDetailsById(film.id);
-    if (!details) continue;
+  // create new entries
+  const createPromises = [];
+  for (const id of toCreateIds) createPromises.push(await getByTMDBId(ctx, id, true));
+  await Promise.allSettled(createPromises);
 
-    const data = {
-      id: details.id,
-      title: details.title,
-      overview: details.overview,
-      poster: details.poster_path,
-      releaseDate: details.release_date,
-      popularity: details.popularity,
-      rating: details.vote_average,
-      revenue: details.revenue,
-      updatedAt: new Date(),
-    };
-    await ctx.prisma.tMDBDetails.update({ data, where: { id: film.id } });
+  // update existing
+  const updatePromises = [];
+  for (const id of toUpdateIds) {
+    updatePromises.push(
+      (async () => {
+        const { details } = await getMovieFromTMDB(id);
+        if (details) {
+          const data = {
+            id: details.id,
+            title: details.title,
+            overview: details.overview,
+            poster: details.poster,
+            releaseDate: details.releaseDate,
+            popularity: details.popularity,
+            rating: details.rating,
+            revenue: details.revenue,
+            updatedAt: new Date(),
+          };
+          await ctx.prisma.tMDBDetails.update({ data, where: { id } });
+        }
+      })(),
+    );
   }
+  await Promise.allSettled(updatePromises);
 }

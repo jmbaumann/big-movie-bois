@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+
 export const ONE_DAY_IN_SECONDS = 1000 * 60 * 60 * 24;
 
 export function getById<T extends Record<string, any>>(arr: T[], key?: keyof T): Record<string, T> {
@@ -33,4 +35,9 @@ export function toMoney(num: number) {
   });
 
   return formatter.format(num);
+}
+
+export function formatDate(date: string | Date, f: string) {
+  if (typeof date === "string" && date.match(/^(\d{4}-\d{2}-\d{2})/)) return format(new Date(date + "T00:00:00"), f);
+  else return format(date, f);
 }

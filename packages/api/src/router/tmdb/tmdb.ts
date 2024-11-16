@@ -1,3 +1,5 @@
+import { format, parseISO } from "date-fns";
+
 import {
   TMDBCreditsResponse,
   TMDBDetailsResponse,
@@ -6,11 +8,11 @@ import {
   TMDBReleaseDatesResponse,
 } from "./types";
 
-export async function getMovieFromTMDB(id: number) {
+export async function getMovieFromTMDB(id: number, simple?: boolean) {
   const details = await getDetailsById(id);
-  const credits = await getCreditsById(id);
+  const credits = simple ? null : await getCreditsById(id);
   const releases = await getReleaseDatesById(id);
-  const keywords = await getKeywordsById(id);
+  const keywords = simple ? null : await getKeywordsById(id);
 
   if (!details || !credits || !releases || !keywords) throw "Bad TMDB call";
 
@@ -63,9 +65,9 @@ export async function tmdb<T>(url: string, method?: "GET" | "POST") {
 
 function restructure(movie: {
   details: TMDBDetailsResponse;
-  credits: TMDBCreditsResponse;
+  credits?: TMDBCreditsResponse;
   releases: TMDBReleaseDatesResponse;
-  keywords: TMDBKeywordsResponse;
+  keywords?: TMDBKeywordsResponse;
 }) {
   const crewDict = {
     Directing: new Set(["Director"]),
@@ -83,7 +85,10 @@ function restructure(movie: {
     overview: movie.details.overview,
     poster: movie.details.poster_path,
     // poster: `https://image.tmdb.org/t/p/w1280/${movie.details.poster_path}`,
-    releaseDate: movie.details.release_date,
+    releaseDate: getReleaseDate(
+      movie.releases.results.find((e) => e.iso_3166_1 === "US")?.release_dates.find((e) => e.type === 3)
+        ?.release_date ?? movie.details.release_date,
+    ),
     runtime: movie.details.runtime,
     certification: movie.releases.results.find((e) => e.iso_3166_1 === "US")?.release_dates.find((e) => e.type === 3)
       ?.certification,
@@ -93,15 +98,15 @@ function restructure(movie: {
     rating: movie.details.vote_average,
     tagline: movie.details.tagline,
     genres: movie.details.genres.map((e) => e.name),
-    keywords: movie.keywords.keywords.map((e) => e.name).slice(0, 12),
+    keywords: movie.keywords?.keywords.map((e) => e.name).slice(0, 12),
   };
-  const cast = movie.credits.cast.slice(0, 20).map((e) => ({
+  const cast = movie.credits?.cast.slice(0, 20).map((e) => ({
     tmdbId: movie.details.id,
     name: e.name,
     image: e.profile_path,
     // image: `https://media.themoviedb.org/t/p/w600_and_h900_bestv2/${e.profile_path}`,
   }));
-  const crew = movie.credits.crew
+  const crew = movie.credits?.crew
     .filter((e) => crewDict[e.department as keyof typeof crewDict]?.has(e.job))
     .map((e) => ({
       tmdbId: movie.details.id,
@@ -113,4 +118,9 @@ function restructure(movie: {
     }));
 
   return { details, cast, crew };
+}
+
+function getReleaseDate(date: string) {
+  const match = date.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match![1] ?? "";
 }

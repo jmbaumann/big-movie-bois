@@ -32,7 +32,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { env } from "~/env.mjs";
-import { ONE_DAY_IN_SECONDS, unique } from "~/utils";
+import { formatDate, ONE_DAY_IN_SECONDS, unique } from "~/utils";
 
 type Film = TMDBDetails & { price?: number };
 type Session = RouterOutputs["ffLeagueSession"]["getById"];
@@ -361,7 +361,7 @@ export default function AvailableFilms({
                       </div>
                       <div className="ml-4 w-full text-white">
                         <p className="mb-2 text-lg">
-                          Release Date: {format(new Date(selectedFilm.releaseDate + "T00:00:00"), "LLL dd, yyyy")}
+                          Release Date: {formatDate(selectedFilm.releaseDate, "LLL dd, yyyy")}
                         </p>
                         <p className="mb-2">{selectedFilm.overview}</p>
 

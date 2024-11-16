@@ -14,6 +14,7 @@ import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Pagination, PaginationContent, PaginationItem } from "~/components/ui/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import { formatDate } from "~/utils";
 
 export default function MasterListAdmin() {
   const confirm = useConfirm();
@@ -59,7 +60,7 @@ export default function MasterListAdmin() {
             <TableRow key={i}>
               <TableCell>{film.id}</TableCell>
               <TableCell>{film.title}</TableCell>
-              <TableCell>{format(film.releaseDate, "LLL dd, yyyy")}</TableCell>
+              <TableCell>{formatDate(film.releaseDate, "LLL dd, yyyy")}</TableCell>
               <TableCell>{film.popularity}</TableCell>
               <TableCell>
                 <DropdownMenu>

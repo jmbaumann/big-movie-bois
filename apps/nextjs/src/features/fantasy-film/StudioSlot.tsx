@@ -28,7 +28,7 @@ import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Label } from "~/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { ONE_DAY_IN_SECONDS } from "~/utils";
+import { formatDate, ONE_DAY_IN_SECONDS } from "~/utils";
 
 type Session = inferRouterOutputs<AppRouter>["ffLeagueSession"]["getById"];
 type Studio = inferRouterOutputs<AppRouter>["ffStudio"]["getStudios"][number];
@@ -155,7 +155,9 @@ export default function StudioSlot({
                         />
                       </div>
                       <div className="ml-4 w-full text-white">
-                        <p className="mb-2 text-lg">Release Date: {format(film?.tmdb?.releaseDate!, "LLL dd, yyyy")}</p>
+                        <p className="mb-2 text-lg">
+                          Release Date: {formatDate(film?.tmdb?.releaseDate!, "LLL dd, yyyy")}
+                        </p>
                         <p className="mb-4">{film?.tmdb?.overview}</p>
 
                         {showScore ? (

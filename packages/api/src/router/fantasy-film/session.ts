@@ -18,7 +18,6 @@ const create = protectedProcedure.input(createLeagueSessionInputObj).mutation(as
 
   const data = {
     leagueId: input.leagueId,
-    slug: `${format(input.startDate, "yyyy-MM-dd")}-${format(input.endDate, "yyyy-MM-dd")}`,
     name: input.name,
     startDate: input.startDate,
     endDate: input.endDate,
@@ -41,7 +40,6 @@ const create = protectedProcedure.input(createLeagueSessionInputObj).mutation(as
 const update = protectedProcedure.input(updateLeagueSessionInputObj).mutation(async ({ ctx, input }) => {
   const data = {
     leagueId: input.leagueId,
-    slug: `${format(input.startDate, "yyyy-MM-dd")}-${format(input.endDate, "yyyy-MM-dd")}`,
     name: input.name,
     startDate: input.startDate,
     endDate: input.endDate,

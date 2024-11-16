@@ -122,7 +122,6 @@ model LeagueMember {
 model LeagueSession {
     id        String   @id @default(cuid())
     leagueId  String
-    slug      String
     name      String
     startDate DateTime
     endDate   DateTime
@@ -132,7 +131,7 @@ model LeagueSession {
     studios  LeagueSessionStudio[]
     activity LeagueSessionActivity[]
 
-    @@unique([leagueId, slug])
+    @@index([leagueId])
 }
 
 model LeagueSessionActivity {

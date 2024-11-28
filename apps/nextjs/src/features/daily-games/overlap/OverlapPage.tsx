@@ -3,19 +3,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { inferRouterOutputs } from "@trpc/server";
-import { format } from "date-fns";
+import { differenceInDays, format, isSameDay, sub } from "date-fns";
+import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
 
 import { api } from "~/utils/api";
-import { findOverlap } from "~/utils/overlap-helpers";
+import useLocalStorage from "~/utils/hooks/use-local-storage";
+import { defaultOverlapGameState, findOverlap } from "~/utils/overlap-helpers";
 import { cn } from "~/utils/shadcn";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
 import Loading from "~/layouts/main/Loading";
-import { OverlapAnswerDetails, OverlapGameState } from "~/store/overlap";
+import { OverlapAnswerDetails } from "~/store/overlap";
 import { ONE_DAY_IN_SECONDS } from "~/utils";
 import Archive from "./Archive";
 import Logo from "./Logo";
@@ -23,18 +25,44 @@ import Settings from "./Settings";
 import Statistics from "./Statistics";
 
 type TMDBMovie = inferRouterOutputs<AppRouter>["tmdb"]["getById"];
+type OverlapGameData = {
+  guesses: NonNullable<TMDBMovie>[];
+  gameOver: boolean;
+  lastCompleted: number;
+  lastPlayed: number;
+};
+type OverlapGameState = {
+  title: OverlapAnswerDetails;
+  releaseYear: OverlapAnswerDetails;
+  runtime: OverlapAnswerDetails;
+  certification: OverlapAnswerDetails;
+  budget: OverlapAnswerDetails;
+  revenue: OverlapAnswerDetails;
+  directors: OverlapAnswerDetails[];
+  writers: OverlapAnswerDetails[];
+  cast: OverlapAnswerDetails[];
+  genres: OverlapAnswerDetails[];
+  keywords: OverlapAnswerDetails[];
+};
 
 export default function OverlapPage() {
   const router = useRouter();
   const archive = router.query.archive as string | undefined;
+  const { data: sessionData } = useSession();
 
-  const [gameState, setGameState] = useState<OverlapGameState | undefined>();
+  const [gameData, setGameData] = useLocalStorage<OverlapGameData>("bmb-overlap", {
+    guesses: [],
+    gameOver: false,
+    lastCompleted: 0,
+    lastPlayed: 0,
+  });
+  const [gameState, setGameState] = useState<OverlapGameState | undefined>(defaultOverlapGameState);
   const [overlaps, setOverlaps] = useState({
     details: 0,
     cast: 0,
     crew: 0,
   });
-  const [guesses, setGuesses] = useState<NonNullable<TMDBMovie>[]>([]);
+
   const [guessId, setGuessId] = useState<number>(0);
   const [searchKeyword, setSearchKeyword] = useState<string>();
 
@@ -57,9 +85,17 @@ export default function OverlapPage() {
     { enabled: false },
   );
 
+  const { mutate: saveScore, isLoading: savingScore } = api.overlap.saveScore.useMutation();
+
   useEffect(() => {
-    if (answer) reset();
-  }, [answer]);
+    if (!isSameDay(new Date(), new Date(gameData.lastPlayed))) {
+      setGameData((s) => ({ ...s, guesses: [], gameOver: false, lastPlayed: new Date().getTime() }));
+    }
+  }, [gameData]);
+
+  // useEffect(() => {
+  //   if (answer) reset();
+  // }, [answer]);
 
   useEffect(() => {
     if (guessId) getGuessDetails();
@@ -67,21 +103,27 @@ export default function OverlapPage() {
 
   useEffect(() => {
     if (guessDetails) {
-      setGuesses((s) => {
-        return [...s, guessDetails];
-      });
+      setGameData((s) => ({
+        ...s,
+        guesses: [...s.guesses, guessDetails],
+        lastPlayed: new Date().getTime(),
+      }));
       setGuessId(0);
     }
   }, [guessDetails]);
 
   useEffect(() => {
     if (answer) {
-      setGameState(findOverlap(answer.tmdb, guesses));
-      console.log(findOverlap(answer.tmdb, guesses));
-      if (guesses.length) {
-        const latest = findOverlap(answer.tmdb, [guesses[guesses.length - 1]!]);
-        if (latest.title.revealed) setOverlaps({ details: 0, cast: 0, crew: 0 });
-        else
+      const gameState = findOverlap(answer.tmdb, gameData.guesses);
+      setGameState(gameState);
+      if (gameData.guesses.length) {
+        const latest = findOverlap(answer.tmdb, [gameData.guesses[gameData.guesses.length - 1]!]);
+        if (latest.title.revealed) {
+          setOverlaps({ details: 0, cast: 0, crew: 0 });
+          if (!gameData.gameOver && sessionData?.user)
+            saveScore({ userId: sessionData.user.id, answerId: answer.id, numGuesses: gameData.guesses.length });
+          setGameData((s) => ({ ...s, gameOver: true, lastCompleted: new Date().getTime() }));
+        } else
           setOverlaps({
             details: [
               latest.releaseYear,
@@ -97,7 +139,7 @@ export default function OverlapPage() {
           });
       }
     }
-  }, [guesses]);
+  }, [gameData.guesses, answer]);
 
   function handleMovieSelect(id: number) {
     setGuessId(id);
@@ -105,8 +147,7 @@ export default function OverlapPage() {
   }
 
   function reset() {
-    setGuesses([]);
-    setGameState(undefined);
+    setGameState(defaultOverlapGameState);
     setOverlaps({
       details: 0,
       cast: 0,
@@ -129,7 +170,7 @@ export default function OverlapPage() {
             <Logo />
           </Link>
           <div className="ml-auto flex items-center">
-            <Archive open={openArchive} setOpen={setOpenArchive} />
+            {/* <Archive open={openArchive} setOpen={setOpenArchive} /> */}
             <Statistics open={openStatistics} setOpen={setOpenStatistics} />
             <Settings open={openSettings} setOpen={setOpenSettings} />
           </div>
@@ -210,6 +251,7 @@ export default function OverlapPage() {
 
               {!gameState.title?.revealed && (
                 <>
+                  <p className="mr-2 lg:block">Average Guesses: {answer.averageGuesses}</p>
                   <Command className="mx-auto mt-2 w-full lg:w-1/2">
                     <CommandInput
                       className="appearance-none"
@@ -226,15 +268,15 @@ export default function OverlapPage() {
                       ))}
                     </CommandList>
                   </Command>
-                  <p className="mr-2 lg:block">Average Guesses: 4</p>
                 </>
               )}
             </div>
           )}
 
+          {!!gameData.guesses.length && <p>Guesses</p>}
           <div className="mb-4 mt-4 flex overflow-x-auto">
             <div className="mx-auto flex gap-2">
-              {guesses.map((guess, i) => {
+              {gameData.guesses.map((guess, i) => {
                 if (guess.poster)
                   return (
                     <Image

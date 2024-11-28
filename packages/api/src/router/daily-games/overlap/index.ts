@@ -6,10 +6,39 @@ import { getByTMDBId } from "../../tmdb";
 
 const getAnswer = publicProcedure.input(z.object({ date: z.string().optional() })).query(async ({ ctx, input }) => {
   const date = input.date ?? format(new Date(), "yyyy-MM-dd");
-  return ctx.prisma.overlapAnswer.findFirst({
+  const data = await ctx.prisma.overlapAnswer.findFirst({
     include: { tmdb: { include: { cast: true, crew: true } } },
     where: { date },
   });
+  if (!data) return;
+
+  const avg = await ctx.prisma.overlapResult.aggregate({
+    _avg: {
+      numGuesses: true,
+    },
+    where: { answerId: data.id },
+  });
+
+  return {
+    ...data,
+    averageGuesses: Math.round(avg._avg.numGuesses ?? 4),
+  };
+});
+
+const getStats = protectedProcedure.input(z.object({ userId: z.string() })).query(async ({ ctx, input }) => {
+  const results = await ctx.prisma.overlapResult.findMany({ where: { userId: input.userId } });
+
+  return {
+    gamesPlayed: results.length,
+    scores: [
+      results.filter((e) => e.numGuesses === 1).length,
+      results.filter((e) => e.numGuesses === 2).length,
+      results.filter((e) => e.numGuesses === 3).length,
+      results.filter((e) => e.numGuesses === 4).length,
+      results.filter((e) => e.numGuesses === 5).length,
+      results.filter((e) => e.numGuesses >= 6).length,
+    ],
+  };
 });
 
 const getArchive = publicProcedure.query(async ({ ctx }) => {
@@ -66,11 +95,19 @@ const getAnswers = publicProcedure
     });
   });
 
+const saveScore = protectedProcedure
+  .input(z.object({ answerId: z.string(), userId: z.string(), numGuesses: z.number().min(0) }))
+  .mutation(async ({ ctx, input }) => {
+    return ctx.prisma.overlapResult.create({ data: input });
+  });
+
 export const overlapRouter = createTRPCRouter({
   getAnswer,
+  getStats,
   getArchive,
   createAnswer,
   updateAnswer,
   deleteAnswer,
   getAnswers,
+  saveScore,
 });

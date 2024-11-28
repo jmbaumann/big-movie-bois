@@ -24,7 +24,7 @@ export default function Poll({ poll, refresh }: { poll: Poll; refresh: () => voi
       toast({ title: "Sign in to vote" });
       return;
     }
-    // if (votedFor) return;
+    if (votedFor) return;
     vote(
       { answerId },
       {

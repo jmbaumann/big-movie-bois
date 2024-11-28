@@ -2,7 +2,7 @@ import { format } from "date-fns";
 
 import { RouterOutputs } from "@repo/api";
 
-import { OverlapGameState } from "~/store/overlap";
+import { OverlapAnswerDetails, OverlapGameState } from "~/store/overlap";
 import { toMoney } from ".";
 
 type TMDBMovie = NonNullable<RouterOutputs["tmdb"]["getById"]>;
@@ -181,3 +181,17 @@ function getMatchingStart(str1: string, str2: string) {
   while (i < str1.length && i < str2.length && str1[i] === str2[i]) i++;
   return str1.substring(0, i);
 }
+
+export const defaultOverlapGameState = {
+  title: {} as OverlapAnswerDetails,
+  releaseYear: {} as OverlapAnswerDetails,
+  runtime: {} as OverlapAnswerDetails,
+  certification: {} as OverlapAnswerDetails,
+  budget: {} as OverlapAnswerDetails,
+  revenue: {} as OverlapAnswerDetails,
+  directors: [] as OverlapAnswerDetails[],
+  writers: [] as OverlapAnswerDetails[],
+  cast: [] as OverlapAnswerDetails[],
+  genres: [] as OverlapAnswerDetails[],
+  keywords: [] as OverlapAnswerDetails[],
+};

@@ -17,23 +17,18 @@ export default function Footer() {
           <Link href={"/"} className="mx-2 hover:text-white">
             Change Log
           </Link>
-          <Link href={"/"} className="mx-2 hover:text-white">
-            Help
+          <Link href={"/terms-of-service"} className="mx-2 hover:text-white">
+            Terms of Service
           </Link>
-          <Link href={"/"} className="mx-2 hover:text-white">
-            Terms
+          <Link href={"/privacy-policy"} className="mx-2 hover:text-white">
+            Privacy Policy
           </Link>
         </nav>
         <p className="mt-4 text-xs">
           © 2024 Big Movie Bois
           <span className="mx-2">|</span>
           Film data from{" "}
-          <a
-            href="https://www.themoviedb.org/"
-            target="_blank"
-            className="underline"
-            rel="noreferrer"
-          >
+          <a href="https://www.themoviedb.org/" target="_blank" className="underline" rel="noreferrer">
             TMDb
           </a>
         </p>

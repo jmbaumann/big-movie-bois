@@ -50,14 +50,14 @@ export default function Poll({ poll, refresh }: { poll: Poll; refresh: () => voi
             />
           )}
           <div className="pt-2">
-            <p className="text-center text-xl">{poll.text}</p>
+            <div className="text-center text-xl">{poll.text}</div>
             <div
               className={cn("mt-2 flex w-full grow flex-col items-center justify-around", votedFor && "items-start")}
             >
               {poll.answers.map((answer, j) => {
                 const percentage = (answer.responses.length / poll.answers.map((e) => e.responses).flat().length) * 100;
                 return (
-                  <div className="my-2 flex w-full items-center">
+                  <div key={j} className="my-2 flex w-full items-center">
                     <Button
                       key={j}
                       className={cn(

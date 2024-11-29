@@ -16,16 +16,19 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      username: string | null;
       isAdmin: boolean;
-      // ...other properties
-      // role: UserRole;
     } & DefaultSession["user"];
   }
 
   interface User {
+    username: string | null;
     isAdmin: boolean;
-    // ...other properties
-    // role: UserRole;
+  }
+
+  interface JWT {
+    username: string | null;
+    email: string;
   }
 }
 
@@ -36,11 +39,21 @@ declare module "next-auth" {
  **/
 export const authOptions: NextAuthOptions = {
   callbacks: {
-    session({ session, user }) {
+    async jwt({ token, user, session, trigger }) {
+      if (trigger === "update") token.username = session.username;
+      if (user) {
+        token.username = user.username || null;
+        token.email = user.email;
+        token.isAdmin = !!user.isAdmin;
+      }
+      return token;
+    },
+    session({ session, token }) {
       if (session.user) {
-        session.user.id = user.id;
-        session.user.isAdmin = !!user.isAdmin;
-        // session.user.role = user.role; <-- put other properties on the session here
+        session.user.id = token.sub!;
+        session.user.email = token.email;
+        session.user.username = token.username as string | null;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     },
@@ -51,14 +64,8 @@ export const authOptions: NextAuthOptions = {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
-    /**
-     * ...add more providers here
-     *
-     * Most other providers require a bit more work than the Discord provider.
-     * For example, the GitHub provider requires you to add the
-     * `refresh_token_expires_in` field to the Account model. Refer to the
-     * NextAuth.js docs for the provider you want to use. Example:
-     * @see https://next-auth.js.org/providers/github
-     **/
   ],
+  session: {
+    strategy: "jwt",
+  },
 };

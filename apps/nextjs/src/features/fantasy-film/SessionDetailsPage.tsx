@@ -241,9 +241,9 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
 
   return (
     <>
-      {!draftIsOver && (
+      {!draftIsOver && !!session.settings.draft.conduct && (
         <div className="mb-4 flex flex-col items-center">
-          <DraftCountdown draftDate={draftDate} />
+          {!!draftDate && <DraftCountdown draftDate={draftDate} />}
           <Button onClick={() => router.push(`/fantasy-film/draft/${session!.id}`)}>Go to Draft</Button>
         </div>
       )}

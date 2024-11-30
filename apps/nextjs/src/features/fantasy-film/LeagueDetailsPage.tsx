@@ -146,7 +146,7 @@ function SessionCard({ session }: { session: LeagueSession }) {
         <div className="">
           {!draftIsOver && (
             <div className="flex flex-col items-center">
-              <DraftCountdown draftDate={draftDate} />
+              {!!draftDate && <DraftCountdown draftDate={draftDate} />}
               <Button onClick={() => router.push(`/fantasy-film/draft/${session!.id}`)}>Go to Draft</Button>
             </div>
           )}

@@ -77,6 +77,8 @@ export function getUpcomingPicks(numPicks: number, numRounds: number, draftOrder
 }
 
 export function getDraftDate(draftSettings: LeagueSessionSettingsDraft) {
+  if (!draftSettings.date) return undefined;
+
   const draftDate = new Date(draftSettings.date ?? "");
   draftDate.setHours(
     draftSettings.ampm === "am"

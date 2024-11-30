@@ -182,7 +182,7 @@ async function updateMasterFantasyFilmList(ctx: TRPCContext) {
   // update active films outside of top 100
   const remaining = await ctx.prisma.tMDBDetails.findMany({
     where: {
-      updatedAt: { lt: new Date("2024-11-17") },
+      updatedAt: { lt: new Date() },
       studioFilms: {
         some: {
           studio: {

@@ -170,7 +170,7 @@ export async function autoDraft(ctx: TRPCContext, sessionId: string, studioId: s
     if (openSlot !== film.slot) break;
     else openSlot++;
 
-  await makePick(ctx, {
+  return await makePick(ctx, {
     sessionId,
     studioId,
     tmdbId: bestAvailable.id,

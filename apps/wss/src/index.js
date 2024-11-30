@@ -26,25 +26,25 @@ app.post("/ws", (req) => {
 
 app.post("/draft", async (req) => {
   const data = req.body.eventData;
-  console.log("/draft", data);
+  // console.log("/draft", data);
   io.emit(req.body.eventName, data);
 
-  setTimeout(
-    async () => {
-      const url = env.BMB_URL;
+  // setTimeout(
+  //   async () => {
+  //     const url = env.BMB_URL;
 
-      try {
-        await axios.post(`${url}/api/auto-draft`, {
-          sessionId: data.sessionId,
-          studioId: data.currentPick.studioId,
-          pick: data.currentPick.num,
-        });
-      } catch (e) {
-        console.log(e);
-      }
-    },
-    data.currentPick.endTimestamp - data.currentPick.startTimestamp + 2500,
-  );
+  //     try {
+  //       await axios.post(`${url}/api/auto-draft`, {
+  //         sessionId: data.sessionId,
+  //         studioId: data.currentPick.studioId,
+  //         pick: data.currentPick.num,
+  //       });
+  //     } catch (e) {
+  //       console.log(e);
+  //     }
+  //   },
+  //   data.currentPick.endTimestamp - data.currentPick.startTimestamp + 2500,
+  // );
 });
 
 io.on("connect", (socket) => {

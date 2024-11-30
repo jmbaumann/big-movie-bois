@@ -129,6 +129,7 @@ export default function AvailableFilms({
   const { mutate: removeFavorite } = api.ffStudio.removeFavorite.useMutation();
   const { mutate: makeBid, isLoading: bidding } = api.ffStudio.bid.useMutation();
   const { mutate: makePick, isLoading: picking } = api.ffDraft.pick.useMutation();
+
   const { mutate: adminAdd } = api.ffAdmin.addStudioFilm.useMutation();
 
   const slotsFilled = new Set(
@@ -146,6 +147,7 @@ export default function AvailableFilms({
     !!availableSlots?.length &&
     !picking &&
     !draftDisabled;
+
   const isFavorite = selectedFilm ? favorites?.map((e) => e.id).includes(selectedFilm.id) : false;
   const bidPlaced = selectedFilm ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
   const insufficientFunds = selectedFilm && myStudio ? (selectedFilm.price ?? 0) > myStudio?.budget : false;

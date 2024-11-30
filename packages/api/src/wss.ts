@@ -6,7 +6,7 @@ export async function socketEvent<T>(eventName: string, eventData: T) {
   const url = env.WEBSOCKET_SERVER;
 
   try {
-    await axios.post(`${url}/ws`, {
+    axios.post(`${url}/ws`, {
       eventName,
       eventData,
     });
@@ -21,7 +21,7 @@ export async function draftEvent<T>(eventName: string, eventData: T) {
   const url = env.WEBSOCKET_SERVER;
 
   try {
-    await axios.post(`${url}/draft`, {
+    axios.post(`${url}/draft`, {
       eventName,
       eventData,
     });

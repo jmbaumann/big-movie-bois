@@ -85,7 +85,7 @@ export default function Draft() {
     });
 
     socket.on("connect", () => {
-      console.log("Connected to the WebSocket server");
+      // console.log("Connected to the WebSocket server");
     });
 
     socket.on(`draft:${sessionId}:draft-update`, (data: DraftState) => {
@@ -103,7 +103,7 @@ export default function Draft() {
   };
 
   const handleDraftUpdate = (state: DraftState) => {
-    console.log("UPDATE", state);
+    // console.log("UPDATE", state);
     setStarted(true);
     setDraftDisabled(false);
     setCurrentPick(state.currentPick);
@@ -118,7 +118,7 @@ export default function Draft() {
 
   useEffect(() => {
     if (draftState) {
-      console.log("INITIAL STATE", draftState);
+      // console.log("INITIAL STATE", draftState);
       setStarted(draftState.started);
       setCurrentPick(draftState.currentPick);
       setPicks(draftState.picks);
@@ -155,11 +155,11 @@ export default function Draft() {
           </div>
         ) : (
           <div className="flex items-center">
-            {started ? (
+            {started && !!draftingStudio ? (
               <Countdown
                 currentPick={currentPick}
                 leagueSettings={session.settings}
-                setDraftDisabled={setDraftDisabled}
+                draftingStudioId={draftingStudio.id}
               />
             ) : session?.league.ownerId === sessionData?.user.id ? (
               <Button className="ml-2 font-sans" onClick={() => handleStart()}>
@@ -219,7 +219,7 @@ export default function Draft() {
 function Countdown({
   currentPick,
   leagueSettings,
-  setDraftDisabled,
+  draftingStudioId,
 }: {
   currentPick: {
     num: number;
@@ -227,11 +227,16 @@ function Countdown({
     endTimestamp: number;
   };
   leagueSettings: LeagueSessionSettings;
-  setDraftDisabled: Dispatch<SetStateAction<boolean>>;
+  draftingStudioId: string;
 }) {
+  const router = useRouter();
+  const sessionId = router.query.sessionId as string;
+
   const [timer, setTimer] = useState("");
   const [seconds, setSeconds] = useState(1);
   const [round, setRound] = useState(Math.ceil(currentPick.num / leagueSettings.draft.numRounds));
+
+  const auto = api.ffDraft.auto.useMutation();
 
   const updateTimer = () => {
     if (currentPick.endTimestamp) {
@@ -242,7 +247,7 @@ function Countdown({
         const minutes = Math.floor((distance / 60) % 60);
         const seconds = Math.floor(distance % 60);
         setTimer(`${minutes}m ${seconds < 10 ? "0" + seconds : seconds}s`);
-      } else setDraftDisabled(true);
+      } else setSeconds(0);
     }
   };
 
@@ -262,17 +267,33 @@ function Countdown({
       <div className="text-sm">
         Round {round} of {leagueSettings.draft.numRounds}
       </div>
-      {secondsRemaining !== leagueSettings.draft.timePerRound ? (
-        <>
-          <div className="text-3xl tabular-nums">{timer}</div>
-          <Progress className="h-2" value={(secondsRemaining / leagueSettings.draft.timePerRound) * 100} />
-        </>
-      ) : (
-        <>
-          <Loader2 className="mx-auto my-2 animate-spin" />
-          <p className="text-xs">Processing...</p>
-        </>
-      )}
+      {
+        secondsRemaining !== leagueSettings.draft.timePerRound ? (
+          <>
+            <div className="text-3xl tabular-nums">{timer}</div>
+            <Progress className="h-2" value={(secondsRemaining / leagueSettings.draft.timePerRound) * 100} />
+          </>
+        ) : (
+          <Button
+            onClick={() =>
+              auto.mutate({
+                sessionId,
+                studioId: draftingStudioId,
+                pick: currentPick.num,
+              })
+            }
+            isLoading={auto.isLoading}
+          >
+            Auto Draft
+          </Button>
+        )
+        //  (
+        //   <>
+        //     <Loader2 className="mx-auto my-2 animate-spin" />
+        //     <p className="text-xs">Processing...</p>
+        //   </>
+        // )
+      }
     </div>
   );
 }

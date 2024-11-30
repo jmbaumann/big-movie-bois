@@ -8,8 +8,8 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../../trp
 
 const search = protectedProcedure.input(z.object({ keyword: z.string() })).query(async ({ ctx, input }) => {
   return ctx.prisma.user.findMany({
-    select: { id: true, name: true },
-    where: { name: { contains: input.keyword, mode: "insensitive" } },
+    select: { id: true, username: true },
+    where: { username: { contains: input.keyword, mode: "insensitive" } },
   });
 });
 

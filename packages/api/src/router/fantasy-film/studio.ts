@@ -292,7 +292,7 @@ export async function createStudio(ctx: TRPCContext, input: z.infer<typeof creat
   const user = await ctx.prisma.user.findFirst({
     where: { id: input.ownerId },
   });
-  const name = `${user?.name}'s Studio`;
+  const name = `${user?.username}'s Studio`;
   return await ctx.prisma.leagueSessionStudio.create({
     data: {
       sessionId: input.sessionId,
@@ -311,7 +311,7 @@ export async function createManyStudios(ctx: TRPCContext, input: z.infer<typeof 
   });
   const data = input.map((e) => ({
     ...createLeagueSessionStudioObj.parse(e),
-    name: `${users.find((u) => u.id === e.ownerId)?.name}'s Studio`,
+    name: `${users.find((u) => u.id === e.ownerId)?.username}'s Studio`,
     image: getRandomIcon(),
     budget: 100,
     createdAt: new Date(),

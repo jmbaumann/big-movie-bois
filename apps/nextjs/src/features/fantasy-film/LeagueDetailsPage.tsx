@@ -96,11 +96,11 @@ export default function LeagueDetailsPage() {
               <TabsTrigger value="history" onClick={() => handleTab("history")}>
                 History
               </TabsTrigger>
-              {isOwner && (
+              {/* {isOwner && (
                 <TabsTrigger value="settings" onClick={() => handleTab("settings")}>
                   Settings
                 </TabsTrigger>
-              )}
+              )} */}
             </TabsList>
             <TabsContent value="sessions">
               {league?.sessions.map((session, i) => <SessionCard key={i} session={session} />)}
@@ -108,7 +108,7 @@ export default function LeagueDetailsPage() {
             <TabsContent value="members">
               <Members league={league!} refreshLeague={refreshLeague} />
             </TabsContent>
-            <TabsContent value="history">History</TabsContent>
+            <TabsContent value="history">No history yet...</TabsContent>
             <TabsContent value="settings">Settings</TabsContent>
           </Tabs>
         </div>
@@ -194,20 +194,23 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
 
   const { data: searchResult } = api.user.search.useQuery(
     { keyword: searchKeyword ?? "" },
-    { enabled: !!searchKeyword },
+    { enabled: (searchKeyword?.length ?? 0) >= 3 },
   );
   const { isLoading, mutate: invite } = api.ffLeague.invite.useMutation();
   const { mutate: removeMember } = api.ffLeague.removeMember.useMutation();
   const { mutate: removeInvite } = api.ffLeague.removeInvite.useMutation();
 
   function handleUserSelected(userId: string) {
-    invite(
-      { userId, leagueId: league!.id },
-      {
-        onSettled: () => refreshLeague(),
-        onError: (error) => toast({ title: error.message, variant: "destructive" }),
-      },
-    );
+    const invited = [...league!.members, ...league!.invites].find((e) => e.userId === userId);
+    if (invited) toast({ title: "That user is already in this league" });
+    else
+      invite(
+        { userId, leagueId: league!.id },
+        {
+          onSettled: () => refreshLeague(),
+          onError: (error) => toast({ title: error.message, variant: "destructive" }),
+        },
+      );
     setOpen(false);
     setSearchKeyword(undefined);
   }
@@ -229,7 +232,7 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
         removeInvite(
           { id },
           {
-            onSuccess: () => toast({ title: "Invitation revoked" }),
+            onSuccess: () => toast({ title: "Invitate deleted" }),
             onSettled: () => refreshLeague(),
           },
         );
@@ -255,7 +258,7 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
                   {isOwner && <Badge>Owner</Badge>}
                   {!isOwner && member.isAdmin && <Badge>Admin</Badge>}
                 </TableCell>
-                <TableCell>{member.user.name}</TableCell>
+                <TableCell>{member.user.username}</TableCell>
                 <TableCell>Joined</TableCell>
                 <TableCell className="float-right">
                   <Button
@@ -277,7 +280,7 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
               return (
                 <TableRow key={i}>
                   <TableCell></TableCell>
-                  <TableCell>{invite.user.name}</TableCell>
+                  <TableCell>{invite.user.username}</TableCell>
                   <TableCell>Invited</TableCell>
                   <TableCell>
                     <Button
@@ -309,7 +312,7 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
           {!!searchKeyword && <CommandEmpty>No users found</CommandEmpty>}
           {searchResult?.map((result, i) => (
             <CommandItem key={i} onSelect={() => handleUserSelected(result.id)}>
-              {result.name}
+              {result.username}
             </CommandItem>
           ))}
         </CommandList>

@@ -173,6 +173,11 @@ const getInvitesByUserId = protectedProcedure.input(z.object({ userId: z.string(
 const invite = protectedProcedure
   .input(z.object({ leagueId: z.string(), userId: z.string() }))
   .mutation(async ({ ctx, input }) => {
+    const existing = await ctx.prisma.leagueInvitation.findFirst({
+      where: { leagueId: input.leagueId, userId: input.userId },
+    });
+    if (existing) return;
+
     return await ctx.prisma.leagueInvitation.create({
       data: {
         leagueId: input.leagueId,

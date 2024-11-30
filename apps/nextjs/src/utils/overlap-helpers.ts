@@ -97,7 +97,7 @@ export function findOverlap(answerMovie: TMDBMovie, guessMovies: TMDBMovie[]) {
       }),
     },
     revenue: {
-      value: toMoney(answer.revenue),
+      value: toMoney(Number(answer.revenue)),
       revealed: new Set(revenuesArray).has(answer.revenue),
       gt: findClosest(revenuesArray, answer.revenue, {
         flag: "gt",
@@ -119,8 +119,8 @@ export function findOverlap(answerMovie: TMDBMovie, guessMovies: TMDBMovie[]) {
 }
 
 function findClosest(
-  guesses: (number | string)[],
-  answer: number | string,
+  guesses: (number | bigint | string)[],
+  answer: number | bigint | string,
   options: {
     flag: "gt" | "lt";
     firstChar?: boolean;
@@ -129,7 +129,7 @@ function findClosest(
 ): number | string | undefined {
   const targetValue = typeof answer === "string" && Number.isInteger(answer) ? Number(answer) : answer;
 
-  let closestValue: number | string | undefined = undefined;
+  let closestValue: number | bigint | string | undefined = undefined;
   let closestDifference = Infinity;
 
   for (const item of guesses) {
@@ -147,18 +147,20 @@ function findClosest(
         typeof targetValue === "string"
           ? targetValue[0]!.toLowerCase().charCodeAt(0) - "a".charCodeAt(0) + 1
           : targetValue;
-      const difference = Math.abs(d1 - d2);
+      const difference = Math.abs(Number(d1) - Number(d2));
 
       if (difference < closestDifference) {
         closestDifference = difference;
         closestValue = options.firstChar
           ? typeof currentValue === "string"
             ? currentValue[0]
-            : `$${Math.round((currentValue / 1000000) * 10) / 10}M`
+            : `$${Math.round((Number(currentValue) / 1000000) * 10) / 10}M`
           : currentValue;
       }
     }
   }
+
+  if (typeof closestValue === "bigint") closestValue = Number(closestValue);
 
   if (options.checkEqual) return closestDifference === 0 ? closestValue : undefined;
 

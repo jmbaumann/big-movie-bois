@@ -27,6 +27,10 @@ export default function Footer() {
         <p className="mt-4 text-xs">
           © 2024 Big Movie Bois
           <span className="mx-2">|</span>
+          <a href="https://jeremybaumann.me" target="_blank">
+            jeremy made this :)
+          </a>
+          <span className="mx-2">|</span>
           Film data from{" "}
           <a href="https://www.themoviedb.org/" target="_blank" className="underline" rel="noreferrer">
             TMDb

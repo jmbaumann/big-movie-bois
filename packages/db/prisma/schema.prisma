@@ -22,7 +22,7 @@ model TMDBDetails {
     runtime       Int
     certification String?
     budget        Int
-    revenue       Int
+    revenue       BigInt
     popularity    Float
     rating        Float
     tagline       String

@@ -91,7 +91,7 @@ export default function SetUsernamePage() {
           control={form.control}
           name="username"
           render={({ field }) => (
-            <FormItem className="w-2/3">
+            <FormItem className="w-full md:w-2/3">
               <FormLabel>Username</FormLabel>
               <FormControl>
                 <div className="flex items-center">
@@ -109,7 +109,7 @@ export default function SetUsernamePage() {
           )}
         />
 
-        <div className="flex w-2/3 justify-between">
+        <div className="flex w-full justify-between md:w-2/3">
           <Button className="w-min " onClick={() => handleCancel()}>
             Cancel
           </Button>

@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="mt-6 flex h-[120px] w-full justify-center bg-neutral-700 pb-4">
-      <div className="mt-6 flex w-[80%] flex-col">
+      <div className="mt-6 flex w-full flex-col lg:w-[80%]">
         <nav className="flex font-bold">
           <Link href={"/"} className="mr-2 hover:text-white">
             About

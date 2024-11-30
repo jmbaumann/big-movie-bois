@@ -6,7 +6,7 @@ import Layout from "~/layouts/main/Layout";
 
 export default function SetUsername() {
   return (
-    <Layout showFooter>
+    <Layout>
       <SetUsernamePage />
     </Layout>
   );

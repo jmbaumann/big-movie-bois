@@ -1,4 +1,4 @@
-import { sub } from "date-fns";
+import { differenceInCalendarDays, differenceInDays, sub } from "date-fns";
 import { z } from "zod";
 
 import { Prisma } from "@repo/db";
@@ -111,10 +111,13 @@ export const filmRouter = createTRPCRouter({
 
 export function getFilmScore(ctx: TRPCContext, session: Session, film: FilmWithScores) {
   let score = 0;
-  if (film.scoreOverride) score = film.scoreOverride;
+  if (film.scoreOverride) return film.scoreOverride;
 
   const slot = session?.settings.teamStructure.find((e) => e.pos === film.slot);
   if (!slot) return 0;
+
+  const sessionComplete = differenceInCalendarDays(new Date(), session!.endDate) > 0;
+  if (sessionComplete) return film.score;
 
   switch (slot.type) {
     case STUDIO_SLOT_TYPES.TOTAL_BOX_OFFICE:
@@ -131,10 +134,10 @@ export function getFilmScore(ctx: TRPCContext, session: Session, film: FilmWithS
       break;
   }
 
-  // await ctx.prisma.studioFilm.update({
-  //   data: { score },
-  //   where: { id: film.id },
-  // });
+  ctx.prisma.studioFilm.update({
+    data: { score },
+    where: { id: film.id },
+  });
   return score;
 }
 

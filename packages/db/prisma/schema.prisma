@@ -13,23 +13,24 @@ datasource db {
 }
 
 model TMDBDetails {
-    id            Int       @id
-    imdbId        String?
-    title         String
-    overview      String
-    poster        String?
-    releaseDate   String
-    runtime       Int
-    certification String?
-    budget        Int
-    revenue       BigInt
-    popularity    Float
-    rating        Float
-    tagline       String
-    genres        String[]
-    keywords      String[]
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime?
+    id             Int       @id
+    imdbId         String?
+    title          String
+    overview       String
+    poster         String?
+    releaseDate    String
+    runtime        Int
+    certification  String?
+    budget         Int
+    revenue        BigInt
+    openingWeekend Int       @default(0)
+    popularity     Float
+    rating         Float
+    tagline        String
+    genres         String[]
+    keywords       String[]
+    createdAt      DateTime  @default(now())
+    updatedAt      DateTime?
 
     cast           TMDBCast[]
     crew           TMDBCrew[]

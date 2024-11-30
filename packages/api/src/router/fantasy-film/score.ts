@@ -12,11 +12,11 @@ export type FilmScores = {
 };
 
 export function getTotalBoxOfficeScore(film: FilmWithTMDB) {
-  return Math.round(film.tmdb.revenue / 1000000) / 10;
+  return Math.round(Number(film.tmdb.revenue) / 1000000) / 10;
 }
 
 export function getOpeningWeekendBoxOfficeScore(film: FilmWithTMDB) {
-  return Math.round(film.tmdb.revenue / 100000) / 10;
+  return Math.round(film.tmdb.openingWeekend / 100000) / 10;
 }
 
 export function getRatingScore(film: FilmWithTMDB) {

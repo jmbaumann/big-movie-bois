@@ -94,6 +94,7 @@ function restructure(movie: {
       ?.certification,
     budget: movie.details.budget,
     revenue: movie.details.revenue,
+    openingWeekend: 0,
     popularity: movie.details.popularity,
     rating: movie.details.vote_average,
     tagline: movie.details.tagline,

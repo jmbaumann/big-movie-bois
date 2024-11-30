@@ -42,8 +42,11 @@ const getStudios = protectedProcedure.input(z.object({ sessionId: z.string() }))
     take: 20,
   });
 
-  for (const studio of list) await getStudioFilmScores(ctx, studio, input.sessionId);
-  const studios = getStudiosRanks(list);
+  const promises = [];
+  for (const studio of list) promises.push(getStudioFilmScores(ctx, studio, input.sessionId));
+  await Promise.allSettled(promises);
+
+  const studios = getStudiosRanks(list.sort((a, b) => b.score - a.score));
 
   return studios as Studio[];
 });
@@ -97,8 +100,11 @@ const search = protectedProcedure
       where: { sessionId: input.sessionId, name: { contains: input.keyword, mode: "insensitive" } },
     });
 
-    for (const studio of list) await getStudioFilmScores(ctx, studio, input.sessionId);
-    const studios = getStudiosRanks(list);
+    const promises = [];
+    for (const studio of list) promises.push(getStudioFilmScores(ctx, studio, input.sessionId));
+    await Promise.allSettled(promises);
+
+    const studios = getStudiosRanks(list.sort((a, b) => b.score - a.score));
 
     return studios as Studio[];
   });

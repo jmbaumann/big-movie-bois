@@ -4,6 +4,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetState
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = localStorage.getItem(key);
+      console.log(key, item);
       return item ? (JSON.parse(item) as T) : initialValue;
     } catch (error) {
       console.error("Error reading localStorage key:", key, error);
@@ -15,7 +16,10 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetState
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
-      localStorage.setItem(key, JSON.stringify(valueToStore));
+      localStorage.setItem(
+        key,
+        JSON.stringify(valueToStore, (key, value) => (typeof value === "bigint" ? Number(value) : value)),
+      );
     } catch (error) {
       console.error("Error setting localStorage key:", key, error);
     }

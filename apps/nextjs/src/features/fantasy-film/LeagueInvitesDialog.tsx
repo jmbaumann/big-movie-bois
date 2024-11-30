@@ -92,7 +92,7 @@ export default function LeagueInvitesDialog({
               return (
                 <TableRow key={i}>
                   <TableCell>{invite.league.name}</TableCell>
-                  <TableCell>{invite.league.owner.name}</TableCell>
+                  <TableCell>{invite.league.owner.username}</TableCell>
                   <TableCell>{format(invite.createdAt, "LLL dd, yyyy")}</TableCell>
                   <TableCell className="flex items-center">
                     <Button

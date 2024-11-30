@@ -38,7 +38,7 @@ const processBids = protectedProcedure
     await logSessionActivity(ctx, {
       sessionId: input.sessionId,
       type: SESSION_ACTIVITY_TYPES.ADMIN_ACTION,
-      message: `${ctx.session.user.name} manually processed active bids`,
+      message: `${ctx.session.user.username} manually processed active bids`,
     });
 
     return processSessionBids(ctx, input.sessionId, new Date());

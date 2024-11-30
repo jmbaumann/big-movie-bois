@@ -23,7 +23,7 @@ type StudioFilm = Omit<
   score: number;
 };
 type Studio = Prisma.LeagueSessionStudioGetPayload<{
-  include: { owner: { select: { name: true } } };
+  include: { owner: { select: { username: true } } };
 }> & {
   rank: number;
   films: StudioFilm[];
@@ -32,7 +32,7 @@ type Studio = Prisma.LeagueSessionStudioGetPayload<{
 const getStudios = protectedProcedure.input(z.object({ sessionId: z.string() })).query(async ({ ctx, input }) => {
   const list = await ctx.prisma.leagueSessionStudio.findMany({
     include: {
-      owner: { select: { name: true } },
+      owner: { select: { username: true } },
       films: { include: { tmdb: true } },
     },
     where: {
@@ -91,7 +91,7 @@ const search = protectedProcedure
   .query(async ({ ctx, input }) => {
     const list = await ctx.prisma.leagueSessionStudio.findMany({
       include: {
-        owner: { select: { name: true } },
+        owner: { select: { username: true } },
         films: { include: { tmdb: true } },
       },
       where: { sessionId: input.sessionId, name: { contains: input.keyword, mode: "insensitive" } },

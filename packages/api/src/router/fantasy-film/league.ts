@@ -62,7 +62,7 @@ const getMyLeagues = publicProcedure.query(async ({ ctx }) => {
     const leagues = await ctx.prisma.league.findMany({
       where: { members: { some: { userId: user.id } } },
       include: {
-        owner: { select: { name: true } },
+        owner: { select: { username: true } },
         sessions: {
           include: {
             league: { select: { name: true } },

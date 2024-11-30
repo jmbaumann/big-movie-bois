@@ -338,7 +338,7 @@ export function MembersSection({ league, sessionMembers }: { league: League; ses
       {league?.members.map((member, i) => (
         <div key={i} className="flex items-center">
           <span className="mr-2 h-10 w-10 rounded-full bg-blue-400"></span>
-          <p>{member.user.name}</p>
+          <p>{member.user.username}</p>
           {new Set(sessionMembers.array).has(member.userId) ? (
             <Button className="ml-auto" variant="destructive" onClick={() => handleRemove(member.userId)}>
               Remove

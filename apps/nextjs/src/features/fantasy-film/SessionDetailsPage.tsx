@@ -262,7 +262,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
                   <StudioIcon image={studio.image} />
                   <div className="flex flex-col">
                     <p>{studio.name}</p>
-                    <p className="text-xs text-slate-400">{studio.owner.name}</p>
+                    <p className="text-xs text-slate-400">{studio.owner.username}</p>
                   </div>
                 </p>
                 <div className="flex items-end">

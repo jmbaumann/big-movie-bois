@@ -28,7 +28,8 @@ export default function SetUsernamePage() {
     username: z
       .string()
       .min(3, { message: "Username must be at least 3 characters long" })
-      .max(20, { message: "Username cannot exceed 20 characters" }),
+      .max(20, { message: "Username cannot exceed 20 characters" })
+      .regex(/^[a-zA-Z0-9_]+$/, "Only alphanumeric characters and underscores are allowed."),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({

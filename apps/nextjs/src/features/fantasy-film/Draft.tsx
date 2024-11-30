@@ -70,6 +70,7 @@ export default function Draft() {
 
   const startDraft = api.ffDraft.start.useMutation();
 
+  const isAdmin = session?.league.ownerId === sessionData?.user.id;
   const studiosById = getById<Studio>(session?.studios ?? [], "ownerId");
   const draftingStudio = session
     ? studiosById[getStudioOwnerByPick(session.settings.draft.order, currentPick.num)]
@@ -160,6 +161,7 @@ export default function Draft() {
                 currentPick={currentPick}
                 leagueSettings={session.settings}
                 draftingStudioId={draftingStudio.id}
+                isAdmin={isAdmin}
               />
             ) : session?.league.ownerId === sessionData?.user.id ? (
               <Button className="ml-2 font-sans" onClick={() => handleStart()}>
@@ -220,6 +222,7 @@ function Countdown({
   currentPick,
   leagueSettings,
   draftingStudioId,
+  isAdmin,
 }: {
   currentPick: {
     num: number;
@@ -228,6 +231,7 @@ function Countdown({
   };
   leagueSettings: LeagueSessionSettings;
   draftingStudioId: string;
+  isAdmin: boolean;
 }) {
   const router = useRouter();
   const sessionId = router.query.sessionId as string;
@@ -274,18 +278,20 @@ function Countdown({
             <Progress className="h-2" value={(secondsRemaining / leagueSettings.draft.timePerRound) * 100} />
           </>
         ) : (
-          <Button
-            onClick={() =>
-              auto.mutate({
-                sessionId,
-                studioId: draftingStudioId,
-                pick: currentPick.num,
-              })
-            }
-            isLoading={auto.isLoading}
-          >
-            Auto Draft
-          </Button>
+          isAdmin && (
+            <Button
+              onClick={() =>
+                auto.mutate({
+                  sessionId,
+                  studioId: draftingStudioId,
+                  pick: currentPick.num,
+                })
+              }
+              isLoading={auto.isLoading}
+            >
+              Auto Draft
+            </Button>
+          )
         )
         //  (
         //   <>

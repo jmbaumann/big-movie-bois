@@ -49,6 +49,7 @@ export default function OverlapPage() {
   const router = useRouter();
   const archive = router.query.archive as string | undefined;
   const { data: sessionData } = useSession();
+  const trpc = api.useContext();
 
   const [gameData, setGameData] = useLocalStorage<OverlapGameData>("bmb-overlap", {
     guesses: [],
@@ -121,7 +122,10 @@ export default function OverlapPage() {
         if (latest.title.revealed) {
           setOverlaps({ details: 0, cast: 0, crew: 0 });
           if (!gameData.gameOver && sessionData?.user)
-            saveScore({ userId: sessionData.user.id, answerId: answer.id, numGuesses: gameData.guesses.length });
+            saveScore(
+              { userId: sessionData.user.id, answerId: answer.id, numGuesses: gameData.guesses.length },
+              { onSettled: () => trpc.overlap.getStats.invalidate({ userId: sessionData?.user.id }) },
+            );
           setGameData((s) => ({ ...s, gameOver: true, lastCompleted: new Date().getTime() }));
         } else
           setOverlaps({

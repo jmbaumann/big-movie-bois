@@ -70,7 +70,7 @@ export function getUnlockedSlots(session: Session, studio: Studio) {
 }
 
 export function getFilmCost(maxPopularity: number, filmPopularity: number) {
-  return Math.min(Math.round((filmPopularity / maxPopularity) * 40), 40);
+  return Math.min(Math.round((filmPopularity / maxPopularity) * 50), 50);
 }
 
 export function getStudioOwnerByPick(draftOrder: string[], pick: number) {

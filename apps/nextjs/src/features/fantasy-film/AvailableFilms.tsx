@@ -233,8 +233,9 @@ export default function AvailableFilms({
           onSuccess: () => {
             toast({ title: buyNow ? "Film added to Studio" : "Bid submitted" });
             setOpen(false);
-            refreshFilms();
             refreshMyStudio();
+            refreshFilms();
+            setAcquiredFilms((s) => [...s, selectedFilm.id]);
             trpc.ffStudio.getStudios.invalidate({ sessionId: session!.id });
             trpc.ffLeagueSession.getBids.invalidate({ sessionId: session!.id });
           },

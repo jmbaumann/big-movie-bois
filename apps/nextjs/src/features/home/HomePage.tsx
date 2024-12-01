@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { format } from "date-fns";
-import { CircleEllipsis, Instagram, Smartphone, Twitch, Twitter, Youtube } from "lucide-react";
+import { Instagram, Mail, Twitch, Twitter, Youtube } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { FaLetterboxd, FaTiktok } from "react-icons/fa6";
 
 import { api } from "~/utils/api";
 import { getFilmsReleased } from "~/utils/fantasy-film-helpers";
@@ -184,11 +185,11 @@ export default function HomePage() {
 
       <div className="flex w-1/3 flex-col space-y-2">
         <div className="flex">
-          <div className="flex grow justify-end gap-x-4">
-            {/* <Link className="hover:text-primary" href={"https://youtube.com/@bigmoviebois"} target="_blank">
+          <div className="flex grow items-center justify-end gap-x-4">
+            <Link className="hover:text-primary" href={"https://youtube.com/@bigmoviebois"} target="_blank">
               <Youtube size={28} />
             </Link>
-            <Link className="hover:text-primary" href={"https://twitch.tv/bigmoviebois"} target="_blank">
+            {/*<Link className="hover:text-primary" href={"https://twitch.tv/bigmoviebois"} target="_blank">
               <Twitch size={28} />
             </Link> */}
             <Link className="hover:text-primary" href={"https://twitter.com/bigmoviebois"} target="_blank">
@@ -197,11 +198,14 @@ export default function HomePage() {
             <Link className="hover:text-primary" href={"https://instagram.com/bigmoviebois"} target="_blank">
               <Instagram size={28} />
             </Link>
-            {/* <Link className="hover:text-primary" href={"https://tiktok.com/bigmoviebois"} target="_blank">
-              <Smartphone size={28} />
-            </Link> */}
-            <Link className="hover:text-primary" href={"https://letterboxd.com/bigmoviebois"} target="_blank">
-              <CircleEllipsis size={28} />
+            <Link className="hover:text-primary" href={"https://tiktok.com/bigmoviebois"} target="_blank">
+              <FaTiktok size={24} />
+            </Link>
+            <Link className="hover:text-primary" href={"https://letterboxd.com/jbaumann"} target="_blank">
+              <FaLetterboxd size={28} />
+            </Link>
+            <Link className="hover:text-primary" href={"/contact"}>
+              <Mail size={28} />
             </Link>
           </div>
         </div>

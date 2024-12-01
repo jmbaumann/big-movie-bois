@@ -5,18 +5,18 @@ export default function Footer() {
     <footer className="mt-6 flex h-[120px] w-full justify-center bg-neutral-700 pb-4">
       <div className="mt-6 flex w-full flex-col lg:w-[80%]">
         <nav className="flex font-bold">
-          <Link href={"/"} className="mr-2 hover:text-white">
+          {/* <Link href={"/"} className="mr-2 hover:text-white">
             About
-          </Link>
+          </Link> */}
           <Link href={"/contact"} className="mx-2 hover:text-white">
             Contact
           </Link>
-          <Link href={"/"} className="mx-2 hover:text-white">
+          {/* <Link href={"/"} className="mx-2 hover:text-white">
             Credits
-          </Link>
-          <Link href={"/"} className="mx-2 hover:text-white">
+          </Link> */}
+          {/* <Link href={"/"} className="mx-2 hover:text-white">
             Change Log
-          </Link>
+          </Link> */}
           <Link href={"/terms-of-service"} className="mx-2 hover:text-white">
             Terms of Service
           </Link>

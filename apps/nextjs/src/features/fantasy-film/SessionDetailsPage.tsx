@@ -140,13 +140,15 @@ export default function SessionDetailsPage() {
               <ChevronLeft /> League
             </Button>
           </Link>
-          <AdminMenu className="float-right">
-            <DropdownMenuContent side="bottom">
-              <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
-                Delete Session
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </AdminMenu>
+          {session?.league.ownerId === sessionData?.user.id && (
+            <AdminMenu className="float-right">
+              <DropdownMenuContent side="bottom">
+                <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
+                  Delete Session
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </AdminMenu>
+          )}
         </div>
 
         <div className="mb-4 flex items-end justify-between">
@@ -301,7 +303,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
 }
 
 function MyStudio({ session, studio, refetch }: { session: Session; studio: Studio | undefined; refetch: () => void }) {
-  if (!studio) return <>no studios</>;
+  if (!studio) return <>You do not have a Studio in this Session</>;
 
   return <StudioDetails session={session} studio={studio} refetch={refetch} />;
 }
@@ -441,7 +443,7 @@ function Films({ session }: { session: Session }) {
 
   const myStudio = session?.studios.find((e) => e.ownerId === sessionData?.user.id);
 
-  if (!myStudio) return <>no studio</>;
+  if (!myStudio) return <>You do not have a Studio in this Session</>;
 
   return <AvailableFilms session={session} studioId={myStudio.id} />;
 }

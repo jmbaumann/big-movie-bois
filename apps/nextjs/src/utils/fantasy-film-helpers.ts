@@ -1,4 +1,4 @@
-import { sub } from "date-fns";
+import { differenceInCalendarDays, sub } from "date-fns";
 
 import { RouterOutputs } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
@@ -10,6 +10,16 @@ type Session = RouterOutputs["ffLeagueSession"]["getById"];
 type Studios = RouterOutputs["ffStudio"]["getStudios"];
 type Studio = Studios[number] | RouterOutputs["ffStudio"]["getMyStudio"];
 type StudioFilmTMDB = Studios[number]["films"][number] | (StudioFilm & { tmdb: TMDBDetails });
+
+export function isSessionStarted(session: Session) {
+  if (!session) return false;
+  return differenceInCalendarDays(new Date(), session.startDate) > 0;
+}
+
+export function isSessionEnded(session: Session) {
+  if (!session) return false;
+  return differenceInCalendarDays(new Date(), session.endDate) > 0;
+}
 
 export function getAvailableFilms(picks: StudioFilm[], films: TMDBDetails[]) {
   const takenIds = picks.map((e) => e.tmdbId);

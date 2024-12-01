@@ -3,20 +3,38 @@ import { z } from "zod";
 import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "../../enums";
 import { toZodEnum } from "../../utils";
 
-const leagueSessionSettingsDraftObj = z.object({
-  conduct: z.boolean().default(true),
-  complete: z.boolean().default(false),
-  date: z.date().optional(),
-  hour: z.string().optional(),
-  min: z.string().optional(),
-  ampm: z.string().optional(),
-  type: z.enum(toZodEnum(DRAFT_TYPES)),
-  order: z.array(z.string()).refine((items) => new Set(items).size === items.length, {
-    message: "Invalid draft order",
-  }),
-  numRounds: z.coerce.number(),
-  timePerRound: z.coerce.number(),
-});
+const leagueSessionSettingsDraftObj = z
+  .object({
+    conduct: z.boolean().default(true),
+    complete: z.boolean().default(false),
+    date: z.date().optional(),
+    hour: z.string().optional(),
+    min: z.string().optional(),
+    ampm: z.string().optional(),
+    type: z.enum(toZodEnum(DRAFT_TYPES)).optional(),
+    order: z
+      .array(z.string())
+      .optional()
+      .refine((items) => items && new Set(items).size === items.length, {
+        message: "Invalid draft order",
+      }),
+    numRounds: z.coerce.number().optional(),
+    timePerRound: z.coerce.number().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.conduct) {
+      const requiredFields = ["date", "hour", "min", "ampm", "type", "order", "numRounds", "timePerRound"];
+      requiredFields.forEach((field) => {
+        if (data[field as keyof typeof data] == null) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [field],
+            message: `${field} is required when conduct is true`,
+          });
+        }
+      });
+    }
+  });
 export type LeagueSessionSettingsDraft = z.infer<typeof leagueSessionSettingsDraftObj>;
 
 const leagueSessionSettingsObj = z.object({

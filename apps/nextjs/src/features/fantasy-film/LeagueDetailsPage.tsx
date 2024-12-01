@@ -71,7 +71,7 @@ export default function LeagueDetailsPage() {
             <ChevronLeft /> Leagues
           </Button>
         </Link>
-        {league && (
+        {league && isOwner && (
           <div className="flex">
             <h1 className="mb-2 text-2xl">{league.name}</h1>
             <div className="ml-auto flex items-center">
@@ -188,6 +188,7 @@ function SessionCard({ session }: { session: LeagueSession }) {
 }
 
 function Members({ league, refreshLeague }: { league: League; refreshLeague: Function }) {
+  const { data: sessionData } = useSession();
   const [searchKeyword, setSearchKeyword] = useState<string>();
   const [open, setOpen] = useState(false);
   const confirm = useConfirm();
@@ -199,6 +200,9 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
   const { isLoading, mutate: invite } = api.ffLeague.invite.useMutation();
   const { mutate: removeMember } = api.ffLeague.removeMember.useMutation();
   const { mutate: removeInvite } = api.ffLeague.removeInvite.useMutation();
+
+  const isLeagueOwner = league?.ownerId === sessionData?.user.id;
+  const totalMembers = (league?.members.length ?? 0) + (league?.invites.length ?? 0);
 
   function handleUserSelected(userId: string) {
     const invited = [...league!.members, ...league!.invites].find((e) => e.userId === userId);
@@ -261,15 +265,17 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
                 <TableCell>{member.user.username}</TableCell>
                 <TableCell>Joined</TableCell>
                 <TableCell className="float-right">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="ml-auto bg-red-600 text-white"
-                    onClick={() => handleRemoveUser(member.id, "member")}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
+                  {isLeagueOwner && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="ml-auto bg-red-600 text-white"
+                      onClick={() => handleRemoveUser(member.id, "member")}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             );
@@ -283,15 +289,17 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
                   <TableCell>{invite.user.username}</TableCell>
                   <TableCell>Invited</TableCell>
                   <TableCell>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="ml-auto bg-red-600 text-white"
-                      onClick={() => handleRemoveUser(invite.id, "invite")}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
+                    {isLeagueOwner && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="ml-auto bg-red-600 text-white"
+                        onClick={() => handleRemoveUser(invite.id, "invite")}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -299,9 +307,14 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
         </TableBody>
       </Table>
 
-      <Button className="mt-4" onClick={() => setOpen(true)}>
-        + Add Member
-      </Button>
+      {isLeagueOwner && totalMembers <= 12 && (
+        <>
+          <Button className="mt-4" onClick={() => setOpen(true)}>
+            + Add Member
+          </Button>
+          <p className="mt-1 text-xs font-light">You can add up to 12 members</p>
+        </>
+      )}
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput
           placeholder="Search by username"

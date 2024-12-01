@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { inferRouterOutputs } from "@trpc/server";
-import { add, format, sub } from "date-fns";
+import { add, differenceInCalendarDays, format, sub } from "date-fns";
 import { CalendarIcon, Info, Loader2, Trash } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useFieldArray, useForm, useFormContext } from "react-hook-form";
@@ -13,6 +13,7 @@ import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "@repo/api/src/enums";
 import { createLeagueSessionInputObj } from "@repo/api/src/zod";
 
 import { api } from "~/utils/api";
+import { isSessionStarted } from "~/utils/fantasy-film-helpers";
 import { useArray, type UseArray } from "~/utils/hooks/use-array";
 import { cn } from "~/utils/shadcn";
 import SlotDescriptionDialog from "~/components/SlotDescriptionDialog";
@@ -80,6 +81,7 @@ export default function SessionForm({
         memberIds: sessionMembers.array,
       };
       data.settings.draft.date = values.settings.draft.date ? new Date(values.settings.draft.date) : undefined;
+      data.settings.draft.order = values.settings.draft.order?.filter((e) => e) ?? undefined;
       updateSession(data, {
         onSuccess: () => {
           toast({ title: "Settings saved" });
@@ -118,7 +120,12 @@ export default function SessionForm({
               <AccordionItem value="draft">
                 <AccordionTrigger>Draft</AccordionTrigger>
                 <AccordionContent className="mt-2 space-y-8 px-4">
-                  <DraftSection league={league} sessionMembers={sessionMembers} showDraftFields={showDraftFields} />
+                  <DraftSection
+                    league={league}
+                    session={session}
+                    sessionMembers={sessionMembers}
+                    showDraftFields={showDraftFields}
+                  />
                 </AccordionContent>
               </AccordionItem>
             </>
@@ -356,10 +363,12 @@ export function MembersSection({ league, sessionMembers }: { league: League; ses
 
 export function DraftSection({
   league,
+  session,
   sessionMembers,
   showDraftFields,
 }: {
   league: League;
+  session: Session;
   sessionMembers: UseArray<string>;
   showDraftFields: boolean;
 }) {
@@ -369,6 +378,8 @@ export function DraftSection({
     name: league?.members.find((m) => m.userId === e)?.user.name,
   }));
 
+  const sessionStarted = isSessionStarted(session);
+
   return (
     <>
       <div className="flex px-4">
@@ -377,7 +388,7 @@ export function DraftSection({
           name="settings.draft.conduct"
           render={({ field }) => (
             <FormItem className="flex items-center space-x-2">
-              <Switch id="draft" checked={field.value} onCheckedChange={field.onChange} />
+              <Switch id="draft" checked={field.value} onCheckedChange={field.onChange} disabled={sessionStarted} />
               <Label htmlFor="draft" className="ml-2">
                 Conduct a draft
               </Label>

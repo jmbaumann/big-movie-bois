@@ -1,7 +1,7 @@
 import { add, format, max, nextTuesday, sub } from "date-fns";
 import { z } from "zod";
 
-import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
+import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
 import { getByDateRange, getDetailsById, getMovieFromTMDB } from "./tmdb";
 import { TMDBSearchResponse } from "./types";
 import { getFilmsForSessionObj } from "./zod";
@@ -82,7 +82,36 @@ const getActive = protectedProcedure.input(z.object({ page: z.number().min(1) })
   };
 });
 
-const updateFantasyFilms = protectedProcedure.mutation(async ({ ctx, input }) => {
+const getOpeningWeekend = protectedProcedure.query(async ({ ctx }) => {
+  const from = format(sub(new Date(), { days: 15 }), "yyyy-MM-dd");
+  const to = format(new Date(), "yyyy-MM-dd");
+
+  const where = {
+    studioFilms: {
+      some: {
+        studio: {
+          session: {
+            AND: [{ startDate: { lte: new Date() } }, { endDate: { gte: new Date() } }],
+          },
+        },
+      },
+    },
+    AND: [{ releaseDate: { gte: from } }, { releaseDate: { lte: to } }],
+  };
+
+  return ctx.prisma.tMDBDetails.findMany({
+    where,
+    orderBy: { releaseDate: "desc" },
+  });
+});
+
+const update = adminProcedure
+  .input(z.object({ id: z.number(), openingWeekend: z.number() }))
+  .mutation(async ({ ctx, input }) => {
+    return ctx.prisma.tMDBDetails.update({ data: { openingWeekend: input.openingWeekend }, where: { id: input.id } });
+  });
+
+const updateFantasyFilms = protectedProcedure.mutation(async ({ ctx }) => {
   await updateMasterFantasyFilmList(ctx);
 });
 
@@ -92,6 +121,8 @@ export const tmdbRouter = createTRPCRouter({
   getById,
   getFilmsForSession,
   getActive,
+  getOpeningWeekend,
+  update,
   updateFantasyFilms,
 });
 

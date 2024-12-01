@@ -6,6 +6,7 @@ import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
 import FilmDataAdmin from "./FilmData";
 import MasterListAdmin from "./MasterList";
+import OpeningWeekendAdmin from "./OpeningWeekend";
 import OverlapAdmin from "./OverlapAdmin";
 import PollsAdmin from "./PollsAdmin";
 import PublicSessionsAdmin from "./PublicSessions";
@@ -33,6 +34,7 @@ export default function AdminDashboard() {
     fantasy: [
       { label: "Master List", value: "master-list", component: <MasterListAdmin /> },
       { label: "Active Films", value: "active-films", component: <FilmDataAdmin /> },
+      { label: "Opening Weekend", value: "opening-weekend", component: <OpeningWeekendAdmin /> },
       { label: "Public Sessions", value: "public-sessions", component: <PublicSessionsAdmin /> },
     ],
     dailys: [{ label: "Overlap", value: "overlap", component: <OverlapAdmin /> }],

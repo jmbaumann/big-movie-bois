@@ -2,5 +2,11 @@
   "github": {
     "silent": true
   },
-  "regions": ["sfo1"]
+  "regions": ["sfo1"],
+  "crons": [
+    {
+      "path": "/api/process-bids",
+      "schedule": "0 17 * * 2"
+    }
+  ]
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { format, nextTuesday } from "date-fns";
 import {
+  CalendarClock,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
@@ -600,6 +601,12 @@ function Activity({ session }: { session: Session }) {
         return (
           <div className="flex items-center">
             <ShieldEllipsis className="mr-1 text-white" /> Admin Action
+          </div>
+        );
+      case SESSION_ACTIVITY_TYPES.AUTOMATED:
+        return (
+          <div className="flex items-center">
+            <CalendarClock className="mr-1 text-white" /> Automated Action
           </div>
         );
     }

@@ -41,6 +41,7 @@ export const SESSION_ACTIVITY_TYPES = {
   BID_WON: "bid-won",
   STUDIO_UPDATE: "studio-update",
   ADMIN_ACTION: "admin-action",
+  AUTOMATED: "automated",
 } as const;
 
 export const FILM_ACQUISITION_TYPES = {

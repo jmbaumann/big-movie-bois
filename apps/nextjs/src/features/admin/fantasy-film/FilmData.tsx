@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight, MoreVertical, Pencil, RefreshCcw, Trash } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleDollarSign, MoreVertical, Pencil, RefreshCcw, Trash } from "lucide-react";
 
 import { api } from "~/utils/api";
 import { Button } from "~/components/ui/button";
@@ -23,6 +23,7 @@ export default function FilmDataAdmin() {
 
   const { data: films } = api.tmdb.getActive.useQuery({ page });
   const { mutate: updateFilmList, isLoading: updating } = api.tmdb.updateFantasyFilms.useMutation();
+  const { mutate: processAllBids, isLoading: processing } = api.ffAdmin.processAllBids.useMutation();
 
   const maxPages = films ? Math.ceil(films.total / 20) : 1;
 
@@ -39,11 +40,29 @@ export default function FilmDataAdmin() {
     }
   }
 
+  async function handleProcessBids() {
+    const ok = await confirm("Are you sure you want to process all active bids?");
+    if (ok) {
+      toast({ title: "Processing..." });
+      processAllBids(undefined, {
+        onSuccess: () => toast({ title: "Bids processed" }),
+        onError: (e) => {
+          toast({ title: e.message, variant: "destructive" });
+        },
+      });
+    }
+  }
+
   return (
     <div className="flex flex-col">
-      <Button className="mb-2 ml-auto w-fit" onClick={() => handleUpdateFilms()} isLoading={updating}>
-        <RefreshCcw className="mr-2" size={20} /> Update Fantasy Film List
-      </Button>
+      <div className="flex gap-x-2">
+        <Button className="mb-2 ml-auto w-fit" onClick={() => handleProcessBids()} isLoading={processing}>
+          <CircleDollarSign className="mr-2" size={20} /> Process Bids
+        </Button>
+        <Button className="mb-2 w-fit" onClick={() => handleUpdateFilms()} isLoading={updating}>
+          <RefreshCcw className="mr-2" size={20} /> Update Fantasy Film List
+        </Button>
+      </div>
 
       <Table className="mb-2">
         <TableHeader>

@@ -10,6 +10,7 @@ import OpeningWeekendAdmin from "./fantasy-film/OpeningWeekend";
 import PublicSessionsAdmin from "./fantasy-film/PublicSessions";
 import OverlapAdmin from "./OverlapAdmin";
 import PollsAdmin from "./PollsAdmin";
+import UsersAdmin from "./UsersAdmin";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
       { label: "Polls", value: "polls", component: <PollsAdmin /> },
     ],
     users: [
-      { label: "Users", value: "users", component: <Users /> },
+      { label: "Users", value: "users", component: <UsersAdmin /> },
       { label: "Supporters", value: "supporters", component: <Supporters /> },
     ],
     fantasy: [

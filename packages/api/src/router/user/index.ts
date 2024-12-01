@@ -4,7 +4,11 @@ import { z } from "zod";
 import { Prisma } from "@repo/db";
 
 import type { TRPCContext } from "../../trpc";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
+import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
+
+const getAll = adminProcedure.query(async ({ ctx }) => {
+  return ctx.prisma.user.findMany({ orderBy: { createdAt: "asc" } });
+});
 
 const search = protectedProcedure.input(z.object({ keyword: z.string() })).query(async ({ ctx, input }) => {
   return ctx.prisma.user.findMany({
@@ -28,6 +32,7 @@ const checkAvailable = publicProcedure.input(z.object({ keyword: z.string() })).
 });
 
 export const userRouter = createTRPCRouter({
+  getAll,
   search,
   update,
   checkAvailable,

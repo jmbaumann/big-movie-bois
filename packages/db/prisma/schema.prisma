@@ -356,6 +356,7 @@ model User {
     image         String?
     username      String?   @unique
     isAdmin       Boolean   @default(false)
+    createdAt     DateTime  @default(now())
 
     accounts          Account[]
     sessions          Session[]

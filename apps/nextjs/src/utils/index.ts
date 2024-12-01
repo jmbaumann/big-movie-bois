@@ -41,3 +41,10 @@ export function formatDate(date: string | Date, f: string) {
   if (typeof date === "string" && date.match(/^(\d{4}-\d{2}-\d{2})/)) return format(new Date(date + "T00:00:00"), f);
   else return format(date, f);
 }
+
+export function randomNumber(n: number): number {
+  const min = Math.pow(10, n - 1);
+  const max = Math.pow(10, n) - 1;
+
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}

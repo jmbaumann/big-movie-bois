@@ -337,6 +337,20 @@ model Account {
     @@index([userId])
 }
 
+model ContactMessage {
+    id        String   @id @default(cuid())
+    userId    String
+    email     String
+    body      String   @db.VarChar(2000)
+    read      Boolean  @default(false)
+    archived  Boolean  @default(false)
+    createdAt DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([userId])
+}
+
 model Session {
     id           String   @id @default(cuid())
     sessionToken String   @unique
@@ -371,6 +385,7 @@ model User {
     studiosDeleted    LeagueSessionStudio[] @relation("StudioDeleter")
     pollResponses     PollResponse[]
     overlapResults    OverlapResult[]
+    contactMessages   ContactMessage[]
 }
 
 model VerificationToken {

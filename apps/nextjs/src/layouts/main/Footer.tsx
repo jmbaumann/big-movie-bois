@@ -8,7 +8,7 @@ export default function Footer() {
           <Link href={"/"} className="mr-2 hover:text-white">
             About
           </Link>
-          <Link href={"/"} className="mx-2 hover:text-white">
+          <Link href={"/contact"} className="mx-2 hover:text-white">
             Contact
           </Link>
           <Link href={"/"} className="mx-2 hover:text-white">

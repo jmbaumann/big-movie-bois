@@ -1,3 +1,4 @@
+import { contactRouter } from "./router/contact";
 import { overlapRouter } from "./router/daily-games/overlap";
 import {
   ffAdminRouter,
@@ -23,6 +24,7 @@ export const appRouter = createTRPCRouter({
   tmdb: tmdbRouter,
   poll: pollRouter,
   user: userRouter,
+  contact: contactRouter,
 });
 
 // export type definition of API

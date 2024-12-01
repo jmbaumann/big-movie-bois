@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { CalendarDays, Home, Shield, User } from "lucide-react";
+import { CalendarDays, Home, Mail, Shield, User } from "lucide-react";
 
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
+import InboxAdmin from "./contact/InboxAdmin";
 import FilmDataAdmin from "./fantasy-film/FilmData";
 import MasterListAdmin from "./fantasy-film/MasterList";
 import OpeningWeekendAdmin from "./fantasy-film/OpeningWeekend";
@@ -20,6 +21,7 @@ export default function AdminDashboard() {
     { icon: <User />, value: "users" },
     { icon: <Shield />, value: "fantasy" },
     { icon: <CalendarDays />, value: "dailys" },
+    { icon: <Mail />, value: "messages" },
   ];
 
   const subMenu = {
@@ -39,6 +41,10 @@ export default function AdminDashboard() {
       { label: "Public Sessions", value: "public-sessions", component: <PublicSessionsAdmin /> },
     ],
     dailys: [{ label: "Overlap", value: "overlap", component: <OverlapAdmin /> }],
+    messages: [
+      { label: "Inbox", value: "new-messages", component: <InboxAdmin /> },
+      // { label: "Archive", value: "archived-messages", component: <InboxAdmin /> },
+    ],
   };
 
   const [activeTab, setActiveTab] = useState((router.query.tab as string) || "home");
@@ -106,14 +112,6 @@ function Analytics() {
 
 function Alerts() {
   return <p>Alerts</p>;
-}
-
-function Polls() {
-  return <p>Polls</p>;
-}
-
-function Users() {
-  return <p>Users</p>;
 }
 
 function Supporters() {

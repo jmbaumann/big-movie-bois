@@ -17,7 +17,7 @@ export default function BiddingWarDialog({ className }: { className?: string }) 
       </DialogTrigger>
       <DialogContent className="max-w-2/3 max-h-[90%] w-2/3 overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>How To Play</DialogTitle>
+          <DialogTitle>Bidding War - How To Play</DialogTitle>
           <div className="text-white">
             <p className="my-2">
               <strong>Bidding War</strong> is a variation of Fantasy Film that is open to everyone!

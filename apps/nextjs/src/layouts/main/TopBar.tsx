@@ -12,10 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import HowToPlayDialog from "~/features/fantasy-film/HowToPlayDialog";
 
 export default function TopBar() {
   const { data: sessionData } = useSession();
   const router = useRouter();
+
+  const onFF = router.pathname.split("/")[1] === "fantasy-film";
 
   const links = [
     { href: "/fantasy-film", label: "Fantasy Film" },
@@ -47,7 +50,9 @@ export default function TopBar() {
           ))}
         </nav>
 
-        <nav className="ml-auto flex">
+        <nav className="mx-2 ml-auto flex items-center">
+          {onFF && <HowToPlayDialog className="flex" />}
+
           {!sessionData?.user ? (
             <Button onClick={() => signIn()}>Sign In</Button>
           ) : (

@@ -11,12 +11,12 @@ type Studios = RouterOutputs["ffStudio"]["getStudios"];
 type Studio = Studios[number] | RouterOutputs["ffStudio"]["getMyStudio"];
 type StudioFilmTMDB = Studios[number]["films"][number] | (StudioFilm & { tmdb: TMDBDetails });
 
-export function isSessionStarted(session: Session) {
+export function isSessionStarted(session: Session | undefined) {
   if (!session) return false;
   return differenceInCalendarDays(new Date(), session.startDate) > 0;
 }
 
-export function isSessionEnded(session: Session) {
+export function isSessionEnded(session: Session | undefined) {
   if (!session) return false;
   return differenceInCalendarDays(new Date(), session.endDate) > 0;
 }

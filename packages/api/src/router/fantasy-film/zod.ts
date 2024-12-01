@@ -50,9 +50,9 @@ export type LeagueSessionSettings = z.infer<typeof leagueSessionSettingsObj>;
 
 export const createLeagueSessionInputObj = z.object({
   leagueId: z.string(),
-  name: z.string().min(2).max(50),
-  startDate: z.date(),
-  endDate: z.date(),
+  name: z.string({ required_error: "Session name is required" }).min(2, { message: "< 2" }).max(50),
+  startDate: z.date({ required_error: "Start date is required" }),
+  endDate: z.date({ required_error: "End date is required" }),
   settings: leagueSessionSettingsObj,
   memberIds: z.array(z.string()).optional(),
 });

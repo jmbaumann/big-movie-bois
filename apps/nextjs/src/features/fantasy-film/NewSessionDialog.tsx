@@ -102,20 +102,19 @@ export default function NewSessionDialog({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const leagueId = (router.query.leagueId as string | undefined) ?? "";
-    createSession(
-      { ...values, leagueId, memberIds: sessionMembers.array },
-      {
-        onSuccess: (data) => {
-          toast({
-            title: "Session Created",
-          });
-          void router.push(`/fantasy-film/${leagueId}/${data.id}`);
-        },
-        onError: (error) => {
-          toast({ title: error.message, variant: "destructive" });
-        },
+    const data = { ...values, leagueId, memberIds: sessionMembers.array };
+    data.settings.draft.order = values.settings.draft.order?.filter((e) => e) ?? undefined;
+    createSession(data, {
+      onSuccess: (r) => {
+        toast({
+          title: "Session Created",
+        });
+        void router.push(`/fantasy-film/${leagueId}/${r.id}`);
       },
-    );
+      onError: () => {
+        toast({ title: "Unable to create session, check that all fields are filled in", variant: "destructive" });
+      },
+    });
   }
 
   const onInvalid = (errors: any) => console.log({ errors });

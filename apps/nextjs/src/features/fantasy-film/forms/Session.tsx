@@ -20,7 +20,7 @@ import SlotDescriptionDialog from "~/components/SlotDescriptionDialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
 import { Button } from "~/components/ui/button";
 import { Calendar } from "~/components/ui/calendar";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "~/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form";
 import { useToast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -111,12 +111,14 @@ export default function SessionForm({
           </AccordionItem>
           {league && (
             <>
-              <AccordionItem value="members">
-                <AccordionTrigger>Members</AccordionTrigger>
-                <AccordionContent className="mt-2 space-y-8 px-4">
-                  <MembersSection league={league} sessionMembers={sessionMembers} />
-                </AccordionContent>
-              </AccordionItem>
+              {!session && (
+                <AccordionItem value="members">
+                  <AccordionTrigger>Members</AccordionTrigger>
+                  <AccordionContent className="mt-2 space-y-8 px-4">
+                    <MembersSection league={league} sessionMembers={sessionMembers} />
+                  </AccordionContent>
+                </AccordionItem>
+              )}
               <AccordionItem value="draft">
                 <AccordionTrigger>Draft</AccordionTrigger>
                 <AccordionContent className="mt-2 space-y-8 px-4">
@@ -136,7 +138,7 @@ export default function SessionForm({
   );
 }
 
-export function DetailsSection({ session }: { session: Session }) {
+export function DetailsSection({ session }: { session?: Session }) {
   const { data: sessionData } = useSession();
   const form = useFormContext();
   const { fields, append, remove } = useFieldArray({
@@ -144,7 +146,6 @@ export function DetailsSection({ session }: { session: Session }) {
     control: form.control,
   });
 
-  const sessionStarted = session && new Date().getTime() > session.startDate.getTime();
   const numExistingSlots = session?.settings.teamStructure.length ?? 0;
 
   return (
@@ -159,6 +160,7 @@ export function DetailsSection({ session }: { session: Session }) {
               <FormControl>
                 <Input {...field} className="text-black" autoComplete="off" />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -209,6 +211,7 @@ export function DetailsSection({ session }: { session: Session }) {
                   />
                 </PopoverContent>
               </Popover>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -351,7 +354,7 @@ export function MembersSection({ league, sessionMembers }: { league: League; ses
               Remove
             </Button>
           ) : (
-            <Button className="ml-auto" variant="destructive" onClick={() => handleAdd(member.userId)}>
+            <Button className="ml-auto" onClick={() => handleAdd(member.userId)}>
               Add
             </Button>
           )}
@@ -368,7 +371,7 @@ export function DraftSection({
   showDraftFields,
 }: {
   league: League;
-  session: Session;
+  session?: Session;
   sessionMembers: UseArray<string>;
   showDraftFields: boolean;
 }) {

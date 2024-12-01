@@ -36,7 +36,7 @@ const getSiteWideSessions = publicProcedure.query(async ({ ctx }) => {
         {
           startDate: {
             gte: new Date(),
-            lte: add(new Date(), { days: 30 }),
+            lte: add(new Date(), { months: 1 }),
           },
         },
         {
@@ -47,6 +47,7 @@ const getSiteWideSessions = publicProcedure.query(async ({ ctx }) => {
         },
       ],
     },
+    orderBy: { endDate: "asc" },
   });
 
   return list.map((e) => ({

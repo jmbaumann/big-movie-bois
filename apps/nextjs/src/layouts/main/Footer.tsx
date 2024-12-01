@@ -33,7 +33,7 @@ export default function Footer() {
           <span className="mx-2">|</span>
           Film data from{" "}
           <a href="https://www.themoviedb.org/" target="_blank" className="underline" rel="noreferrer">
-            TMDb
+            TMDB
           </a>
         </p>
       </div>

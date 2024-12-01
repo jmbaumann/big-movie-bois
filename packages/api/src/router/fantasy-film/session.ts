@@ -46,7 +46,6 @@ const update = protectedProcedure.input(updateLeagueSessionInputObj).mutation(as
     settings: JSON.stringify(input.settings),
   };
 
-  console.log(data.settings);
   const session = await ctx.prisma.leagueSession.update({
     data,
     where: { id: input.id },

@@ -32,6 +32,7 @@ export default function BiddingWarDialog({ className }: { className?: string }) 
               Like in Fantasy Film, your Films will lock into their slot 7 days before their release date & will no
               longer be able to be dropped or swapped into a different slot.
             </p>
+            <p className="my-2">Film prices are based on their popularity according to TMDB.</p>
             <p className="my-2">
               Films you've purchased can be dropped & you will recoup 80% of the amount of money you purchased the Film
               for.

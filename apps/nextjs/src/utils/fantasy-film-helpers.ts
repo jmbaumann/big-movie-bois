@@ -69,6 +69,10 @@ export function getUnlockedSlots(session: Session, studio: Studio) {
   return slots;
 }
 
+export function getFilmCost(maxPopularity: number, filmPopularity: number) {
+  return Math.min(Math.round((filmPopularity / maxPopularity) * 40), 40);
+}
+
 export function getStudioOwnerByPick(draftOrder: string[], pick: number) {
   const round = Math.ceil(pick / draftOrder.length);
   const studioIndex = round * draftOrder.length - pick;

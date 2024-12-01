@@ -11,7 +11,7 @@ import { DraftState } from "@repo/api/src/router/fantasy-film/draft";
 import { LeagueSessionStudio, TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
-import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
+import { getFilmCost, getUnlockedSlots } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
 import AdminMenu from "~/components/AdminMenu";
 import SortChips from "~/components/SortChips";
@@ -152,11 +152,17 @@ export default function AvailableFilms({
   const bidPlaced = selectedFilm ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
   const insufficientFunds = selectedFilm && myStudio ? (selectedFilm.price ?? 0) > myStudio?.budget : false;
 
+  const myFilmsPopularity = myStudio?.films.map((e) => e.tmdb!.popularity);
+  const maxPopularity =
+    sessionFilms && myFilmsPopularity
+      ? Math.min(Math.max(...sessionFilms.data.map((e) => e.popularity), ...myFilmsPopularity), 100)
+      : 0;
+
   useEffect(() => {
     if (sessionFilms?.data) {
       const films = sessionFilms.data.map((e) => ({
         ...e,
-        price: Math.min(Math.round((e.popularity / 100) * 40), 40),
+        price: getFilmCost(maxPopularity, e.popularity),
       }));
       const ids = new Set(acquiredFilms);
       setFilms((s) => unique([...s, ...films]).filter((e) => !ids.has(e.id)));
@@ -292,7 +298,7 @@ export default function AvailableFilms({
         <Dialog open={open} onOpenChange={setOpen}>
           <div className={cn("grid", gridCols ? `grid-cols-${gridCols}` : "grid-cols-5")}>
             {availableFilms.map((film, i) => {
-              const price = Math.min(Math.round((film.popularity / 100) * 40), 40);
+              const price = getFilmCost(maxPopularity, film.popularity);
 
               return (
                 <DialogTrigger

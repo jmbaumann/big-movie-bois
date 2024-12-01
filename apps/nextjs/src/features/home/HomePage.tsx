@@ -198,7 +198,7 @@ export default function HomePage() {
             <Link className="hover:text-primary" href={"https://instagram.com/bigmoviebois"} target="_blank">
               <Instagram size={28} />
             </Link>
-            <Link className="hover:text-primary" href={"https://tiktok.com/bigmoviebois"} target="_blank">
+            <Link className="hover:text-primary" href={"https://tiktok.com/@bigmoviebois"} target="_blank">
               <FaTiktok size={24} />
             </Link>
             <Link className="hover:text-primary" href={"https://letterboxd.com/jbaumann"} target="_blank">

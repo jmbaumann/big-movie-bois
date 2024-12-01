@@ -17,9 +17,9 @@ export default function Footer() {
           {/* <Link href={"/"} className="mx-2 hover:text-white">
             Change Log
           </Link> */}
-          <Link href={"/terms-of-service"} className="mx-2 hover:text-white">
+          {/* <Link href={"/terms-of-service"} className="mx-2 hover:text-white">
             Terms of Service
-          </Link>
+          </Link> */}
           <Link href={"/privacy-policy"} className="mx-2 hover:text-white">
             Privacy Policy
           </Link>

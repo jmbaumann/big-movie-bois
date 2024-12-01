@@ -4,12 +4,12 @@ import { CalendarDays, Home, Shield, User } from "lucide-react";
 
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
-import FilmDataAdmin from "./FilmData";
-import MasterListAdmin from "./MasterList";
-import OpeningWeekendAdmin from "./OpeningWeekend";
+import FilmDataAdmin from "./fantasy-film/FilmData";
+import MasterListAdmin from "./fantasy-film/MasterList";
+import OpeningWeekendAdmin from "./fantasy-film/OpeningWeekend";
+import PublicSessionsAdmin from "./fantasy-film/PublicSessions";
 import OverlapAdmin from "./OverlapAdmin";
 import PollsAdmin from "./PollsAdmin";
-import PublicSessionsAdmin from "./PublicSessions";
 
 export default function AdminDashboard() {
   const router = useRouter();

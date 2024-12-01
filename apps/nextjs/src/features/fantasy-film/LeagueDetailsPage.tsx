@@ -103,6 +103,7 @@ export default function LeagueDetailsPage() {
               )} */}
             </TabsList>
             <TabsContent value="sessions">
+              {!league.sessions.length && <p>Your sessions will appear here</p>}
               {league?.sessions.map((session, i) => <SessionCard key={i} session={session} />)}
             </TabsContent>
             <TabsContent value="members">
@@ -265,7 +266,7 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
                 <TableCell>{member.user.username}</TableCell>
                 <TableCell>Joined</TableCell>
                 <TableCell className="float-right">
-                  {isLeagueOwner && (
+                  {isLeagueOwner && member.userId !== league?.ownerId && (
                     <Button
                       type="button"
                       variant="outline"
@@ -288,7 +289,7 @@ function Members({ league, refreshLeague }: { league: League; refreshLeague: Fun
                   <TableCell></TableCell>
                   <TableCell>{invite.user.username}</TableCell>
                   <TableCell>Invited</TableCell>
-                  <TableCell>
+                  <TableCell className="float-right">
                     {isLeagueOwner && (
                       <Button
                         type="button"

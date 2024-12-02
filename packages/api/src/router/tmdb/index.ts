@@ -9,7 +9,7 @@ import { getFilmsForSessionObj } from "./zod";
 const POPULARITY_THRESHOLD = 10;
 
 const search = publicProcedure.input(z.object({ keyword: z.string() })).query(async ({ ctx, input }) => {
-  const url = `https://api.themoviedb.org/3/search/movie?query=${input.keyword}&include_adult=false&language=en-US&page=1`;
+  const url = `https://api.themoviedb.org/3/search/movie?query=${input.keyword}&include_adult=false&language=en-US&with_release_type=3&sort_by=popularity.desc&page=1`;
   const options = {
     method: "GET",
     headers: {
@@ -21,8 +21,23 @@ const search = publicProcedure.input(z.object({ keyword: z.string() })).query(as
   try {
     const res = await fetch(url, options);
     const data: TMDBSearchResponse = await res.json();
-    // TODO: handle duplicate titles
-    return data.results.filter((e) => e.popularity >= POPULARITY_THRESHOLD).map((e) => ({ id: e.id, title: e.title }));
+
+    let list = data.results
+      .filter((e) => e.popularity >= POPULARITY_THRESHOLD)
+      .sort((a, b) => b.popularity - a.popularity)
+      .map((e) => ({ id: e.id, title: e.title, year: e.release_date ? format(e.release_date, "yyyy") : "" }));
+
+    const titleCount: Record<string, number> = {};
+    list.forEach((movie) => {
+      titleCount[movie.title] = (titleCount[movie.title] || 0) + 1;
+    });
+
+    const movies = list.map((movie) => {
+      if ((titleCount[movie.title] ?? 0) > 1) return { ...movie, title: `${movie.title} (${movie.year})` };
+      return movie;
+    });
+
+    return movies;
   } catch (error) {
     console.error(error);
   }

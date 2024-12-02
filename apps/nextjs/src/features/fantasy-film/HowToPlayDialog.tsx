@@ -15,7 +15,7 @@ export default function HowToPlayDialog({ className }: { className?: string }) {
       <DialogTrigger className={className}>
         <Info className="mr-1" /> How To Play
       </DialogTrigger>
-      <DialogContent className="max-w-2/3 max-h-[90%] w-2/3 overflow-y-auto">
+      <DialogContent className="lg:max-w-2/3 max-h-[90%] w-2/3 max-w-full overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Fantasy Film - How To Play</DialogTitle>
           <div className="flex flex-col gap-y-4 text-white">

@@ -45,8 +45,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex space-x-2">
-      <div className="flex w-2/3 flex-col">
+    <div className="flex flex-col lg:flex-row lg:space-x-2">
+      <div className="hidden w-2/3 flex-col lg:flex">
         <div className="flex items-center justify-between">
           <Link className="hover:text-primary text-2xl uppercase" href={"/fantasy-film"}>
             Fantasy Film
@@ -183,7 +183,7 @@ export default function HomePage() {
         })}
       </div>
 
-      <div className="flex w-1/3 flex-col space-y-2">
+      <div className="flex w-full flex-col space-y-2 lg:w-1/3">
         <div className="flex">
           <div className="flex grow items-center justify-end gap-x-4">
             <Link className="hover:text-primary" href={"https://youtube.com/@bigmoviebois"} target="_blank">

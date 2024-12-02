@@ -48,7 +48,14 @@ export default function FantasyFilmHomePage() {
 
   return (
     <Layout title="Fantasy Film" showFooter>
-      <div className="flex w-full gap-x-4">
+      <div className="flex lg:hidden">
+        <p>
+          Fantasy Film is not yet optimized for smaller screens. Until then, try using a laptop or desktop when for
+          Fantasy
+        </p>
+      </div>
+
+      <div className="hidden w-full gap-x-4 lg:flex">
         <div className="w-2/3">
           <div className="mb-4 flex items-center">
             <h1 className="text-2xl">My Leagues</h1>

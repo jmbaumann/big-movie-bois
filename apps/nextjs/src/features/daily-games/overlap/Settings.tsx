@@ -42,7 +42,7 @@ export default function Settings({
             <p className="text-xs">
               Film data from{" "}
               <a href="https://www.themoviedb.org/" target="_blank" className="underline" rel="noreferrer">
-                TMDb
+                TMDB
               </a>
             </p>
           </div>

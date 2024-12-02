@@ -71,6 +71,7 @@ export default function FilmDataAdmin() {
             <TableHead>Title</TableHead>
             <TableHead>Release Date</TableHead>
             <TableHead>Popularity</TableHead>
+            <TableHead>Updated</TableHead>
             <TableHead className="w-[40px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -81,6 +82,7 @@ export default function FilmDataAdmin() {
               <TableCell>{film.title}</TableCell>
               <TableCell>{formatDate(film.releaseDate, "LLL dd, yyyy")}</TableCell>
               <TableCell>{film.popularity}</TableCell>
+              <TableCell>{film.updatedAt ? formatDate(film.updatedAt, "LLL dd, yyyy") : ""}</TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger>

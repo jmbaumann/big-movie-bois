@@ -1,4 +1,5 @@
 import { contactRouter } from "./router/contact";
+import { cronRouter } from "./router/cron";
 import { overlapRouter } from "./router/daily-games/overlap";
 import {
   ffAdminRouter,
@@ -14,6 +15,7 @@ import { userRouter } from "./router/user";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
+  cron: cronRouter,
   ffAdmin: ffAdminRouter,
   ffLeague: ffLeagueRouter,
   ffLeagueSession: ffLeagueSessionRouter,

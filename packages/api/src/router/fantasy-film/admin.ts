@@ -1,8 +1,7 @@
-import { format } from "date-fns";
 import { z } from "zod";
 
 import { SESSION_ACTIVITY_TYPES } from "../../enums";
-import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
+import { createTRPCRouter, protectedProcedure } from "../../trpc";
 import { logSessionActivity, processSessionBids } from "./session";
 
 const addStudioFilm = protectedProcedure
@@ -45,7 +44,7 @@ const processBids = protectedProcedure
     return processSessionBids(ctx, input.sessionId, new Date());
   });
 
-const processAllBids = publicProcedure
+const processAllBids = protectedProcedure
   .meta({ openapi: { method: "POST", path: "/process-bids" } })
   .mutation(async ({ ctx }) => {
     const activeSessions = await ctx.prisma.leagueSession.findMany({

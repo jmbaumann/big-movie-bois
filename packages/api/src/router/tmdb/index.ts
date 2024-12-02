@@ -189,7 +189,7 @@ export async function getFilmsBySessionId(ctx: TRPCContext, input: z.infer<typeo
   };
 }
 
-async function updateMasterFantasyFilmList(ctx: TRPCContext) {
+export async function updateMasterFantasyFilmList(ctx: TRPCContext) {
   // get top 100 films from tmdb (from today -> +400 days)
   const from = format(new Date(), "yyyy-MM-dd");
   const to = format(add(new Date(), { days: 400 }), "yyyy-MM-dd");

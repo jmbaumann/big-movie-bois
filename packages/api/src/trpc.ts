@@ -145,6 +145,7 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
  */
 export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
 
+// ADMIN PROCEDURE
 const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
   if (!ctx.session?.user.isAdmin) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -158,3 +159,14 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
 });
 
 export const adminProcedure = t.procedure.use(enforceUserIsAdmin);
+
+// CRON JOB PROCEDURE
+const enforceCronToken = t.middleware(({ ctx, next }) => {
+  console.log("headers", ctx.req.headers.authorization);
+  // if (ctx.req.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  //   throw new TRPCError({ code: "UNAUTHORIZED" });
+  // }
+  return next();
+});
+
+export const cronProcedure = t.procedure.use(enforceCronToken);

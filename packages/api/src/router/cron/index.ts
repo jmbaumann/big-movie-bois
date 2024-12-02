@@ -1,0 +1,48 @@
+import { format } from "date-fns";
+import { z } from "zod";
+
+import { SESSION_ACTIVITY_TYPES } from "../../enums";
+import { createTRPCRouter, cronProcedure } from "../../trpc";
+import { logSessionActivity, processSessionBids } from "../fantasy-film/session";
+import { updateMasterFantasyFilmList } from "../tmdb";
+
+const updateFilmList = cronProcedure
+  .meta({ openapi: { method: "POST", path: "/update-films" } })
+  .mutation(async ({ ctx }) => {
+    await updateMasterFantasyFilmList(ctx);
+  });
+
+const processAllBids = cronProcedure
+  .meta({ openapi: { method: "POST", path: "/process-bids" } })
+  .mutation(async ({ ctx }) => {
+    const activeSessions = await ctx.prisma.leagueSession.findMany({
+      where: {
+        leagueId: { not: "cm18qkt8o00056e9iscpz7ym8" },
+        AND: [{ startDate: { lte: new Date() } }, { endDate: { gte: new Date() } }],
+      },
+    });
+
+    const promises = [];
+    for (const session of activeSessions) {
+      promises.push(
+        (() => {
+          logSessionActivity(ctx, {
+            sessionId: session.id,
+            type: SESSION_ACTIVITY_TYPES.AUTOMATED,
+            message: "Active bids processed",
+          });
+
+          processSessionBids(ctx, session.id, new Date());
+        })(),
+      );
+    }
+
+    await Promise.allSettled(promises);
+  });
+
+export const cronRouter = createTRPCRouter({
+  processAllBids,
+  updateFilmList,
+});
+
+////////////////

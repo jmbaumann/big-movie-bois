@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { Pencil, Trash, X } from "lucide-react";
+import { Pencil, Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "@repo/api/src/enums";
-import { LeagueSessionSettings, updateLeagueSessionInputObj } from "@repo/api/src/router/fantasy-film/zod";
-import { LeagueSession } from "@repo/db";
+import { updateLeagueSessionInputObj } from "@repo/api/src/router/fantasy-film/zod";
 
 import { api, RouterOutputs } from "~/utils/api";
-import { useArray } from "~/utils/hooks/use-array";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
 import { Button } from "~/components/ui/button";
 import { Form } from "~/components/ui/form";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";

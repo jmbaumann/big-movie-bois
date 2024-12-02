@@ -30,7 +30,7 @@ export default function TopBar() {
                 if (!sessionData?.user) signIn();
               }}
             >
-              {sessionData ? sessionData.user?.name : "Sign in"}
+              {sessionData ? sessionData.user?.username : "Sign in"}
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => signOut()}>Sign Out</DropdownMenuItem>

@@ -267,13 +267,20 @@ export default function AvailableFilms({
   function handleDraft() {
     if (session && selectedFilm && myStudio && selectedSlot) {
       const studioId = isAdmin && drafting && drafting?.id !== myStudio.id ? drafting.id : myStudio.id;
-      makePick({
-        sessionId: session.id,
-        tmdbId: selectedFilm.id,
-        title: selectedFilm.title,
-        studioId,
-        slot: Number(selectedSlot),
-      });
+      makePick(
+        {
+          sessionId: session.id,
+          tmdbId: selectedFilm.id,
+          title: selectedFilm.title,
+          studioId,
+          slot: Number(selectedSlot),
+        },
+        {
+          onError: () => {
+            toast({ title: "An error ocurred, please try again" });
+          },
+        },
+      );
       setOpen(false);
     }
   }

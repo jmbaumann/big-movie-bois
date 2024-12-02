@@ -10,8 +10,6 @@ import { DraftState } from "@repo/api/src/router/fantasy-film/draft";
 import { LeagueSessionSettings } from "@repo/api/src/zod";
 import { LeagueSessionStudio, StudioFilm } from "@repo/db";
 
-// import io from "socket.io-client";
-
 import { api } from "~/utils/api";
 import { getStudioOwnerByPick, getUpcomingPicks } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
@@ -104,7 +102,7 @@ export default function Draft() {
   };
 
   const handleDraftUpdate = (state: DraftState) => {
-    // console.log("UPDATE", state);
+    console.log("UPDATE", state);
     setStarted(true);
     setDraftDisabled(false);
     setCurrentPick(state.currentPick);

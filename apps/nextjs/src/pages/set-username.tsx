@@ -53,9 +53,11 @@ export default function SetUsername() {
               { ...values, id: sessionData?.user.id! },
               {
                 onSuccess: () => {
-                  toast({ title: "Username updated" });
+                  toast({ title: "Username updated, redirecting..." });
                   update({ username: values.username });
-                  router.push("/");
+                  setTimeout(() => {
+                    router.push("/");
+                  }, 1000);
                 },
                 onError: (error) => {
                   toast({ title: error.message, variant: "destructive" });

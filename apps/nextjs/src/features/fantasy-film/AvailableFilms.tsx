@@ -240,7 +240,7 @@ export default function AvailableFilms({
             trpc.ffLeagueSession.getBids.invalidate({ sessionId: session!.id });
           },
           onError: (e) => {
-            toast({ title: e.message, variant: "destructive" });
+            // toast({ title: e.message, variant: "destructive" });
           },
         },
       );

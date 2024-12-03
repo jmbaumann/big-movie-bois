@@ -200,7 +200,7 @@ export default function AvailableFilms({
       });
 
       socket.on("connect", () => {
-        console.log("Connected to the WebSocket server");
+        // console.log("Connected to the WebSocket server");
       });
 
       socket.on(`draft:${session!.id}:draft-update`, (data: DraftState) => {

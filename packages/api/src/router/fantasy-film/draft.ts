@@ -48,7 +48,7 @@ const start = protectedProcedure
     const session = await getSessionById(ctx, input.sessionId);
     if (!session) throw "No session found";
 
-    const studio = session.studios.find((e) => e.ownerId === session.settings.draft.order[0]);
+    const studio = session.studios.find((e) => e.ownerId === session.settings.draft.order![0]);
     if (!studio) throw "No draft order";
 
     const ts = new Date().getTime();
@@ -58,7 +58,7 @@ const start = protectedProcedure
         studioId: studio.id,
         num: 1,
         startTimestamp: ts,
-        endTimestamp: ts + session.settings.draft.timePerRound * 1000,
+        endTimestamp: ts + session.settings.draft.timePerRound! * 1000,
       },
       lastPick: undefined,
       newActivities: ["The draft has started!"],
@@ -114,7 +114,7 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
   });
   const slot = session!.settings.teamStructure.find((e) => e.pos === film.slot);
   const nextStudio = session?.studios.find(
-    (e) => e.ownerId === getStudioOwnerByPick(session!.settings.draft.order, sessionFilms.length + 1),
+    (e) => e.ownerId === getStudioOwnerByPick(session!.settings.draft.order!, sessionFilms.length + 1),
   );
   const complete = sessionFilms.length === (session?.settings.draft.numRounds ?? 0) * (session?.studios.length ?? 0);
 
@@ -124,7 +124,7 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
       studioId: nextStudio!.id,
       num: sessionFilms.length + 1,
       startTimestamp: ts,
-      endTimestamp: ts + session!.settings.draft.timePerRound * 1000,
+      endTimestamp: ts + session!.settings.draft.timePerRound! * 1000,
     },
     newActivities: [`${studio?.name} drafted ${input.title}${slot ? " in their " + slot.type + " slot" : ""}`],
     lastPick: film,
@@ -149,7 +149,7 @@ export async function autoDraft(ctx: TRPCContext, sessionId: string, studioId: s
 
   const session = await getSessionById(ctx, sessionId);
   if (!session) throw "No session";
-  if (picks.length === session?.settings.draft.numRounds * session?.studios.length) return;
+  if (picks.length === session?.settings.draft.numRounds! * session?.studios.length) return;
 
   const films = await getFilmsBySessionId(ctx, {
     sessionId,

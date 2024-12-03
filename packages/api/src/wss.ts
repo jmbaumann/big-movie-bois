@@ -21,10 +21,11 @@ export async function draftEvent<T>(eventName: string, eventData: T) {
   const url = env.WEBSOCKET_SERVER;
 
   try {
-    axios.post(`${url}/draft`, {
+    const r = await axios.post(`${url}/draft`, {
       eventName,
       eventData,
     });
+    console.log(r);
   } catch (e) {
     console.log(e);
   }

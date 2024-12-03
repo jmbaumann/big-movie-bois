@@ -6,6 +6,8 @@ import { getSession, signIn, signOut, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { getServerSession } from "@repo/auth";
+
 import { api } from "~/utils/api";
 import { Button } from "~/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form";
@@ -127,7 +129,7 @@ export default function SetUsername() {
 }
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  const session = await getSession(ctx);
+  const session = await getServerSession(ctx);
 
   if (!session || !!session?.user?.username) {
     return {

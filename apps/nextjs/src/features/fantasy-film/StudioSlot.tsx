@@ -53,6 +53,7 @@ export default function StudioSlot({
   bidWar?: boolean;
   refreshStudio?: () => void;
 }) {
+  const trpc = api.useContext();
   const { data: sessionData } = useSession();
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
@@ -85,7 +86,10 @@ export default function StudioSlot({
         {
           onSuccess: () => {
             toast({ title: "Film slots swapped" });
-            if (refreshStudio) refreshStudio();
+            if (refreshStudio) {
+              refreshStudio();
+              trpc.ffStudio.getMyStudio.invalidate({ sessionId: session!.id });
+            }
             setOpen(false);
           },
         },

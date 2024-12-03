@@ -73,7 +73,7 @@ export default function OverlapPage() {
 
   const { data: answer } = api.overlap.getAnswer.useQuery(
     {
-      date: archive ?? undefined,
+      date: archive ?? format(new Date(), "yyyy-MM-dd"),
     },
     { staleTime: ONE_DAY_IN_SECONDS },
   );

@@ -1,7 +1,7 @@
 import { format, sub } from "date-fns";
 import { z } from "zod";
 
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../../../trpc";
+import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "../../../trpc";
 import { getByTMDBId } from "../../tmdb";
 
 const getAnswer = publicProcedure.input(z.object({ date: z.string().optional() })).query(async ({ ctx, input }) => {
@@ -84,14 +84,17 @@ const deleteAnswer = protectedProcedure
     return ctx.prisma.overlapAnswer.delete({ where: { id: input.id } });
   });
 
-const getAnswers = publicProcedure
-  .input(z.object({ archive: z.boolean().optional() }))
+const getAnswers = adminProcedure
+  .input(z.object({ date: z.string(), archive: z.boolean().optional() }))
   .query(async ({ ctx, input }) => {
-    const yesterday = format(sub(new Date(), { days: 1 }), "yyyy-MM-dd");
+    console.log(input.date);
+    console.log(format(sub(input.date, { days: 1 }), "yyyy-MM-dd"));
+    const yesterday = format(sub(input.date, { days: 1 }), "yyyy-MM-dd");
+    console.log(yesterday);
     return ctx.prisma.overlapAnswer.findMany({
       include: { tmdb: { include: { cast: true, crew: true } } },
-      where: { date: { gte: yesterday } },
-      orderBy: { date: "asc" },
+      where: { date: input.archive ? { lte: yesterday } : { gte: yesterday } },
+      orderBy: { date: input.archive ? "desc" : "asc" },
     });
   });
 

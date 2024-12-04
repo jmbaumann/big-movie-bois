@@ -271,7 +271,7 @@ export default function OverlapPage() {
                   <div className="mx-auto mt-2 flex w-full items-center gap-x-2 lg:w-1/2">
                     <Command className="">
                       <CommandInput
-                        className="appearance-none"
+                        className="appearance-none px-4 py-2 text-base"
                         placeholder="Guess a movie"
                         value={searchKeyword}
                         onChangeCapture={(e: ChangeEvent<HTMLInputElement>) => setSearchKeyword(e.target.value)}

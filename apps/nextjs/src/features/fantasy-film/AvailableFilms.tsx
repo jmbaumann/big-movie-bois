@@ -302,7 +302,7 @@ export default function AvailableFilms({
         </Button>
       </div>
 
-      <div className="max-h-[calc(100%-40px)] overflow-y-auto">
+      <div className="scrollbar-hidden max-h-[calc(100%-40px)] overflow-y-auto">
         <Dialog open={open} onOpenChange={setOpen}>
           <div className={cn("grid", gridCols ? `grid-cols-${gridCols}` : "grid-cols-5")}>
             {availableFilms.map((film, i) => {

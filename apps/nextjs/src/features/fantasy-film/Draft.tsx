@@ -358,7 +358,10 @@ function MyStudio({
         </Button>
       </div>
       <div
-        className={cn("grid max-h-[calc(100%-40px)] gap-y-2 overflow-y-auto", expand ? "grid-cols-2" : "grid-cols-1")}
+        className={cn(
+          "scrollbar-hidden grid max-h-[calc(100%-40px)] gap-y-2 overflow-y-auto",
+          expand ? "grid-cols-2" : "grid-cols-1",
+        )}
       >
         {teamStructure.map((slot, i) => {
           const film = films.find((e) => e.slot === slot.pos);
@@ -373,7 +376,7 @@ function Activity({ activities }: { activities: string[] }) {
   return (
     <>
       <div>Activity</div>
-      <div className="flex max-h-[calc(100%-30px)] flex-col-reverse gap-2 overflow-y-auto px-2">
+      <div className="scrollbar-hidden flex max-h-[calc(100%-30px)] flex-col-reverse gap-2 overflow-y-auto px-2">
         {activities.map((activity, i) => {
           return (
             <div className="p-2 odd:text-[#9ac] even:bg-[#9ac] even:text-white" key={i}>

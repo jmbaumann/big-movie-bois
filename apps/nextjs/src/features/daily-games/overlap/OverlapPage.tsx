@@ -12,7 +12,9 @@ import { api } from "~/utils/api";
 import useLocalStorage from "~/utils/hooks/use-local-storage";
 import { defaultOverlapGameState, findOverlap } from "~/utils/overlap-helpers";
 import { cn } from "~/utils/shadcn";
+import { Button } from "~/components/ui/button";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
+import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
@@ -50,6 +52,7 @@ export default function OverlapPage() {
   const archive = router.query.archive as string | undefined;
   const { data: sessionData } = useSession();
   const trpc = api.useContext();
+  const confirm = useConfirm();
 
   const [gameData, setGameData] = useLocalStorage<OverlapGameData>("bmb-overlap", {
     guesses: [],
@@ -63,6 +66,7 @@ export default function OverlapPage() {
     cast: 0,
     crew: 0,
   });
+  const [forfeit, setForfeit] = useState(false);
 
   const [guessId, setGuessId] = useState<number>(0);
   const [searchKeyword, setSearchKeyword] = useState<string>();
@@ -123,7 +127,7 @@ export default function OverlapPage() {
           setOverlaps({ details: 0, cast: 0, crew: 0 });
           if (!gameData.gameOver && sessionData?.user)
             saveScore(
-              { userId: sessionData.user.id, answerId: answer.id, numGuesses: gameData.guesses.length },
+              { userId: sessionData.user.id, answerId: answer.id, numGuesses: forfeit ? 0 : gameData.guesses.length },
               { onSettled: () => trpc.overlap.getStats.invalidate({ userId: sessionData?.user.id }) },
             );
           setGameData((s) => ({ ...s, gameOver: true, lastCompleted: new Date().getTime() }));
@@ -162,6 +166,14 @@ export default function OverlapPage() {
     setOpenArchive(false);
     setOpenSettings(false);
     setOpenStatistics(false);
+  }
+
+  async function handleForfeit() {
+    const ok = await confirm("Are you sure you want to give up on today's Overlap?");
+    if (ok && answer) {
+      setForfeit(true);
+      handleMovieSelect(answer.tmdbId);
+    }
   }
 
   if (!answer) return <Loading />;
@@ -256,22 +268,29 @@ export default function OverlapPage() {
               {!gameState.title?.revealed && (
                 <>
                   <p className="mr-2 lg:block">Average Guesses: {answer.averageGuesses}</p>
-                  <Command className="mx-auto mt-2 w-full lg:w-1/2">
-                    <CommandInput
-                      className="appearance-none"
-                      placeholder="Guess a movie"
-                      value={searchKeyword}
-                      onChangeCapture={(e: ChangeEvent<HTMLInputElement>) => setSearchKeyword(e.target.value)}
-                    />
-                    <CommandList>
-                      {!!searchKeyword && <CommandEmpty>No results found.</CommandEmpty>}
-                      {searchResult?.map((result, i) => (
-                        <CommandItem key={i} onSelect={() => handleMovieSelect(result.id)}>
-                          {result.title}
-                        </CommandItem>
-                      ))}
-                    </CommandList>
-                  </Command>
+                  <div className="mx-auto mt-2 flex w-full items-center gap-x-2 lg:w-1/2">
+                    <Command className="">
+                      <CommandInput
+                        className="appearance-none"
+                        placeholder="Guess a movie"
+                        value={searchKeyword}
+                        onChangeCapture={(e: ChangeEvent<HTMLInputElement>) => setSearchKeyword(e.target.value)}
+                      />
+                      <CommandList>
+                        {!!searchKeyword && <CommandEmpty>No results found.</CommandEmpty>}
+                        {searchResult?.map((result, i) => (
+                          <CommandItem key={i} onSelect={() => handleMovieSelect(result.id)}>
+                            {result.title}
+                          </CommandItem>
+                        ))}
+                      </CommandList>
+                    </Command>
+                    {gameData.guesses.length >= 5 && (
+                      <Button className="rounded-md py-4" onClick={() => handleForfeit()}>
+                        Give up
+                      </Button>
+                    )}
+                  </div>
                 </>
               )}
             </div>

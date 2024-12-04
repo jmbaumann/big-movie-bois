@@ -16,7 +16,7 @@ const getAnswer = publicProcedure.input(z.object({ date: z.string().optional() }
     _avg: {
       numGuesses: true,
     },
-    where: { answerId: data.id },
+    where: { answerId: data.id, numGuesses: { gte: 1 } },
   });
 
   return {

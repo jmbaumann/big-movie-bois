@@ -4,7 +4,6 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetState
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = localStorage.getItem(key);
-      console.log(key, item);
       return item ? (JSON.parse(item) as T) : initialValue;
     } catch (error) {
       console.error("Error reading localStorage key:", key, error);

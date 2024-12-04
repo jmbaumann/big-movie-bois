@@ -22,9 +22,7 @@ type ConfirmationContextType = {
   ) => Promise<boolean>;
 };
 
-export const ConfirmationContext = createContext<
-  ConfirmationContextType | undefined
->(undefined);
+export const ConfirmationContext = createContext<ConfirmationContextType | undefined>(undefined);
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -79,17 +77,11 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           <AlertDialogHeader>
             <AlertDialogTitle>{labels.text}</AlertDialogTitle>
             {/* {labels.description && ( */}
-            <AlertDialogDescription aria-describedby={undefined}>
-              {labels.description}
-            </AlertDialogDescription>
+            <AlertDialogDescription aria-describedby={undefined}>{labels.description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => handleCancel()}>
-              {labels.negativeText}
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleConfirm()}>
-              {labels.affirmitiveText}
-            </AlertDialogAction>
+            <AlertDialogCancel onClick={() => handleCancel()}>{labels.negativeText}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirm()}>{labels.affirmitiveText}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

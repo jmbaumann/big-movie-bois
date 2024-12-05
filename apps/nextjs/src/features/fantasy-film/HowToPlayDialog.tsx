@@ -1,5 +1,6 @@
 import { HelpCircle, Info } from "lucide-react";
 
+import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +11,12 @@ import {
 } from "~/components/ui/dialog";
 
 export default function HowToPlayDialog({ className }: { className?: string }) {
+  const breakpoint = useBreakpoint();
+
   return (
     <Dialog>
       <DialogTrigger className={className}>
-        <Info className="mr-1" /> How To Play
+        <Info className="mr-1" /> {!breakpoint.isMobile && "How To Play"}
       </DialogTrigger>
       <DialogContent className="lg:max-w-2/3 max-h-[90%] w-2/3 max-w-full overflow-y-auto">
         <DialogHeader>

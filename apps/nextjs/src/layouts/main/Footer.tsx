@@ -1,8 +1,18 @@
 import Link from "next/link";
 
-export default function Footer() {
+import useBreakpoint from "~/utils/hooks/use-breakpoint";
+import { cn } from "~/utils/shadcn";
+
+export default function Footer({ showMobile }: { showMobile?: boolean }) {
+  const breakpoint = useBreakpoint();
+
   return (
-    <footer className="mt-6 flex h-[120px] w-full justify-center bg-neutral-700 pb-4">
+    <footer
+      className={cn(
+        "mt-6 flex h-[120px] w-full justify-center bg-neutral-700 pb-4",
+        breakpoint.isMobile && !showMobile && "hidden lg:flex",
+      )}
+    >
       <div className="mt-6 flex w-[80%] flex-col">
         <nav className="flex font-bold">
           {/* <Link href={"/"} className="mr-2 hover:text-white">

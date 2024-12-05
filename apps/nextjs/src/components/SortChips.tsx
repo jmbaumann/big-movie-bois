@@ -54,7 +54,7 @@ function SortChip({
   return (
     <span
       className={cn(
-        "mr-4 flex select-none items-center rounded-3xl px-4 py-1 hover:cursor-pointer",
+        "mr-2 flex w-max select-none items-center rounded-3xl px-4 py-1 hover:cursor-pointer lg:mr-4",
         sort.value === value ? "bg-primary text-zinc-100" : "bg-zinc-100 text-neutral-800",
       )}
       onClick={() => sortItems(value, sort.value === value ? !sort.desc : true)}

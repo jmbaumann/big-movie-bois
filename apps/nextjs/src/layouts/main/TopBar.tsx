@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { Menu } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 
+import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import HowToPlayDialog from "~/features/fantasy-film/HowToPlayDialog";
+import Footer from "./Footer";
 
 const links = [
   { href: "/fantasy-film", label: "Fantasy Film" },
@@ -28,6 +30,7 @@ const links = [
 export default function TopBar() {
   const { data: sessionData } = useSession();
   const router = useRouter();
+  const breakpoint = useBreakpoint();
 
   const onFF = router.pathname.split("/")[1] === "fantasy-film";
 
@@ -92,26 +95,25 @@ function MobileMenu({ children, className }: { children: React.ReactNode; classN
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger className={className}>{children}</SheetTrigger>
-      <SheetContent className="w-2/3 lg:w-1/2" hideClose side="left">
+      <SheetContent className="m-0 w-2/3 p-0 pt-8 lg:w-1/2" hideClose side="left">
         <SheetHeader className="h-full">
-          <SheetTitle className="mb-4">Big Movie Bois</SheetTitle>
-          <SheetDescription className="flex h-full flex-col justify-between gap-y-4">
-            {links.map((link, i) => (
-              <Link
-                key={i}
-                href={link.href}
-                className={cn(
-                  "hover:text-primary mx-3 uppercase",
-                  router.pathname.startsWith(link.href) ? "border-primary border-b-2" : "",
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <SheetTitle className="mb-4">
+            <Link href={"/"}>Big Movie Bois</Link>
+          </SheetTitle>
+          <SheetDescription className="flex h-full flex-col justify-between">
+            <div className="flex flex-col gap-y-4">
+              {links.map((link, i) => (
+                <Link
+                  key={i}
+                  href={link.href}
+                  className={cn("mx-auto w-max uppercase", router.pathname.startsWith(link.href) ? "text-primary" : "")}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
 
-            <p className="mt-auto text-xs">
-              This site is still being optimized for smaller screens. For best results try using a laptop or desktop.
-            </p>
+            <Footer showMobile />
           </SheetDescription>
         </SheetHeader>
       </SheetContent>

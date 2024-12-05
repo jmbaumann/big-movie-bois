@@ -287,7 +287,7 @@ export default function AvailableFilms({
 
   return (
     <>
-      <div className="flex items-center">
+      <div className="scrollbar-hidden flex max-w-full items-center overflow-x-scroll">
         <SortChips
           items={availableFilms}
           setItems={setAvailableFilms}

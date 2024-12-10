@@ -34,7 +34,9 @@ import { StudioFilm, TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getFilmsReleased, isSlotLocked } from "~/utils/fantasy-film-helpers";
+import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import { cn } from "~/utils/shadcn";
+import SlotDescriptionDialog from "~/components/SlotDescriptionDialog";
 import { Button } from "~/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
 import {
@@ -134,7 +136,7 @@ export default function BiddingWarSessionDetailsPage() {
 
         <div className="flex">
           <Tabs className="w-full px-2 lg:px-4" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
+            <TabsList className="scrollbar-hidden flex flex-row justify-stretch overflow-x-scroll">
               <TabsTrigger value="home" onClick={() => handleTab("home")}>
                 Home
               </TabsTrigger>
@@ -197,7 +199,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
   }
 
   return (
-    <div className="flex w-full flex-col">
+    <div className="scrollbar-hidden flex w-full flex-col">
       <Table>
         <TableHeader>
           <TableRow>
@@ -244,22 +246,46 @@ function MyStudio({ session, studio, refetch }: { session: Session; studio: Stud
 
 function StudioDetails({ session, studio, refetch }: { session: Session; studio: Studio; refetch?: () => void }) {
   const { data: sessionData } = useSession();
+  const breakpoint = useBreakpoint();
 
   return (
     <div className="w-full">
-      <div className="mb-4 flex items-end text-2xl">
-        <p className="flex items-center justify-center gap-x-2">
-          <StudioIcon image={studio.image} />
-          {studio.name}
-          {studio.ownerId === sessionData?.user.id && refetch && <EditStudio studio={studio} refetch={refetch} />}
-        </p>
-        <p className="ml-4 text-lg">
-          ({studio.rank} of {session?.studios.length})
-        </p>
-        <p className="ml-4 text-lg">${studio.budget}</p>
-        <p className="ml-auto">{studio.score} pts</p>
-      </div>
-      <div className="grid grid-cols-5 gap-x-2 gap-y-4">
+      {breakpoint.isMobile ? (
+        <div className="mb-2 flex flex-col items-start justify-between text-2xl">
+          <div className="flex items-center justify-center gap-x-2">
+            <StudioIcon image={studio.image} />
+            {studio.name}
+            {studio.ownerId === sessionData?.user.id && refetch && <EditStudio studio={studio} refetch={refetch} />}
+          </div>
+          <div className="mt-1 flex w-full items-center justify-between px-1">
+            <div className="flex items-center">
+              <p className="mr-2 text-sm">
+                ({studio.rank} of {session?.studios.length})
+              </p>
+              <p className="float-right text-lg">${studio.budget}</p>
+            </div>
+            <div className="flex items-center">
+              <SlotDescriptionDialog className="mr-2 lg:mr-0" size={20} />
+              <p className="">{studio.score} pts</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-4 flex items-end text-2xl">
+          <p className="flex items-center justify-center gap-x-2">
+            <StudioIcon image={studio.image} />
+            {studio.name}
+            {studio.ownerId === sessionData?.user.id && refetch && <EditStudio studio={studio} refetch={refetch} />}
+          </p>
+          <p className="ml-4 text-lg">
+            ({studio.rank} of {session?.studios.length})
+          </p>
+          <p className="ml-4 text-lg">${studio.budget}</p>
+          <p className="ml-auto">{studio.score} pts</p>
+          <SlotDescriptionDialog className="mb-1 ml-2" size={20} />
+        </div>
+      )}
+      <div className="mx-auto grid grid-cols-2 gap-x-2 gap-y-4 pb-4 lg:grid-cols-5">
         {session?.settings.teamStructure.map((slot, i) => {
           const film = studio.films.find((e) => e.slot === slot.pos);
           const locked = isSlotLocked(film);
@@ -272,7 +298,6 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
               film={film}
               showScore={film ? locked : false}
               locked={locked}
-              bidWar
               refreshStudio={refetch}
             />
           );
@@ -345,9 +370,13 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
 }
 
 function Films({ session, myStudio }: { session: Session; myStudio: Studio | undefined }) {
+  const breakpoint = useBreakpoint();
+
   if (!myStudio) return <>no studio</>;
 
-  return <AvailableFilms session={session} studioId={myStudio.id} buyNow />;
+  return (
+    <AvailableFilms session={session} studioId={myStudio.id} buyNow gridCols={breakpoint.isMobile ? 2 : undefined} />
+  );
 }
 
 function Activity({ session }: { session: Session }) {

@@ -214,6 +214,8 @@ function Mobile({
 
         {tab === "public" && (
           <>
+            <BiddingWarDialog className="ml-auto text-white" />
+
             {biddingWarSessions?.map((session, i) => {
               const myStudio = session.studios.find((e) => e.ownerId === sessionData?.user.id);
               return <BiddingWarCard key={i} session={session} myStudio={myStudio} />;

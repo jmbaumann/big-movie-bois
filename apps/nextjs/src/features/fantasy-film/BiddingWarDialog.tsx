@@ -1,23 +1,18 @@
 import { HelpCircle } from "lucide-react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+import { cn } from "~/utils/shadcn";
+import ResponsiveDialog from "~/components/ResponsiveDialog";
 
 export default function BiddingWarDialog({ className }: { className?: string }) {
   return (
-    <Dialog>
-      <DialogTrigger className={className}>
+    <ResponsiveDialog>
+      <ResponsiveDialog.Trigger className={cn("flex", className)}>
+        <p className="mr-2 inline-block lg:hidden">How To Play</p>
         <HelpCircle />
-      </DialogTrigger>
-      <DialogContent className="max-w-2/3 max-h-[90%] w-2/3 overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Bidding War - How To Play</DialogTitle>
+      </ResponsiveDialog.Trigger>
+      <ResponsiveDialog.Content className="max-w-2/3 max-h-[90%] w-2/3 overflow-y-auto">
+        <ResponsiveDialog.Header>
+          <ResponsiveDialog.Title>Bidding War - How To Play</ResponsiveDialog.Title>
           <div className="text-white">
             <p className="my-2">
               <strong>Bidding War</strong> is a variation of Fantasy Film that is open to everyone!
@@ -39,8 +34,8 @@ export default function BiddingWarDialog({ className }: { className?: string }) 
             </p>
             <p className="my-2">A new Bidding War session begins every quarter.</p>
           </div>
-        </DialogHeader>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialog.Header>
+      </ResponsiveDialog.Content>
+    </ResponsiveDialog>
   );
 }

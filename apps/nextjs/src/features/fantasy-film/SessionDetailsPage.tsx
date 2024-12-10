@@ -336,7 +336,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
           <div className="flex flex-col items-end">
             <p className="">{studio.score} pts</p>
             <div className="flex items-center">
-              <SlotDescriptionDialog size={20} />
+              <SlotDescriptionDialog className="mr-2 lg:mr-0" size={20} />
               <p className="mr-2 text-sm">
                 ({studio.rank} of {session?.studios.length})
               </p>

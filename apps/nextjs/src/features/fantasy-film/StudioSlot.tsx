@@ -12,6 +12,7 @@ import { api } from "~/utils/api";
 import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
 import AdminMenu from "~/components/AdminMenu";
+import ResponsiveDialog from "~/components/ResponsiveDialog";
 import { Alert, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import {
@@ -126,8 +127,8 @@ export default function StudioSlot({
         </p>
         <div className="flex aspect-[2/3] flex-col justify-center p-2">
           {!!film && (!bidWar || isMyStudio) ? (
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger className="flex">
+            <ResponsiveDialog open={open} setOpen={setOpen}>
+              <ResponsiveDialog.Trigger>
                 <div className="relative">
                   {showScore && (
                     <div
@@ -143,87 +144,88 @@ export default function StudioSlot({
                     height={300}
                   />
                 </div>
-              </DialogTrigger>
-              <DialogContent className="max-w-2/3 w-1/2 rounded-sm" forceMount>
-                <DialogHeader>
-                  <DialogTitle className="text-white">{film?.tmdb?.title}</DialogTitle>
-                  <DialogDescription>
-                    <div className="flex">
-                      <div className="flex flex-col">
-                        <Image
-                          className="group-hover:border-primary inset-0 min-w-[200px] border-4 border-transparent"
-                          src={`https://image.tmdb.org/t/p/w1280${film?.tmdb?.poster}`}
-                          alt={`${film?.tmdb?.title} poster`}
-                          width={200}
-                          height={300}
-                        />
-                      </div>
-                      <div className="ml-4 w-full text-white">
-                        <p className="mb-2 text-lg">
-                          Release Date: {formatDate(film?.tmdb?.releaseDate!, "LLL dd, yyyy")}
-                        </p>
-                        <p className="mb-4">{film?.tmdb?.overview}</p>
+              </ResponsiveDialog.Trigger>
 
-                        {showScore ? (
-                          <div className="mb-2 grid grid-cols-2 gap-y-2">
-                            <div className="">
-                              <p>Total Box Office</p>
-                              <p className="text-lg">{film.scores.totalBoxOffice}</p>
-                            </div>
-                            <div className="">
-                              <p>Opening Weekend Box Office</p>
-                              <p className="text-lg">{film.scores.openingWeekendBoxOffice}</p>
-                            </div>
-                            <div className="">
-                              <p>Rating</p>
-                              <p className="text-lg">{film.scores.rating}</p>
-                            </div>
-                            <div className="">
-                              <p>Reverse Rating</p>
-                              <p className="text-lg">{film.scores.reverseRating}</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <Alert className="my-4">
-                            <Lock className="h-4 w-4" />
-                            <AlertTitle>
-                              This film will lock on{" "}
-                              {format(sub(new Date(film?.tmdb?.releaseDate ?? ""), { days: 7 }), "LLL dd, yyyy")}
-                            </AlertTitle>
-                          </Alert>
-                        )}
-                        {(canEdit || isAdmin) && (
-                          <div className="flex items-center">
-                            <Select value={selectedSlot} onValueChange={setSelectedSlot}>
-                              <SelectTrigger className="w-2/3 text-black">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {unlockedSlots?.map((slot, i) => (
-                                  <SelectItem key={i} value={String(slot.pos)}>
-                                    {slot.type}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {(canEdit || isAdmin) && (
-                              <Button
-                                className="ml-2"
-                                disabled={slot === session?.settings.teamStructure[Number(selectedSlot) - 1]?.type}
-                                onClick={handleSwap}
-                                isLoading={swapping}
-                              >
-                                <Shuffle className="mr-1" />
-                                Swap
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+              <ResponsiveDialog.Content className="max-w-2/3 w-1/2 rounded-sm" forceMount>
+                <ResponsiveDialog.Header>
+                  <ResponsiveDialog.Title>{film?.tmdb?.title ?? ""}</ResponsiveDialog.Title>
+
+                  <div className="flex flex-col pb-4 lg:flex-row">
+                    <div className="mx-auto flex flex-col">
+                      <Image
+                        className="group-hover:border-primary inset-0 min-w-[200px] border-4 border-transparent"
+                        src={`https://image.tmdb.org/t/p/w1280${film?.tmdb?.poster}`}
+                        alt={`${film?.tmdb?.title} poster`}
+                        width={200}
+                        height={300}
+                      />
                     </div>
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter className="flex-col sm:justify-between">
+                    <div className="w-full text-white lg:ml-4">
+                      <p className="mb-2 text-lg">
+                        Release Date: {formatDate(film?.tmdb?.releaseDate!, "LLL dd, yyyy")}
+                      </p>
+                      <p className="mb-4">{film?.tmdb?.overview}</p>
+
+                      {showScore ? (
+                        <div className="mb-2 grid grid-cols-2 gap-y-2">
+                          <div className="">
+                            <p>Total Box Office</p>
+                            <p className="text-lg">{film.scores.totalBoxOffice}</p>
+                          </div>
+                          <div className="">
+                            <p>Opening Weekend Box Office</p>
+                            <p className="text-lg">{film.scores.openingWeekendBoxOffice}</p>
+                          </div>
+                          <div className="">
+                            <p>Rating</p>
+                            <p className="text-lg">{film.scores.rating}</p>
+                          </div>
+                          <div className="">
+                            <p>Reverse Rating</p>
+                            <p className="text-lg">{film.scores.reverseRating}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <Alert className="my-4">
+                          <Lock className="h-4 w-4" />
+                          <AlertTitle>
+                            This film will lock on{" "}
+                            {format(sub(new Date(film?.tmdb?.releaseDate ?? ""), { days: 7 }), "LLL dd, yyyy")}
+                          </AlertTitle>
+                        </Alert>
+                      )}
+                      {(canEdit || isAdmin) && (
+                        <div className="flex items-center">
+                          <Select value={selectedSlot} onValueChange={setSelectedSlot}>
+                            <SelectTrigger className="w-2/3 text-black">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {unlockedSlots?.map((slot, i) => (
+                                <SelectItem key={i} value={String(slot.pos)}>
+                                  {slot.type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {(canEdit || isAdmin) && (
+                            <Button
+                              className="ml-2"
+                              disabled={slot === session?.settings.teamStructure[Number(selectedSlot) - 1]?.type}
+                              onClick={handleSwap}
+                              isLoading={swapping}
+                            >
+                              <Shuffle className="mr-1" />
+                              Swap
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </ResponsiveDialog.Header>
+
+                <ResponsiveDialog.Footer className="flex-row sm:justify-between">
                   <div className="flex items-center">
                     <Link
                       className="flex items-center"
@@ -265,10 +267,26 @@ export default function StudioSlot({
                       </>
                     )}
                   </div>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </ResponsiveDialog.Footer>
+              </ResponsiveDialog.Content>
+            </ResponsiveDialog>
           ) : (
+            // <Dialog open={open} onOpenChange={setOpen}>
+            //   <DialogTrigger className="flex">
+
+            //   </DialogTrigger>
+            //   <DialogContent className="max-w-2/3 w-1/2 rounded-sm" forceMount>
+            //     <DialogHeader>
+            //       <DialogTitle className="text-white">{film?.tmdb?.title}</DialogTitle>
+            //       <DialogDescription>
+
+            //       </DialogDescription>
+            //     </DialogHeader>
+            //     <DialogFooter className="flex-col sm:justify-between">
+
+            //     </DialogFooter>
+            //   </DialogContent>
+            // </Dialog>
             <div
               className={cn(
                 "flex h-full max-h-[300px] max-w-[200px] items-center justify-center bg-[#9ac] font-sans text-black",

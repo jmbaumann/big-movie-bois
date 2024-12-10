@@ -226,6 +226,7 @@ export default function SessionDetailsPage() {
 function Home({ session, studios }: { session: Session; studios: Studio[] }) {
   const { data: sessionData } = useSession();
   const router = useRouter();
+  const breakpoint = useBreakpoint();
 
   const draftDate = getDraftDate(session!.settings.draft);
   const draftIsOver = studios.some((e) => !!e.films.length) || !session?.settings.draft.conduct;
@@ -260,7 +261,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
             <CardHeader>
               <CardTitle className="mb-4 flex items-center text-2xl">
                 <p
-                  className="hover:text-primary flex w-1/2 items-center gap-x-2 hover:cursor-pointer"
+                  className="hover:text-primary flex items-center gap-x-2 hover:cursor-pointer lg:w-1/2"
                   onClick={() => handleStudioSelected(studio)}
                 >
                   <StudioIcon image={studio.image} />
@@ -269,26 +270,36 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
                     <p className="text-xs text-slate-400">{studio.owner.username}</p>
                   </div>
                 </p>
-                <div className="flex items-end">
+                <div className="hidden items-end lg:flex">
                   <p className="ml-4 text-lg">
                     ({studio.rank} of {session?.studios.length})
                   </p>
                   <p className="ml-4 text-lg">${studio.budget}</p>
                 </div>
-                <p className="text-primary ml-auto">{studio.score} pts</p>
+                <p className="text-primary ml-auto block">{studio.score} pts</p>
               </CardTitle>
               <CardDescription className="flex items-center">
-                <p className="text-lg">
+                <div className="flex w-full items-end justify-between lg:hidden">
+                  <p className="text-lg">
+                    ({studio.rank} of {session?.studios.length})
+                  </p>
+                  <p className="text-lg">${studio.budget}</p>
+                  <p className="text-lg">
+                    Films Released: {getFilmsReleased(studio.films)} / {session?.settings.teamStructure.length}
+                  </p>
+                </div>
+
+                <p className="hidden text-lg lg:block">
                   Films Released: {getFilmsReleased(studio.films)} / {session?.settings.teamStructure.length}
                 </p>
 
-                {mostRecent && (
+                {mostRecent && !breakpoint.isMobile && (
                   <div className="ml-auto">
                     <p>Most Recent</p>
                     <p className="text-lg text-white">{mostRecent.tmdb?.title}</p>
                   </div>
                 )}
-                {upcoming && (
+                {upcoming && !breakpoint.isMobile && (
                   <div className="ml-auto">
                     <p>Upcoming</p>
                     <p className="text-lg text-white">{upcoming.tmdb?.title}</p>
@@ -325,7 +336,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
           <div className="flex flex-col items-end">
             <p className="">{studio.score} pts</p>
             <div className="flex items-center">
-              <SlotDescriptionDialog className="mr-2" size={20} />
+              <SlotDescriptionDialog size={20} />
               <p className="mr-2 text-sm">
                 ({studio.rank} of {session?.studios.length})
               </p>
@@ -372,6 +383,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
 
 function OpposingStudios({ session, studios }: { session: Session; studios: Studio[] }) {
   const router = useRouter();
+  const breakpoint = useBreakpoint();
 
   const [selectedStudio, setSelectedStudio] = useState<Studio | undefined>(undefined);
 
@@ -412,24 +424,34 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
               <StudioIcon image={studio.image} />
               {studio.name}
             </p>
-            <p className="ml-4 text-lg">
+            <p className="ml-4 hidden text-lg lg:block">
               ({studio.rank} of {session?.studios.length})
             </p>
-            <p className="ml-4 text-lg">${studio.budget}</p>
+            <p className="ml-4 hidden text-lg lg:block">${studio.budget}</p>
             <p className="text-primary ml-auto">{studio.score} pts</p>
           </CardTitle>
           <CardDescription className="flex items-center">
-            <p className="text-lg">
+            <div className="flex w-full items-end justify-between lg:hidden">
+              <p className="text-lg">
+                ({studio.rank} of {session?.studios.length})
+              </p>
+              <p className="text-lg">${studio.budget}</p>
+              <p className="text-lg">
+                Films Released: {getFilmsReleased(studio.films)} / {session?.settings.teamStructure.length}
+              </p>
+            </div>
+
+            <p className="hidden text-lg lg:block">
               Films Released: {getFilmsReleased(studio.films)} / {session?.settings.teamStructure.length}
             </p>
 
-            {mostRecent && (
+            {mostRecent && !breakpoint.isMobile && (
               <div className="ml-auto">
                 <p>Most Recent</p>
                 <p className="text-lg text-white">{mostRecent.tmdb?.title}</p>
               </div>
             )}
-            {upcoming && (
+            {upcoming && !breakpoint.isMobile && (
               <div className="ml-auto">
                 <p>Most Recent</p>
                 <p className="text-lg text-white">{upcoming.tmdb?.title}</p>
@@ -437,7 +459,7 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
             )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-4 gap-x-4 gap-y-2">
+        <CardContent className="hidden grid-cols-4 gap-x-4 gap-y-2 lg:grid">
           {session?.settings.teamStructure.map((slot, i) => {
             const film = studio.films.find((e) => e.slot === i + 1);
             return (

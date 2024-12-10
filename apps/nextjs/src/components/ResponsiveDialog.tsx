@@ -47,7 +47,7 @@ export default function ResponsiveDialog({
       <SheetTrigger className="px-2 py-2">{trigger}</SheetTrigger>
       <SheetContent
         side={side ?? "bottom"}
-        className={cn("max-h-[90%] bg-neutral-900 text-white", className)}
+        className={cn("scrollbar-hidden max-h-[90%] bg-neutral-900 text-white", className)}
         aria-describedby={undefined}
       >
         <SheetHeader>

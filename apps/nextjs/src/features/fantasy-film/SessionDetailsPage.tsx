@@ -258,7 +258,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
 
         return (
           <Card key={i} className="mb-2">
-            <CardHeader>
+            <CardHeader className="p-2 lg:p-6">
               <CardTitle className="mb-4 flex items-center text-2xl">
                 <p
                   className="hover:text-primary flex items-center gap-x-2 hover:cursor-pointer lg:w-1/2"

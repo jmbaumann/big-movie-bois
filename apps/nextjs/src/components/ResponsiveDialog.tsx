@@ -98,20 +98,26 @@ const Content = ({
   className,
   side,
   forceMount,
+  autoFocus,
+  onCloseAutoFocus,
 }: {
   children: React.ReactNode;
   className?: string;
   side?: "top" | "bottom" | "left" | "right";
   forceMount?: boolean;
+  autoFocus?: boolean;
+  onCloseAutoFocus?: (e: Event) => void;
 }) => {
   const breakpoint = useBreakpoint();
   const ContentComponent = breakpoint.isMobile ? SheetContent : DialogContent;
 
   const props = breakpoint.isMobile
-    ? { side: side ?? "bottom", className: "text-white" }
+    ? { side: side ?? "bottom", className: "text-white", onCloseAutoFocus }
     : {
         className: cn("max-w-2/3 max-h-[90%] w-2/3 overflow-y-auto text-white", className),
         forceMount: (forceMount ? true : undefined) as true | undefined,
+        autoFocus,
+        onCloseAutoFocus,
       };
 
   return <ContentComponent {...props}>{children}</ContentComponent>;

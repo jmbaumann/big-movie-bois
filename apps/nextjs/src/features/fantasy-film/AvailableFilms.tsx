@@ -12,8 +12,10 @@ import { LeagueSessionStudio, TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getFilmCost, getUnlockedSlots } from "~/utils/fantasy-film-helpers";
+import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import { cn } from "~/utils/shadcn";
 import AdminMenu from "~/components/AdminMenu";
+import ResponsiveDialog from "~/components/ResponsiveDialog";
 import SortChips from "~/components/SortChips";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
@@ -57,6 +59,7 @@ export default function AvailableFilms({
 }) {
   const { data: sessionData } = useSession();
   const trpc = api.useContext();
+  const breakpoint = useBreakpoint();
 
   const [films, setFilms] = useState<Film[]>([]);
   const [availableFilms, setAvailableFilms] = useState<Film[]>([]);
@@ -303,13 +306,13 @@ export default function AvailableFilms({
       </div>
 
       <div className="scrollbar-hidden max-h-[calc(100%-40px)] overflow-y-auto">
-        <Dialog open={open} onOpenChange={setOpen}>
+        <ResponsiveDialog open={open} setOpen={setOpen}>
           <div className={cn("grid", gridCols ? `grid-cols-${gridCols}` : "grid-cols-5")}>
             {availableFilms.map((film, i) => {
               const price = getFilmCost(maxPopularity, film.popularity);
 
               return (
-                <DialogTrigger
+                <ResponsiveDialog.Trigger
                   key={i}
                   className="hover:text-primary group mx-auto flex w-[170px] flex-col p-2 text-white hover:cursor-pointer"
                 >
@@ -348,134 +351,150 @@ export default function AvailableFilms({
                       <p className="text-xs text-slate-400">{format(film.releaseDate, "LLL dd, yyyy")}</p>
                     </div>
                   </div>
-                </DialogTrigger>
+                </ResponsiveDialog.Trigger>
               );
             })}
-            <DialogContent
+            <ResponsiveDialog.Content
               className="max-w-2/3 w-1/2 rounded-sm"
               forceMount
               autoFocus={false}
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
-              <DialogHeader>
-                <DialogTitle className="text-white">{selectedFilm?.title}</DialogTitle>
-                <DialogDescription>
-                  {selectedFilm && (
-                    <div className="flex">
-                      <div className="flex flex-col">
-                        {selectedFilm.poster ? (
-                          <Image
-                            className="group-hover:border-primary inset-0 min-w-[200px] border-4 border-transparent"
-                            src={`https://image.tmdb.org/t/p/w1280${selectedFilm.poster}`}
-                            alt={`${selectedFilm.title} poster`}
-                            width={200}
-                            height={300}
-                          />
-                        ) : (
-                          <div className="h-[190px] w-[130px] bg-slate-300"> no poster </div>
-                        )}
-                      </div>
-                      <div className="ml-4 w-full text-white">
-                        <p className="mb-2 text-lg">
-                          Release Date: {formatDate(selectedFilm.releaseDate, "LLL dd, yyyy")}
-                        </p>
-                        <p className="mb-2">{selectedFilm.overview}</p>
+              <ResponsiveDialog.Header>
+                <ResponsiveDialog.Title>{selectedFilm?.title}</ResponsiveDialog.Title>
 
-                        <Alert className="my-4">
-                          <Lock className="h-4 w-4" />
-                          <AlertTitle>
-                            This film will no longer be available after{" "}
-                            {format(
-                              sub(new Date(selectedFilm.releaseDate + "T00:00:00" ?? ""), { days: 8 }),
-                              "LLL dd, yyyy",
-                            )}
-                          </AlertTitle>
-                        </Alert>
-
-                        {canPick && !bidPlaced && (
-                          <>
-                            <div className="mt-4">
-                              <Label>Slot</Label>
-                              <Select value={selectedSlot} onValueChange={setSelectedSlot}>
-                                <SelectTrigger className="w-2/3 text-black">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {availableSlots?.map((slot, i) => (
-                                    <SelectItem key={i} value={String(slot.pos)}>
-                                      {slot.type}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="mt-4 flex justify-between">
-                              {!isDraft && (
-                                <div className="flex flex-col">
-                                  <Label>{!buyNow ? "Amount" : "Price"}</Label>
-                                  {!buyNow ? (
-                                    <Input
-                                      className="w-2/3 text-black"
-                                      value={bidAmount}
-                                      onChange={(e) => setBidAmount(e.target.value)}
-                                      type="number"
-                                      min={0}
-                                      startIcon={DollarSign}
-                                    ></Input>
-                                  ) : (
-                                    <p
-                                      className={cn(
-                                        "flex items-center text-2xl text-white",
-                                        insufficientFunds && "text-red-600",
-                                      )}
-                                    >
-                                      <DollarSign />
-                                      {bidAmount}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-                              {buyNow && !insufficientFunds && (
-                                <div className="flex flex-col">
-                                  <Label>Remaining Budget</Label>
-                                  <p className="flex items-center text-2xl text-white">
-                                    <DollarSign />
-                                    {(myStudio?.budget ?? 0) - Number(bidAmount)}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {bidPlaced && (
-                          <Alert className="mt-4">
-                            <CircleDollarSign className="h-4 w-4" />
-                            <AlertTitle>Bid placed</AlertTitle>
-                            <AlertDescription>
-                              You have an active bid for this film. Manage your bids in the Bids tab.
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                      </div>
+                {selectedFilm && (
+                  <div className="flex flex-col lg:flex-row">
+                    <div className="flex flex-col">
+                      {selectedFilm.poster ? (
+                        <Image
+                          className="group-hover:border-primary inset-0 mx-auto min-w-[200px] border-4 border-transparent"
+                          src={`https://image.tmdb.org/t/p/w1280${selectedFilm.poster}`}
+                          alt={`${selectedFilm.title} poster`}
+                          width={200}
+                          height={300}
+                        />
+                      ) : (
+                        <div className="h-[190px] w-[130px] bg-slate-300"> no poster </div>
+                      )}
                     </div>
-                  )}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="flex-col sm:justify-between">
-                <div className="flex items-center">
-                  <Link
-                    className="flex items-center"
-                    href={`https://www.themoviedb.org/movie/${selectedFilm?.id}`}
-                    target="_blank"
-                  >
-                    More Info <ExternalLink className="mx-1" size={16} />
-                  </Link>
-                  <Button onClick={() => handleFavorite()} variant="ghost">
-                    <Star color="#fbbf24" fill={isFavorite ? "#fbbf24" : ""} />
-                  </Button>
-                </div>
+                    <div className="w-full text-white lg:ml-4">
+                      <p className="mb-2 text-lg">
+                        Release Date: {formatDate(selectedFilm.releaseDate, "LLL dd, yyyy")}
+                      </p>
+                      <p className="mb-2">{selectedFilm.overview}</p>
+
+                      {breakpoint.isMobile && (
+                        <div className="flex items-center justify-between">
+                          <Link
+                            className="flex items-center"
+                            href={`https://www.themoviedb.org/movie/${selectedFilm?.id}`}
+                            target="_blank"
+                          >
+                            More Info <ExternalLink className="mx-1" size={16} />
+                          </Link>
+                          <Button onClick={() => handleFavorite()} variant="ghost">
+                            <Star color="#fbbf24" fill={isFavorite ? "#fbbf24" : ""} />
+                          </Button>
+                        </div>
+                      )}
+
+                      <Alert className="my-4">
+                        <Lock className="h-4 w-4" />
+                        <AlertTitle>
+                          This film will no longer be available after{" "}
+                          {format(
+                            sub(new Date(selectedFilm.releaseDate + "T00:00:00" ?? ""), { days: 8 }),
+                            "LLL dd, yyyy",
+                          )}
+                        </AlertTitle>
+                      </Alert>
+
+                      {canPick && !bidPlaced && (
+                        <>
+                          <div className="mt-4 flex flex-col items-start">
+                            <Label>Slot</Label>
+                            <Select value={selectedSlot} onValueChange={setSelectedSlot}>
+                              <SelectTrigger className="mt-1 text-black lg:w-2/3">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableSlots?.map((slot, i) => (
+                                  <SelectItem key={i} value={String(slot.pos)}>
+                                    {slot.type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="mb-2 mt-4 flex justify-end lg:mb-0 lg:justify-between">
+                            {!isDraft && (
+                              <div className="flex flex-col items-start">
+                                <Label>{!buyNow ? "Amount" : "Price"}</Label>
+                                {!buyNow ? (
+                                  <Input
+                                    className="mt-1 text-black lg:w-2/3"
+                                    value={bidAmount}
+                                    onChange={(e) => setBidAmount(e.target.value)}
+                                    type="number"
+                                    min={0}
+                                    startIcon={DollarSign}
+                                  ></Input>
+                                ) : (
+                                  <p
+                                    className={cn(
+                                      "flex items-center text-2xl text-white",
+                                      insufficientFunds && "text-red-600",
+                                    )}
+                                  >
+                                    <DollarSign />
+                                    {bidAmount}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            {buyNow && !insufficientFunds && (
+                              <div className="flex flex-col">
+                                <Label>Remaining Budget</Label>
+                                <p className="flex items-center text-2xl text-white">
+                                  <DollarSign />
+                                  {(myStudio?.budget ?? 0) - Number(bidAmount)}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+
+                      {bidPlaced && (
+                        <Alert className="mt-4">
+                          <CircleDollarSign className="h-4 w-4" />
+                          <AlertTitle>Bid placed</AlertTitle>
+                          <AlertDescription>
+                            You have an active bid for this film. Manage your bids in the Bids tab.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </ResponsiveDialog.Header>
+              <ResponsiveDialog.Footer className="mt-2 flex-row sm:justify-between lg:mt-0">
+                {!breakpoint.isMobile && (
+                  <div className="flex items-center">
+                    <Link
+                      className="flex items-center"
+                      href={`https://www.themoviedb.org/movie/${selectedFilm?.id}`}
+                      target="_blank"
+                    >
+                      More Info <ExternalLink className="mx-1" size={16} />
+                    </Link>
+                    <Button onClick={() => handleFavorite()} variant="ghost">
+                      <Star color="#fbbf24" fill={isFavorite ? "#fbbf24" : ""} />
+                    </Button>
+                  </div>
+                )}
 
                 <div className="ml-auto flex items-center">
                   {isAdmin && !isDraft && (
@@ -511,10 +530,10 @@ export default function AvailableFilms({
                     </Button>
                   )}
                 </div>
-              </DialogFooter>
-            </DialogContent>
+              </ResponsiveDialog.Footer>
+            </ResponsiveDialog.Content>
           </div>
-        </Dialog>
+        </ResponsiveDialog>
 
         {!!films.length && !showWatchlist && films.length < (sessionFilms?.total ?? 0) && (
           <div className="flex w-full">

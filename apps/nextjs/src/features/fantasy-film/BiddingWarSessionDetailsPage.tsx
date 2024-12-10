@@ -432,8 +432,8 @@ function Activity({ session }: { session: Session }) {
       if (part === "STUDIO") {
         const url =
           activity.studio?.ownerId === sessionData?.user.id
-            ? `/fantasy-film/${activity.session.leagueId}/${activity.sessionId}?tab=my-studio`
-            : `/fantasy-film/${activity.session.leagueId}/${activity.sessionId}?tab=opposing-studios&studio=${activity.studioId}`;
+            ? `/fantasy-film/bidding-war/${activity.sessionId}?tab=my-studio`
+            : `/fantasy-film/bidding-war/${activity.sessionId}?tab=opposing-studios&studio=${activity.studioId}`;
         return (
           <Link key={index} href={url} className="text-primary font-bold">
             {activity.studio?.name}

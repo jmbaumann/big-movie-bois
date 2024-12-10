@@ -327,20 +327,22 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
   return (
     <div className="w-full">
       {breakpoint.isMobile ? (
-        <div className="mb-4 flex items-center justify-between text-2xl">
+        <div className="mb-2 flex flex-col items-start justify-between text-2xl">
           <div className="flex items-center justify-center gap-x-2">
             <StudioIcon image={studio.image} />
             {studio.name}
             {studio.ownerId === sessionData?.user.id && refetch && <EditStudio studio={studio} refetch={refetch} />}
           </div>
-          <div className="flex flex-col items-end">
-            <p className="">{studio.score} pts</p>
+          <div className="mt-1 flex w-full items-center justify-between px-1">
             <div className="flex items-center">
-              <SlotDescriptionDialog className="mr-2 lg:mr-0" size={20} />
               <p className="mr-2 text-sm">
                 ({studio.rank} of {session?.studios.length})
               </p>
               <p className="float-right text-lg">${studio.budget}</p>
+            </div>
+            <div className="flex items-center">
+              <SlotDescriptionDialog className="mr-2 lg:mr-0" size={20} />
+              <p className="">{studio.score} pts</p>
             </div>
           </div>
         </div>

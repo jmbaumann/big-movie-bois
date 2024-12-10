@@ -119,9 +119,9 @@ export default function StudioSlot({
   }
 
   return (
-    <div className={cn("flex h-[260px]")}>
+    <div className={cn("flex lg:h-[260px]")}>
       <div className="flex rounded-sm rounded-r-none border-2 border-[#9ac]">
-        <p className="flex h-full rotate-180 items-center justify-center text-white [writing-mode:vertical-lr]">
+        <p className="flex rotate-180 items-center justify-center text-white [writing-mode:vertical-lr] lg:h-full">
           {locked && <Lock size={16} className="mb-2 inline-block rotate-90" />}
           {slot}
         </p>

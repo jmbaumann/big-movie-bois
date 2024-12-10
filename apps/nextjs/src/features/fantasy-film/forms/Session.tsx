@@ -149,7 +149,7 @@ export function DetailsSection({ session }: { session?: Session }) {
   const numExistingSlots = session?.settings.teamStructure.length ?? 0;
 
   return (
-    <>
+    <div className="flex flex-col gap-y-4">
       <div className="flex w-full items-center space-x-10">
         <FormField
           control={form.control}
@@ -165,7 +165,7 @@ export function DetailsSection({ session }: { session?: Session }) {
           )}
         />
       </div>
-      <div className="flex items-end space-x-4">
+      <div className="flex flex-col lg:flex-row lg:items-end lg:space-x-4">
         <FormField
           control={form.control}
           name="startDate"
@@ -175,7 +175,7 @@ export function DetailsSection({ session }: { session?: Session }) {
                 Start Date
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger className="ml-auto">
+                    <TooltipTrigger className="ml-2 lg:ml-auto">
                       <Info size={20} />
                     </TooltipTrigger>
                     <TooltipContent>Sessions can be created up to 30 days in advance</TooltipContent>
@@ -188,7 +188,7 @@ export function DetailsSection({ session }: { session?: Session }) {
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-[240px] pl-3 text-left font-normal text-black",
+                        "w-[240px] text-left font-normal text-black lg:pl-3",
                         !field.value && "text-muted-foreground",
                       )}
                       disabled={!!session?.id}
@@ -219,12 +219,12 @@ export function DetailsSection({ session }: { session?: Session }) {
           control={form.control}
           name="endDate"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
+            <FormItem className="mt-2 flex flex-col lg:mt-0">
               <FormLabel className="flex items-center">
                 End Date
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger className="ml-auto">
+                    <TooltipTrigger className="ml-2 lg:ml-auto">
                       <Info size={20} />
                     </TooltipTrigger>
                     <TooltipContent>Sessions can be between 30 & 365 days long</TooltipContent>
@@ -237,7 +237,7 @@ export function DetailsSection({ session }: { session?: Session }) {
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-[240px] pl-3 text-left font-normal text-black",
+                        "w-[240px] text-left font-normal text-black lg:pl-3",
                         !field.value && "text-muted-foreground",
                       )}
                       disabled={!!session?.id}
@@ -288,7 +288,7 @@ export function DetailsSection({ session }: { session?: Session }) {
                           defaultValue={field.value}
                           disabled={sessionStorage && index < numExistingSlots}
                         >
-                          <SelectTrigger className="w-1/2 text-black">
+                          <SelectTrigger className="text-black lg:w-1/2">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -331,7 +331,7 @@ export function DetailsSection({ session }: { session?: Session }) {
           </Button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -384,7 +384,7 @@ export function DraftSection({
   const sessionStarted = isSessionStarted(session);
 
   return (
-    <>
+    <div className="flex flex-col gap-y-4">
       <div className="flex px-4">
         <FormField
           control={form.control}
@@ -401,7 +401,7 @@ export function DraftSection({
       </div>
       {showDraftFields && (
         <>
-          <div className="flex items-end space-x-4 px-4">
+          <div className="flex flex-col px-4 lg:flex-row lg:items-end lg:space-x-4">
             <FormField
               control={form.control}
               name="settings.draft.date"
@@ -436,73 +436,79 @@ export function DraftSection({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="settings.draft.hour"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <SelectTrigger className="w-[80px] text-black">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, index) => (index + 1).toString().padStart(2, "0")).map((e) => {
-                          return (
-                            <SelectItem key={e} value={e}>
-                              {e}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="settings.draft.min"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <SelectTrigger className="w-[80px] text-black">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, index) => (index * 5).toString().padStart(2, "0")).map((e) => {
-                          return (
-                            <SelectItem key={e} value={e}>
-                              {e}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="settings.draft.ampm"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <SelectTrigger className="w-[80px] text-black">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AM">AM</SelectItem>
-                        <SelectItem value="PM">PM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            <div className="mt-2 flex gap-x-2">
+              <FormField
+                control={form.control}
+                name="settings.draft.hour"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger className="w-[80px] text-black">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 12 }, (_, index) => (index + 1).toString().padStart(2, "0")).map(
+                            (e) => {
+                              return (
+                                <SelectItem key={e} value={e}>
+                                  {e}
+                                </SelectItem>
+                              );
+                            },
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="settings.draft.min"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger className="w-[80px] text-black">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 12 }, (_, index) => (index * 5).toString().padStart(2, "0")).map(
+                            (e) => {
+                              return (
+                                <SelectItem key={e} value={e}>
+                                  {e}
+                                </SelectItem>
+                              );
+                            },
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="settings.draft.ampm"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger className="w-[80px] text-black">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
           <div className="mb-4 space-y-4 px-4">
             <FormField
@@ -595,6 +601,6 @@ export function DraftSection({
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

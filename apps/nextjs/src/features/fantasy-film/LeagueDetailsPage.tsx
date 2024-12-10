@@ -85,7 +85,7 @@ export default function LeagueDetailsPage() {
         )}
 
         <div className="">
-          <Tabs className="w-full px-2 lg:px-4" value={activeTab} onValueChange={setActiveTab}>
+          <Tabs className="mt-2 w-full px-2 lg:mt-0 lg:px-4" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="">
               <TabsTrigger value="sessions" onClick={() => handleTab("sessions")}>
                 Sessions

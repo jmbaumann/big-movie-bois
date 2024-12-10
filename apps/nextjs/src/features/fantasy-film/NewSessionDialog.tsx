@@ -2,10 +2,8 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { inferRouterOutputs } from "@trpc/server";
-import { format, sub } from "date-fns";
-import { CalendarIcon, Loader2, Trash } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useFieldArray, useForm, useFormContext } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { AppRouter } from "@repo/api";
@@ -13,9 +11,9 @@ import { DRAFT_TYPES, STUDIO_SLOT_TYPES } from "@repo/api/src/enums";
 import { createLeagueSessionInputObj } from "@repo/api/src/zod";
 
 import { api } from "~/utils/api";
-import { useArray, type UseArray } from "~/utils/hooks/use-array";
+import { useArray } from "~/utils/hooks/use-array";
 import { cn } from "~/utils/shadcn";
-import SlotDescriptionDialog from "~/components/SlotDescriptionDialog";
+import ResponsiveDialog from "~/components/ResponsiveDialog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -24,24 +22,8 @@ import {
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
 import { Button } from "~/components/ui/button";
-import { Calendar } from "~/components/ui/calendar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "~/components/ui/form";
+import { Form } from "~/components/ui/form";
 import { useToast } from "~/components/ui/hooks/use-toast";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { Switch } from "~/components/ui/switch";
 import { DetailsSection, DraftSection, MembersSection } from "./forms/Session";
 
 type Steps = "details" | "draft" | "members";
@@ -145,25 +127,25 @@ export default function NewSessionDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <ResponsiveDialog open={open} setOpen={setOpen}>
+      <ResponsiveDialog.Trigger>
         <Button className={cn("", className)} disabled={disabled} onClick={() => setOpen(true)}>
           + Create Session
         </Button>
-      </DialogTrigger>
+      </ResponsiveDialog.Trigger>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="mt-4 space-y-8">
-          <DialogContent
+          <ResponsiveDialog.Content
             className="max-w-2/3 max-h-[90%] w-2/3 overflow-y-auto"
             onPointerDownOutside={(event) => event.preventDefault()} // Prevent closing on outside click
             onEscapeKeyDown={(event) => event.preventDefault()}
             aria-describedby={undefined}
           >
-            <DialogHeader>
-              <DialogTitle>Create New Session</DialogTitle>
+            <ResponsiveDialog.Header>
+              <ResponsiveDialog.Title>Create New Session</ResponsiveDialog.Title>
 
-              <Breadcrumb className="text-gray-400">
+              <Breadcrumb className="pb-2 text-gray-400 lg:mb-0">
                 <BreadcrumbList>
                   <BreadcrumbItem>
                     <BreadcrumbPage className={currentStep === "details" ? "text-white" : ""}>Details</BreadcrumbPage>
@@ -178,33 +160,28 @@ export default function NewSessionDialog({
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-            </DialogHeader>
+            </ResponsiveDialog.Header>
 
             {getCurrentStepForm(currentStep)}
 
-            <DialogFooter>
-              <>
+            <ResponsiveDialog.Footer>
+              <div className="ml-auto mt-4 flex gap-x-4 lg:mt-0">
                 {currentStep !== "details" && <Button onClick={() => navigateForm("back")}>Back</Button>}
                 {currentStep !== "draft" && (
-                  <Button className="float-right" onClick={() => navigateForm("next")}>
+                  <Button className="" onClick={() => navigateForm("next")}>
                     Next
                   </Button>
                 )}
                 {currentStep === "draft" && (
-                  <Button
-                    type="submit"
-                    className="float-right"
-                    isLoading={creating}
-                    onClick={() => onSubmit(form.getValues())}
-                  >
+                  <Button type="submit" className="" isLoading={creating} onClick={() => onSubmit(form.getValues())}>
                     Create Session
                   </Button>
                 )}
-              </>
-            </DialogFooter>
-          </DialogContent>
+              </div>
+            </ResponsiveDialog.Footer>
+          </ResponsiveDialog.Content>
         </form>
       </Form>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }

@@ -7,21 +7,9 @@ import { z } from "zod";
 
 import { api } from "~/utils/api";
 import { cn } from "~/utils/shadcn";
+import ResponsiveDialog from "~/components/ResponsiveDialog";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "~/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "~/components/ui/form";
 import { useToast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -53,8 +41,7 @@ export default function NewLeagueDialog({ className }: { className?: string }) {
         title: "Must be logged in to create a League",
         variant: "destructive",
       });
-    if (!values.name)
-      return toast({ title: "Must include a name", variant: "destructive" });
+    if (!values.name) return toast({ title: "Must include a name", variant: "destructive" });
     createLeague(values, {
       onSuccess: (data) => {
         toast({
@@ -69,24 +56,21 @@ export default function NewLeagueDialog({ className }: { className?: string }) {
   }
 
   return (
-    <Dialog>
-      <DialogTrigger
+    <ResponsiveDialog>
+      <ResponsiveDialog.Trigger
         className={cn(
           "bg-primary inline-flex h-10 items-center justify-center whitespace-nowrap rounded-3xl px-4 py-2 text-sm font-medium text-slate-50 hover:bg-teal-700/90",
           className,
         )}
       >
         + Create League
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create New League</DialogTitle>
-        </DialogHeader>
+      </ResponsiveDialog.Trigger>
+      <ResponsiveDialog.Content>
+        <ResponsiveDialog.Header>
+          <ResponsiveDialog.Title>Create New League</ResponsiveDialog.Title>
+        </ResponsiveDialog.Header>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="mt-4 space-y-8"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-8">
             <div className="flex w-full space-x-10">
               <FormField
                 control={form.control}
@@ -95,11 +79,7 @@ export default function NewLeagueDialog({ className }: { className?: string }) {
                   <FormItem className="w-full">
                     <FormLabel>League Name</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        className="text-black"
-                        autoComplete="off"
-                      />
+                      <Input {...field} className="text-black" autoComplete="off" />
                     </FormControl>
                   </FormItem>
                 )}
@@ -128,7 +108,7 @@ export default function NewLeagueDialog({ className }: { className?: string }) {
             </Button>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialog.Content>
+    </ResponsiveDialog>
   );
 }

@@ -44,6 +44,8 @@ const Content = ({
   forceMount,
   autoFocus,
   onCloseAutoFocus,
+  onPointerDownOutside,
+  onEscapeKeyDown,
 }: {
   children: React.ReactNode;
   className?: string;
@@ -51,6 +53,8 @@ const Content = ({
   forceMount?: boolean;
   autoFocus?: boolean;
   onCloseAutoFocus?: (e: Event) => void;
+  onPointerDownOutside?: (e: Event) => void;
+  onEscapeKeyDown?: (e: Event) => void;
 }) => {
   const breakpoint = useBreakpoint();
   const ContentComponent = breakpoint.isMobile ? SheetContent : DialogContent;
@@ -62,6 +66,8 @@ const Content = ({
         forceMount: (forceMount ? true : undefined) as true | undefined,
         autoFocus,
         onCloseAutoFocus,
+        onPointerDownOutside,
+        onEscapeKeyDown,
       };
 
   return <ContentComponent {...props}>{children}</ContentComponent>;

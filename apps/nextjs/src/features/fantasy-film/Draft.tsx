@@ -71,12 +71,12 @@ export default function Draft() {
   const isAdmin = session?.league.ownerId === sessionData?.user.id;
   const studiosById = getById<Studio>(session?.studios ?? [], "ownerId");
   const draftingStudio = session
-    ? studiosById[getStudioOwnerByPick(session.settings.draft.order, currentPick.num)]
+    ? studiosById[getStudioOwnerByPick(session.settings.draft.order ?? [], currentPick.num)]
     : undefined;
   const draftOver =
     session?.settings.draft.complete ||
     picks.length === (session?.settings.draft.numRounds ?? 0) * (session?.studios.length ?? 0);
-  const draftCannotStart = session?.settings.draft.order.length === 0;
+  const draftCannotStart = session?.settings.draft.order?.length === 0;
 
   useEffect(() => {
     const socket = io(env.NEXT_PUBLIC_WEBSOCKET_SERVER, {
@@ -170,11 +170,13 @@ export default function Draft() {
             )}
             <OnTheClock pick={currentPick.num} studio={draftingStudio} />
             <div className="flex space-x-4 overflow-hidden">
-              {getUpcomingPicks(currentPick.num, session.settings.draft.numRounds, session.settings.draft.order).map(
-                (pick, i) => {
-                  return <UpcomingPick key={i} num={pick.num} studio={studiosById[pick.studio]} />;
-                },
-              )}
+              {getUpcomingPicks(
+                currentPick.num,
+                session.settings.draft.numRounds ?? 0,
+                session.settings.draft.order ?? [],
+              ).map((pick, i) => {
+                return <UpcomingPick key={i} num={pick.num} studio={studiosById[pick.studio]} />;
+              })}
             </div>
           </div>
         )}
@@ -236,7 +238,7 @@ function Countdown({
 
   const [timer, setTimer] = useState("");
   const [seconds, setSeconds] = useState(1);
-  const [round, setRound] = useState(Math.ceil(currentPick.num / leagueSettings.draft.numRounds));
+  const [round, setRound] = useState(Math.ceil(currentPick.num / (leagueSettings.draft.numRounds ?? 1)));
 
   const auto = api.ffDraft.auto.useMutation();
 
@@ -254,7 +256,7 @@ function Countdown({
   };
 
   useEffect(() => {
-    setRound(Math.ceil(currentPick.num / leagueSettings.draft.order.length));
+    setRound(Math.ceil(currentPick.num / (leagueSettings.draft.order?.length ?? 1)));
     updateTimer();
     const interval = setInterval(() => {
       updateTimer();
@@ -262,7 +264,7 @@ function Countdown({
     return () => clearInterval(interval);
   }, [currentPick]);
 
-  const secondsRemaining = leagueSettings.draft.timePerRound - seconds;
+  const secondsRemaining = (leagueSettings.draft.timePerRound ?? 0) - seconds;
 
   return (
     <div className="ml-4 mr-2 flex min-w-max flex-col items-center font-sans">
@@ -273,7 +275,7 @@ function Countdown({
         secondsRemaining !== leagueSettings.draft.timePerRound ? (
           <>
             <div className="text-3xl tabular-nums">{timer}</div>
-            <Progress className="h-2" value={(secondsRemaining / leagueSettings.draft.timePerRound) * 100} />
+            <Progress className="h-2" value={(secondsRemaining / (leagueSettings.draft.timePerRound ?? 0)) * 100} />
           </>
         ) : (
           isAdmin && (

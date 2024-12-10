@@ -119,13 +119,13 @@ export default function StudioSlot({
   }
 
   return (
-    <div className={cn("flex lg:h-[260px]")}>
-      <div className="mb-4 flex rounded-sm rounded-r-none border-2 border-[#9ac] lg:mb-0">
+    <div className={cn("flex w-full lg:h-[260px]")}>
+      <div className="mb-4 flex w-full rounded-sm rounded-r-none border-2 border-[#9ac] lg:mb-0 lg:w-fit">
         <p className="my-2 flex rotate-180 items-center justify-center text-white [writing-mode:vertical-lr] lg:h-full">
           {locked && <Lock size={16} className="mb-2 inline-block rotate-90" />}
           {slot}
         </p>
-        <div className="flex aspect-[2/3] flex-col justify-center p-2">
+        <div className="flex aspect-[2/3] w-full flex-col justify-center p-2">
           {!!film && (!bidWar || isMyStudio) ? (
             <ResponsiveDialog open={open} setOpen={setOpen}>
               <ResponsiveDialog.Trigger>

@@ -260,7 +260,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
           <Card key={i} className="mb-2">
             <CardHeader className="p-2 lg:p-6">
               <CardTitle className="mb-4 flex items-center text-2xl">
-                <p
+                <div
                   className="hover:text-primary flex items-center gap-x-2 hover:cursor-pointer lg:w-1/2"
                   onClick={() => handleStudioSelected(studio)}
                 >
@@ -269,7 +269,7 @@ function Home({ session, studios }: { session: Session; studios: Studio[] }) {
                     <p>{studio.name}</p>
                     <p className="text-xs text-slate-400">{studio.owner.username}</p>
                   </div>
-                </p>
+                </div>
                 <div className="hidden items-end lg:flex">
                   <p className="ml-4 text-lg">
                     ({studio.rank} of {session?.studios.length})
@@ -417,20 +417,25 @@ function OpposingStudios({ session, studios }: { session: Session; studios: Stud
 
     return (
       <Card key={i} className="mb-2">
-        <CardHeader>
-          <CardTitle className="mb-4 flex items-end text-2xl">
-            <p
-              className="hover:text-primary flex items-center justify-center gap-x-2 hover:cursor-pointer"
+        <CardHeader className="p-2 lg:p-6">
+          <CardTitle className="mb-4 flex items-center text-2xl">
+            <div
+              className="hover:text-primary flex items-center gap-x-2 hover:cursor-pointer lg:w-1/2"
               onClick={() => handleStudioSelected(studio)}
             >
               <StudioIcon image={studio.image} />
-              {studio.name}
-            </p>
-            <p className="ml-4 hidden text-lg lg:block">
-              ({studio.rank} of {session?.studios.length})
-            </p>
-            <p className="ml-4 hidden text-lg lg:block">${studio.budget}</p>
-            <p className="text-primary ml-auto">{studio.score} pts</p>
+              <div className="flex flex-col">
+                <p>{studio.name}</p>
+                <p className="text-xs text-slate-400">{studio.owner.username}</p>
+              </div>
+            </div>
+            <div className="hidden items-end lg:flex">
+              <p className="ml-4 text-lg">
+                ({studio.rank} of {session?.studios.length})
+              </p>
+              <p className="ml-4 text-lg">${studio.budget}</p>
+            </div>
+            <p className="text-primary ml-auto block">{studio.score} pts</p>
           </CardTitle>
           <CardDescription className="flex items-center">
             <div className="flex w-full items-end justify-between lg:hidden">

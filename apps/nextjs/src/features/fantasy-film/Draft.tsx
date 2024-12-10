@@ -12,6 +12,7 @@ import { LeagueSessionStudio, StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getStudioOwnerByPick, getUpcomingPicks } from "~/utils/fantasy-film-helpers";
+import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
@@ -20,6 +21,7 @@ import { env } from "~/env.mjs";
 import Layout from "~/layouts/main/Layout";
 import { getById } from "~/utils";
 import AvailableFilms from "./AvailableFilms";
+import HowToPlayDialog from "./HowToPlayDialog";
 import StudioIcon from "./StudioIcon";
 import StudioSlot from "./StudioSlot";
 
@@ -31,6 +33,7 @@ export default function Draft() {
   const router = useRouter();
   const confirm = useConfirm();
   const sessionId = router.query.sessionId as string;
+  const breakpoint = useBreakpoint();
 
   const [started, setStarted] = useState(false);
   const [currentPick, setCurrentPick] = useState({
@@ -42,6 +45,9 @@ export default function Draft() {
   const [activities, setActivities] = useState<string[]>([]);
   const [expand, setExpand] = useState(false);
   const [draftDisabled, setDraftDisabled] = useState(false);
+
+  // MOBILE
+  const [tab, setTab] = useState<"my" | "available" | "activity">("my");
 
   const {
     data: session,
@@ -132,12 +138,98 @@ export default function Draft() {
       </Layout>
     );
 
+  if (!breakpoint.isMobile)
+    return (
+      <Layout fullWidth>
+        <div className="flex flex-col space-y-2">
+          <div className="bg-lb-blue flex h-10 items-center justify-between px-4 font-sans text-white">
+            <span className="uppercase">FANTASY FILM DRAFT - {session.name}</span>
+            {/* <HowToPlayDialog /> */}
+          </div>
+
+          {draftOver ? (
+            <div className="bg-lb-green flex h-[88px] items-center justify-center px-4 font-sans uppercase text-white">
+              {draftCannotStart ? (
+                <span className="mx-4">INVITE MORE PLAYERS TO START DRAFT</span>
+              ) : (
+                <span className="mx-4">DRAFT COMPLETED</span>
+              )}
+              <Link href={`/fantasy-film/${session.leagueId}/${session.id}`} className="mx-4 hover:underline">
+                Session Home
+                <ExternalLink className="inline pb-1" size={20} />
+              </Link>
+            </div>
+          ) : (
+            <div className="flex items-center">
+              {started && !!draftingStudio ? (
+                <Countdown
+                  currentPick={currentPick}
+                  leagueSettings={session.settings}
+                  draftingStudioId={draftingStudio.id}
+                  isAdmin={isAdmin}
+                />
+              ) : session?.league.ownerId === sessionData?.user.id ? (
+                <Button className="ml-2 font-sans" onClick={() => handleStart()}>
+                  Start Draft
+                </Button>
+              ) : (
+                <div className="text-center">Waiting on owner to start draft</div>
+              )}
+              <OnTheClock pick={currentPick.num} studio={draftingStudio} />
+              <div className="flex space-x-4 overflow-hidden">
+                {getUpcomingPicks(
+                  currentPick.num,
+                  session.settings.draft.numRounds ?? 0,
+                  session.settings.draft.order ?? [],
+                ).map((pick, i) => {
+                  return <UpcomingPick key={i} num={pick.num} studio={studiosById[pick.studio]} />;
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="flex max-h-[calc(100vh-168px)]">
+            <div className={cn("max-h-full border-t-2 border-[#9ac] px-2 py-2", expand ? "w-[436px]" : "w-[218px]")}>
+              {myStudio && (
+                <MyStudio
+                  teamStructure={session.settings.teamStructure}
+                  films={myStudio.films}
+                  expand={expand}
+                  setExpand={setExpand}
+                />
+              )}
+            </div>
+            <div
+              className={cn(
+                "border-x-2 border-t-2 border-[#9ac] px-2 py-2",
+                expand ? "w-[calc(100vw-736px)]" : "w-[calc(100vw-518px)]",
+              )}
+            >
+              {myStudio && (
+                <AvailableFilms
+                  session={session}
+                  studioId={myStudio.id}
+                  isDraft={true}
+                  drafting={draftingStudio}
+                  draftDisabled={draftDisabled || draftOver}
+                  gridCols={expand ? 4 : 5}
+                />
+              )}
+            </div>
+            <div className="w-[300px] border-t-2 border-[#9ac] px-4 py-2">
+              <Activity activities={activities} />
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+
   return (
-    <Layout fullWidth>
-      <div className="flex flex-col space-y-2">
-        <div className="bg-lb-blue flex h-10 items-center justify-between px-4 font-sans text-white">
+    <Layout>
+      <div className="flex flex-col">
+        <div className="bg-lb-blue flex h-10 items-center justify-between px-1 font-sans text-white">
           <span className="uppercase">FANTASY FILM DRAFT - {session.name}</span>
-          <HelpCircle />
+          {/* <HowToPlayDialog /> */}
         </div>
 
         {draftOver ? (
@@ -153,7 +245,7 @@ export default function Draft() {
             </Link>
           </div>
         ) : (
-          <div className="flex items-center">
+          <div className="scrollbar-hidden flex items-center overflow-scroll">
             {started && !!draftingStudio ? (
               <Countdown
                 currentPick={currentPick}
@@ -169,7 +261,7 @@ export default function Draft() {
               <div className="text-center">Waiting on owner to start draft</div>
             )}
             <OnTheClock pick={currentPick.num} studio={draftingStudio} />
-            <div className="flex space-x-4 overflow-hidden">
+            <div className="flex space-x-4">
               {getUpcomingPicks(
                 currentPick.num,
                 session.settings.draft.numRounds ?? 0,
@@ -181,38 +273,46 @@ export default function Draft() {
           </div>
         )}
 
-        <div className="flex max-h-[calc(100vh-168px)]">
-          <div className={cn("max-h-full border-t-2 border-[#9ac] px-2 py-2", expand ? "w-[436px]" : "w-[218px]")}>
-            {myStudio && (
-              <MyStudio
-                teamStructure={session.settings.teamStructure}
-                films={myStudio.films}
-                expand={expand}
-                setExpand={setExpand}
-              />
-            )}
-          </div>
-          <div
-            className={cn(
-              "border-x-2 border-t-2 border-[#9ac] px-2 py-2",
-              expand ? "w-[calc(100vw-736px)]" : "w-[calc(100vw-518px)]",
-            )}
+        <div className="mb-4 flex justify-around border-b-[1px] border-zinc-50">
+          <Button
+            className={cn("text-lg", tab === "my" && "text-primary font-bold")}
+            variant="ghost"
+            onClick={() => setTab("my")}
           >
-            {myStudio && (
-              <AvailableFilms
-                session={session}
-                studioId={myStudio.id}
-                isDraft={true}
-                drafting={draftingStudio}
-                draftDisabled={draftDisabled || draftOver}
-                gridCols={expand ? 4 : 5}
-              />
-            )}
-          </div>
-          <div className="w-[300px] border-t-2 border-[#9ac] px-4 py-2">
-            <Activity activities={activities} />
-          </div>
+            My Studio
+          </Button>
+          <Button
+            className={cn("text-lg", tab === "available" && "text-primary font-bold")}
+            variant="ghost"
+            onClick={() => setTab("available")}
+          >
+            Available Films
+          </Button>
+          <Button
+            className={cn("text-lg", tab === "activity" && "text-primary font-bold")}
+            variant="ghost"
+            onClick={() => setTab("activity")}
+          >
+            Activity
+          </Button>
         </div>
+
+        {tab === "my" && myStudio && (
+          <MyStudio teamStructure={session.settings.teamStructure} films={myStudio.films} expand />
+        )}
+
+        {tab === "available" && myStudio && (
+          <AvailableFilms
+            session={session}
+            studioId={myStudio.id}
+            isDraft={true}
+            drafting={draftingStudio}
+            draftDisabled={draftDisabled || draftOver}
+            gridCols={2}
+          />
+        )}
+
+        {tab === "activity" && <Activity activities={activities} />}
       </div>
     </Layout>
   );
@@ -315,10 +415,12 @@ function OnTheClock({ pick, studio }: { pick: number; studio?: LeagueSessionStud
         studio.ownerId === sessionData?.user.id ? "bg-green-500" : "",
       )}
     >
-      <StudioIcon image={studio.image} />
-      <div className="flex flex-col font-sans">
+      <div className="flex flex-col items-center font-sans">
         <div className="text-sm uppercase">On the Clock: Pick {pick}</div>
-        <div className="text-2xl">{studio.name}</div>
+        <div className="flex">
+          <StudioIcon image={studio.image} />
+          <div className="ml-1 text-2xl">{studio.name}</div>
+        </div>
       </div>
     </div>
   );
@@ -349,15 +451,17 @@ function MyStudio({
   }[];
   films: StudioFilmTMDB[];
   expand: boolean;
-  setExpand: Dispatch<SetStateAction<boolean>>;
+  setExpand?: Dispatch<SetStateAction<boolean>>;
 }) {
   return (
     <>
       <div className="flex items-center">
-        <p>My Studio</p>
-        <Button className="ml-auto pr-1" variant="ghost" onClick={() => setExpand((s) => !s)}>
-          {expand ? <ArrowLeftFromLine /> : <ArrowRightFromLine />}
-        </Button>
+        <p className="hidden lg:block">My Studio</p>
+        {!!setExpand && (
+          <Button className="ml-auto pr-1" variant="ghost" onClick={() => setExpand((s) => !s)}>
+            {expand ? <ArrowLeftFromLine /> : <ArrowRightFromLine />}
+          </Button>
+        )}
       </div>
       <div
         className={cn(
@@ -377,7 +481,7 @@ function MyStudio({
 function Activity({ activities }: { activities: string[] }) {
   return (
     <>
-      <div>Activity</div>
+      <div className="hidden lg:block">Activity</div>
       <div className="scrollbar-hidden flex max-h-[calc(100%-30px)] flex-col-reverse gap-2 overflow-y-auto px-2">
         {activities.map((activity, i) => {
           return (
@@ -388,5 +492,41 @@ function Activity({ activities }: { activities: string[] }) {
         })}
       </div>
     </>
+  );
+}
+
+function Mobile() {
+  const { data: sessionData } = useSession();
+
+  const [tab, setTab] = useState<"my" | "available" | "activity">("my");
+
+  return (
+    <Layout title="Fantasy Film">
+      <div className="flex flex-col">
+        <div className="mb-4 flex justify-around border-b-[1px] border-zinc-50">
+          <Button
+            className={cn("text-lg", tab === "my" && "text-primary font-bold")}
+            variant="ghost"
+            onClick={() => setTab("my")}
+          >
+            My Studio
+          </Button>
+          <Button
+            className={cn("text-lg", tab === "available" && "text-primary font-bold")}
+            variant="ghost"
+            onClick={() => setTab("available")}
+          >
+            Available Films
+          </Button>
+          <Button
+            className={cn("text-lg", tab === "activity" && "text-primary font-bold")}
+            variant="ghost"
+            onClick={() => setTab("activity")}
+          >
+            Activity
+          </Button>
+        </div>
+      </div>
+    </Layout>
   );
 }

@@ -120,8 +120,8 @@ export default function StudioSlot({
 
   return (
     <div className={cn("flex lg:h-[260px]")}>
-      <div className="flex rounded-sm rounded-r-none border-2 border-[#9ac]">
-        <p className="flex rotate-180 items-center justify-center text-white [writing-mode:vertical-lr] lg:h-full">
+      <div className="mb-4 flex rounded-sm rounded-r-none border-2 border-[#9ac] lg:mb-0">
+        <p className="my-2 flex rotate-180 items-center justify-center text-white [writing-mode:vertical-lr] lg:h-full">
           {locked && <Lock size={16} className="mb-2 inline-block rotate-90" />}
           {slot}
         </p>
@@ -289,7 +289,7 @@ export default function StudioSlot({
             // </Dialog>
             <div
               className={cn(
-                "flex h-full max-h-[300px] max-w-[200px] items-center justify-center bg-[#9ac] font-sans text-black",
+                "flex h-full max-h-[300px] min-h-[220px] max-w-[200px] items-center justify-center bg-[#9ac] font-sans text-black",
                 film && bidWar && "bg-primary",
               )}
             >

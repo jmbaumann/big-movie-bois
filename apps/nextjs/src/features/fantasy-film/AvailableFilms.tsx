@@ -536,7 +536,7 @@ export default function AvailableFilms({
         </ResponsiveDialog>
 
         {!!films.length && !showWatchlist && films.length < (sessionFilms?.total ?? 0) && (
-          <div className="flex w-full">
+          <div className="mb-4 flex w-full lg:mb-0">
             <Button className="mx-auto" onClick={() => setPage((s) => s + 1)} isLoading={loadingFilms}>
               Load More
             </Button>

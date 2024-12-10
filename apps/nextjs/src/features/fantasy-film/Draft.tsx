@@ -494,39 +494,3 @@ function Activity({ activities }: { activities: string[] }) {
     </>
   );
 }
-
-function Mobile() {
-  const { data: sessionData } = useSession();
-
-  const [tab, setTab] = useState<"my" | "available" | "activity">("my");
-
-  return (
-    <Layout title="Fantasy Film">
-      <div className="flex flex-col">
-        <div className="mb-4 flex justify-around border-b-[1px] border-zinc-50">
-          <Button
-            className={cn("text-lg", tab === "my" && "text-primary font-bold")}
-            variant="ghost"
-            onClick={() => setTab("my")}
-          >
-            My Studio
-          </Button>
-          <Button
-            className={cn("text-lg", tab === "available" && "text-primary font-bold")}
-            variant="ghost"
-            onClick={() => setTab("available")}
-          >
-            Available Films
-          </Button>
-          <Button
-            className={cn("text-lg", tab === "activity" && "text-primary font-bold")}
-            variant="ghost"
-            onClick={() => setTab("activity")}
-          >
-            Activity
-          </Button>
-        </div>
-      </div>
-    </Layout>
-  );
-}

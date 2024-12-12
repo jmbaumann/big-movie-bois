@@ -98,7 +98,7 @@ function LeagueCard({ league }: { league: League }) {
                 {format(session.startDate, "LLL dd, yyyy")} - {format(session.endDate, "LLL dd, yyyy")}
               </CardDescription>
             </CardHeader>
-            <CardContent>TEAM NAME</CardContent>
+            {/* <CardContent>TEAM NAME</CardContent> */}
           </Card>
         ))}
       </CardContent>

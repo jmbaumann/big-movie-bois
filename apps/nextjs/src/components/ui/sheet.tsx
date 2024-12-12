@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 
 import { cn } from "~/utils/shadcn";
 
-const Sheet = SheetPrimitive.Root;
+const Sheet = ({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) => <SheetPrimitive.Root {...props} />;
 
 const SheetTrigger = SheetPrimitive.Trigger;
 

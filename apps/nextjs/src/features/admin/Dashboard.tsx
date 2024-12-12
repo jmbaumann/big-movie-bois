@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { CalendarDays, Home, Mail, Shield, User } from "lucide-react";
+import { CalendarDays, Home, Mail, Shield, Trophy, User } from "lucide-react";
 
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
+import AwardShowsAdmin from "./award-show/AwardShowsAdmin";
+import LiveResultsAdmin from "./award-show/LiveResultsAdmin";
 import InboxAdmin from "./contact/InboxAdmin";
 import FilmDataAdmin from "./fantasy-film/FilmData";
 import MasterListAdmin from "./fantasy-film/MasterList";
@@ -21,6 +23,7 @@ export default function AdminDashboard() {
     { icon: <User />, value: "users" },
     { icon: <Shield />, value: "fantasy" },
     { icon: <CalendarDays />, value: "dailys" },
+    { icon: <Trophy />, value: "awardShows" },
     { icon: <Mail />, value: "messages" },
   ];
 
@@ -41,6 +44,10 @@ export default function AdminDashboard() {
       { label: "Public Sessions", value: "public-sessions", component: <PublicSessionsAdmin /> },
     ],
     dailys: [{ label: "Overlap", value: "overlap", component: <OverlapAdmin /> }],
+    awardShows: [
+      { label: "Award Shows", value: "award-shows", component: <AwardShowsAdmin /> },
+      { label: "Live Results", value: "live-results", component: <LiveResultsAdmin /> },
+    ],
     messages: [
       { label: "Inbox", value: "new-messages", component: <InboxAdmin /> },
       // { label: "Archive", value: "archived-messages", component: <InboxAdmin /> },

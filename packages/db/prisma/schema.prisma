@@ -256,6 +256,92 @@ model FilmTradeProposal {
     @@index([receivingFilmId])
 }
 
+model AwardShow {
+    id      String  @id @default(cuid())
+    slug    String
+    name    String
+    image   String
+    website String?
+
+    years AwardShowYear[]
+}
+
+model AwardShowYear {
+    id          String    @id @default(cuid())
+    awardShowId String
+    year        String
+    available   DateTime?
+    locked      DateTime
+
+    awardShow  AwardShow           @relation(fields: [awardShowId], references: [id])
+    categories AwardShowCategory[]
+    groups     AwardShowGroup[]
+
+    @@unique([awardShowId, year])
+}
+
+model AwardShowCategory {
+    id              String @id @default(cuid())
+    awardShowYearId String
+    name            String
+    order           Int
+
+    awardShowYear AwardShowYear      @relation(fields: [awardShowYearId], references: [id])
+    nominees      AwardShowNominee[]
+    picks         AwardShowPick[]
+
+    @@index([awardShowYearId])
+}
+
+model AwardShowNominee {
+    id         String  @id @default(cuid())
+    categoryId String
+    tmdbId     Int?
+    name       String
+    image      String?
+    order      Int?
+    winner     Boolean @default(false)
+
+    category AwardShowCategory @relation(fields: [categoryId], references: [id])
+    picks    AwardShowPick[]
+
+    @@index([categoryId])
+}
+
+model AwardShowGroup {
+    id              String  @id @default(cuid())
+    awardShowYearId String
+    ownerId         String
+    name            String
+    public          Boolean @default(false)
+
+    awardShowYear AwardShowYear   @relation(fields: [awardShowYearId], references: [id])
+    owner         User            @relation(fields: [ownerId], references: [id])
+    picks         AwardShowPick[]
+
+    @@index([awardShowYearId])
+    @@index([ownerId])
+}
+
+model AwardShowPick {
+    id         String @id @default(cuid())
+    groupId    String
+    userId     String
+    categoryId String
+    nomineeId  String
+
+    group    AwardShowGroup    @relation(fields: [groupId], references: [id])
+    user     User              @relation(fields: [userId], references: [id])
+    category AwardShowCategory @relation(fields: [categoryId], references: [id])
+    nominee  AwardShowNominee  @relation(fields: [nomineeId], references: [id])
+
+    @@unique([groupId, userId, categoryId])
+    @@index([groupId])
+    @@index([userId])
+    @@index([categoryId])
+    @@index([nomineeId])
+}
+
 model PollQuestion {
     id        String    @id @default(cuid())
     text      String
@@ -386,6 +472,8 @@ model User {
     pollResponses     PollResponse[]
     overlapResults    OverlapResult[]
     contactMessages   ContactMessage[]
+    AwardShowGroup    AwardShowGroup[]
+    AwardShowPick     AwardShowPick[]
 }
 
 model VerificationToken {

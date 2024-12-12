@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, sub } from "date-fns";
 import { CalendarIcon, ChevronsUpDown, Pencil, Trash, X } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { api, RouterOutputs } from "~/utils/api";
@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~
 import { ONE_DAY_IN_SECONDS } from "~/utils";
 
 type AwardShow = RouterOutputs["awardShow"]["get"][number];
+type Category = RouterOutputs["awardShow"]["get"][number]["categories"][number];
 
 export default function AwardShowsAdmin() {
   const { toast } = useToast();
@@ -67,8 +68,8 @@ export default function AwardShowsAdmin() {
               <TableCell>{show.year}</TableCell>
               <TableCell>{3}</TableCell>
               <TableCell>{8}</TableCell>
-              <TableCell>
-                <AwardShowCategoriesSheet selectedShow={selectedShow}>
+              <TableCell onClick={() => setSelectedShow(show)}>
+                <AwardShowCategoriesSheet selectedShow={selectedShow} refetch={refresh}>
                   <Button>Categories & Nominees</Button>
                 </AwardShowCategoriesSheet>
               </TableCell>
@@ -277,79 +278,264 @@ function AwardShowCategoriesSheet({
   children: React.ReactNode;
   className?: string;
   selectedShow?: AwardShow;
-  refetch?: () => void;
+  refetch: () => void;
 }) {
-  const { toast } = useToast();
-
   const [open, setOpen] = useState(false);
-
-  const { data: shows, refetch: refresh } = api.awardShow.getShows.useQuery(undefined, {
-    staleTime: ONE_DAY_IN_SECONDS,
-  });
-
-  const { isLoading: creatingYear, mutate: createAwardShowYear } = api.awardShow.addYear.useMutation();
-
-  const formSchema = z.object({
-    awardShowId: z.string(),
-    year: z.string(),
-    available: z.date().optional(),
-    locked: z.date(),
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      awardShowId: "",
-      year: String(new Date().getFullYear()),
-      available: undefined,
-      locked: new Date(),
-    },
-  });
-
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    if (values.awardShowId)
-      createAwardShowYear(values, {
-        onSuccess: () => {
-          toast({
-            title: "Award Show Created",
-          });
-          setOpen(false);
-          // refetch();
-        },
-        onError: (error) => {
-          toast({ title: error.message, variant: "destructive" });
-        },
-      });
-  }
-
-  useEffect(() => {
-    if (selectedShow) {
-      form.setValue("awardShowId", selectedShow.awardShowId);
-      form.setValue("year", selectedShow.year);
-      form.setValue("available", selectedShow.available ?? undefined);
-      form.setValue("locked", selectedShow.locked);
-    }
-  }, [selectedShow]);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category>();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger className={className}>{children}</SheetTrigger>
       <SheetContent className="w-3/4">
         <SheetHeader>
-          <SheetTitle>{selectedShow ? "Edit" : "New"} Award Show</SheetTitle>
+          <SheetTitle>
+            {selectedShow?.awardShow.name} {selectedShow?.year} - CATEGORIES & NOMINEES
+          </SheetTitle>
           <SheetDescription>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-4">
-                CATEGORIES & NOMINEES
-                <Button type="submit" className="ml-auto w-fit" isLoading={creatingYear}>
-                  Save
-                </Button>
-              </form>
-            </Form>
+            {!showNewForm && <Button onClick={() => setShowNewForm(true)}>+ Add Category</Button>}
+
+            {showNewForm && (
+              <CategoryForm
+                key="new-form"
+                selectedShow={selectedShow}
+                selectedCategory={selectedCategory}
+                setShowNewForm={setShowNewForm}
+                setSelectedCategory={setSelectedCategory}
+                refetch={refetch}
+              />
+            )}
+
+            <div className="mt-4">
+              {selectedShow?.categories.map((category, i) => {
+                if (selectedCategory?.id === category.id)
+                  return (
+                    <CategoryForm
+                      key={`edit-form-${category.id}`}
+                      selectedShow={selectedShow}
+                      selectedCategory={selectedCategory}
+                      setShowNewForm={setShowNewForm}
+                      setSelectedCategory={setSelectedCategory}
+                      refetch={refetch}
+                    />
+                  );
+                else
+                  return (
+                    <div key={i} className="my-2">
+                      <div className="flex items-center">
+                        <Button
+                          className="mr-1"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setSelectedCategory(category)}
+                        >
+                          <Pencil size={20} />
+                        </Button>
+                        <p className="inline-block text-xl text-white">{category.name}</p>
+                      </div>
+
+                      <div className="mt-2 flex justify-around">
+                        {category.nominees.map((nominee, j) => (
+                          <div key={j + "-" + i} className="flex">
+                            {nominee.name}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+              })}
+            </div>
           </SheetDescription>
         </SheetHeader>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function CategoryForm({
+  selectedShow,
+  selectedCategory,
+  setShowNewForm,
+  setSelectedCategory,
+  refetch,
+}: {
+  selectedShow?: AwardShow;
+  selectedCategory?: Category;
+  setShowNewForm: React.Dispatch<React.SetStateAction<boolean>>;
+  setSelectedCategory: React.Dispatch<React.SetStateAction<Category | undefined>>;
+  refetch: () => void;
+}) {
+  const { toast } = useToast();
+
+  const { isLoading: saving, mutate: saveCategories } = api.awardShow.saveCategories.useMutation();
+
+  const formSchema = z.object({
+    id: z.string().optional(),
+    awardShowYearId: z.string(),
+    name: z.string(),
+    order: z.number(),
+    nominees: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          name: z.string(),
+          image: z.string().optional(),
+          tmdbId: z.coerce.number().optional(),
+        }),
+      )
+      .optional(),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      awardShowYearId: selectedShow?.id,
+      order: (selectedShow?.categories.length ?? 0) + 1,
+      nominees: [{ name: "", image: "", tmdbId: undefined }],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    name: "nominees",
+    control: form.control,
+  });
+
+  useEffect(() => {
+    console.log(selectedCategory);
+    if (selectedCategory) {
+      form.reset({
+        id: selectedCategory.id,
+        awardShowYearId: selectedCategory.awardShowYearId,
+        name: selectedCategory.name,
+        order: selectedCategory.order,
+        nominees: selectedCategory.nominees?.map((e) => ({
+          id: e.id ?? undefined,
+          name: e.name || "",
+          image: e.image || "",
+          tmdbId: e.tmdbId || undefined,
+        })) || [{ name: "", image: "", tmdbId: undefined }],
+      });
+    } else {
+      form.reset({
+        awardShowYearId: selectedShow?.id,
+        order: (selectedShow?.categories.length ?? 0) + 1,
+        nominees: [{ name: "", image: "", tmdbId: undefined }],
+      });
+    }
+  }, [selectedCategory, form]);
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("SAVE", values);
+    saveCategories(values, {
+      onSuccess: () => {
+        toast({
+          title: "Category & Nominees saved",
+        });
+        refetch();
+        setShowNewForm(false);
+      },
+      onError: (error) => {
+        toast({ title: error.message, variant: "destructive" });
+      },
+    });
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-4">
+        <div className="">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input {...field} className="text-black" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="mt-2 flex flex-col gap-y-4">
+            {fields.map((field, index) => {
+              return (
+                <div className="ml-4" key={"nom-" + index}>
+                  <div className="flex space-x-2">
+                    <FormField
+                      control={form.control}
+                      name={`nominees.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem className="grow">
+                          <FormLabel>Nominee #{index + 1} Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="grow text-black" autoComplete="off" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`nominees.${index}.image`}
+                      render={({ field }) => (
+                        <FormItem className="grow">
+                          <FormLabel>Image</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="grow text-black" autoComplete="off" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`nominees.${index}.tmdbId`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>TMDB ID</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="text-black" autoComplete="off" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            <Button
+              type="button"
+              className="w-fit"
+              onClick={() =>
+                append({
+                  name: "",
+                  image: "",
+                  tmdbId: undefined,
+                })
+              }
+            >
+              Add Nominee
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex justify-between">
+          <Button
+            type="button"
+            className="w-fit"
+            variant="destructive"
+            onClick={() => {
+              setShowNewForm(false);
+              setSelectedCategory(undefined);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" className="w-fit" isLoading={saving}>
+            Save
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }
 
@@ -378,6 +564,7 @@ function AwardShowFormDialog() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("HERE");
     createAwardShow(values, {
       onSuccess: () => {
         toast({

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
+import { draftEvent, socketEvent } from "../../wss";
 
 const get = protectedProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShowYear.findMany({
@@ -98,9 +99,12 @@ const saveCategories = adminProcedure
     }
   });
 
-const updateWinner = adminProcedure.input(z.object({ nomineeId: z.string() })).mutation(async ({ ctx, input }) => {
-  return ctx.prisma.awardShowNominee.update({ data: { winner: true }, where: { id: input.nomineeId } });
-});
+const updateWinner = adminProcedure
+  .input(z.object({ awardShowYearId: z.string(), nomineeId: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    await ctx.prisma.awardShowNominee.update({ data: { winner: true }, where: { id: input.nomineeId } });
+    return await socketEvent<{ done: boolean }>(`pick-em:${input.awardShowYearId}:winner-update`, { done: true });
+  });
 
 const createGroup = protectedProcedure
   .input(

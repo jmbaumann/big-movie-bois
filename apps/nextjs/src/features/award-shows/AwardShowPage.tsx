@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { io } from "socket.io-client";
 
 import { api } from "~/utils/api";
 import { useArray } from "~/utils/hooks/use-array";
@@ -9,6 +10,7 @@ import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { toast } from "~/components/ui/hooks/use-toast";
+import { env } from "~/env.mjs";
 import Loading from "~/layouts/main/Loading";
 import { ONE_DAY_IN_SECONDS } from "~/utils";
 
@@ -20,11 +22,11 @@ export default function AwardShowPage() {
 
   const picks = useArray<Pick>();
 
-  const { data: awardShowGroup } = api.awardShowGroup.get.useQuery(
+  const { data: awardShowGroup, refetch } = api.awardShowGroup.get.useQuery(
     { id: "cm4kvmla900086e5nklamssl4" },
     { staleTime: ONE_DAY_IN_SECONDS },
   );
-  const { data: myPicks, refetch } = api.awardShowGroup.myPicks.useQuery(
+  const { data: myPicks, refetch: refetchMyPicks } = api.awardShowGroup.myPicks.useQuery(
     { userId: sessionData?.user.id ?? "", groupId: "cm4kvmla900086e5nklamssl4" },
     { enabled: !!sessionData, staleTime: ONE_DAY_IN_SECONDS },
   );
@@ -33,6 +35,24 @@ export default function AwardShowPage() {
   useEffect(() => {
     if (myPicks) picks.set(myPicks);
   }, [myPicks]);
+
+  useEffect(() => {
+    const socket = io(env.NEXT_PUBLIC_WEBSOCKET_SERVER, {
+      // withCredentials: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to the WebSocket server");
+    });
+
+    socket.on(`pick-em:${awardShowGroup?.awardShowYearId}:winner-update`, () => {
+      refetch();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [awardShowGroup]);
 
   function handlePick(categoryId: string, nomineeId: string) {
     const picked = picks.array.findIndex((e) => e.categoryId === categoryId);
@@ -50,7 +70,7 @@ export default function AwardShowPage() {
       makePick(data, {
         onSuccess: () => {
           toast({ title: "Picks submitted" });
-          refetch();
+          refetchMyPicks();
         },
       });
     }

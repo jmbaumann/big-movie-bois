@@ -16,9 +16,9 @@ export default function LiveResultsAdmin() {
 
   async function handlePick(nomineeId: string) {
     const ok = await confirm("Are you sure you want to select this nominee as the winner?");
-    if (ok) {
+    if (ok && liveShow) {
       pickWinner(
-        { nomineeId },
+        { nomineeId, awardShowYearId: liveShow.id },
         {
           onSuccess: () => {
             toast({ title: "Winner updated" });

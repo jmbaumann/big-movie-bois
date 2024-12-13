@@ -14,17 +14,21 @@ import BiddingWarDialog from "~/features/fantasy-film/BiddingWarDialog";
 import LeagueInvitesDialog from "~/features/fantasy-film/LeagueInvitesDialog";
 import StudioIcon from "~/features/fantasy-film/StudioIcon";
 import Poll from "~/features/polls/Poll";
+import AwardShowCard from "../award-shows/AwardShowCard";
 
 export default function HomePage() {
   const { data: sessionData } = useSession();
   const router = useRouter();
 
-  const { data: polls, refetch: refreshPolls } = api.poll.get.useQuery({ active: true });
   const { data: leagues, refetch } = api.ffLeague.getMyLeagues.useQuery(undefined, {
     enabled: !!sessionData?.user,
   });
   const { data: biddingWarSessions } = api.ffLeague.getSiteWideSessions.useQuery(undefined);
   const { mutate: join, isLoading: joining } = api.ffStudio.create.useMutation();
+
+  const { data: polls, refetch: refreshPolls } = api.poll.get.useQuery({ active: true });
+
+  const { data: awardShows, refetch: refreshAwardShows } = api.awardShow.getActive.useQuery();
 
   const activeSessions = leagues
     ?.map((e) => e.sessions)
@@ -210,6 +214,10 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* <p className="text-2xl text-white">Pick 'Ems</p> */}
+        {awardShows?.map((show, i) => <AwardShowCard key={i} awardShow={show} />)}
+
+        {/* <p className="text-2xl text-white">Polls</p> */}
         {polls?.map((poll, i) => <Poll key={i} poll={poll} refresh={refreshPolls} />)}
       </div>
     </div>

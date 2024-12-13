@@ -1,4 +1,5 @@
 import { awardShowRouter } from "./router/award-show";
+import { awardShowGroupRouter } from "./router/award-show/group";
 import { contactRouter } from "./router/contact";
 import { cronRouter } from "./router/cron";
 import { overlapRouter } from "./router/daily-games/overlap";
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
   ffFilm: ffFilmRouter,
   ffDraft: ffDraftRouter,
   awardShow: awardShowRouter,
+  awardShowGroup: awardShowGroupRouter,
   overlap: overlapRouter,
   tmdb: tmdbRouter,
   poll: pollRouter,

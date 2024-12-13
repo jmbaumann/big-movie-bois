@@ -13,6 +13,14 @@ const getShows = protectedProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShow.findMany();
 });
 
+const getActive = publicProcedure.query(async ({ ctx }) => {
+  return ctx.prisma.awardShowYear.findMany({
+    include: { awardShow: { select: { name: true, slug: true } } },
+    where: { available: { lte: new Date() } },
+    orderBy: { available: "desc" },
+  });
+});
+
 const create = adminProcedure
   .input(
     z.object({
@@ -106,6 +114,7 @@ const createGroup = protectedProcedure
 export const awardShowRouter = createTRPCRouter({
   get,
   getShows,
+  getActive,
   create,
   addYear,
   saveCategories,

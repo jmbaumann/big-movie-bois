@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, Lock, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { io } from "socket.io-client";
 
@@ -88,9 +88,16 @@ export default function AwardShowPage() {
         <p className="mb-4 text-2xl">
           {awardShowGroup.name} - {awardShowGroup.awardShowYear.awardShow.name} {awardShowGroup.awardShowYear.year}
         </p>
-        <Button isLoading={submitting} onClick={() => submitPicks()}>
-          Save Picks
-        </Button>
+        {isLocked ? (
+          <div className="flex items-center">
+            <Lock size={20} className="mr-1" />
+            Picks Locked
+          </div>
+        ) : (
+          <Button isLoading={submitting} onClick={() => submitPicks()}>
+            Save Picks
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col gap-y-6">

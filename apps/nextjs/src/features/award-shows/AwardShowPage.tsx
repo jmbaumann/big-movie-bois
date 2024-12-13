@@ -88,13 +88,18 @@ export default function AwardShowPage() {
                         "border-green-600 text-green-600 hover:cursor-default hover:border-green-600",
                       !!winnerId &&
                         winnerId !== nominee.id &&
+                        picked?.nomineeId === nominee.id &&
                         "border-red-600 text-red-600 hover:cursor-default hover:border-red-600",
                     )}
                     onClick={() => handlePick(category.id, nominee.id)}
                   >
                     <CardContent className="flex items-center p-4 text-center">
-                      {winnerId === nominee.id && <CheckCircle2 className="mr-1 text-green-600" />}
-                      {!!winnerId && winnerId !== nominee.id && <XCircle className="mr-1 text-red-600" />}
+                      {winnerId === nominee.id && picked?.nomineeId === winnerId && (
+                        <CheckCircle2 className="mr-1 text-green-600" size={20} />
+                      )}
+                      {!!winnerId && winnerId !== nominee.id && picked?.nomineeId === nominee.id && (
+                        <XCircle className="mr-1 text-red-600" size={20} />
+                      )}
                       {nominee.name}
                     </CardContent>
                   </Card>

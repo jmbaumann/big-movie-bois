@@ -15,7 +15,7 @@ const getShows = protectedProcedure.query(async ({ ctx }) => {
 
 const getActive = publicProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShowYear.findMany({
-    include: { awardShow: { select: { name: true, slug: true } } },
+    include: { awardShow: { select: { name: true, slug: true } }, categories: { include: { nominees: true } } },
     where: { available: { lte: new Date() } },
     orderBy: { available: "desc" },
   });
@@ -98,6 +98,10 @@ const saveCategories = adminProcedure
     }
   });
 
+const updateWinner = adminProcedure.input(z.object({ nomineeId: z.string() })).mutation(async ({ ctx, input }) => {
+  return ctx.prisma.awardShowNominee.update({ data: { winner: true }, where: { id: input.nomineeId } });
+});
+
 const createGroup = protectedProcedure
   .input(
     z.object({
@@ -118,5 +122,6 @@ export const awardShowRouter = createTRPCRouter({
   create,
   addYear,
   saveCategories,
+  updateWinner,
   createGroup,
 });

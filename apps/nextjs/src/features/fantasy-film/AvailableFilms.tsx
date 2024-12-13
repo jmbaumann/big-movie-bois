@@ -8,7 +8,7 @@ import { io } from "socket.io-client";
 
 import { RouterOutputs } from "@repo/api";
 import { DraftState } from "@repo/api/src/router/fantasy-film/draft";
-import { LeagueSessionStudio, TMDBDetails } from "@repo/db";
+import { TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getFilmCost, getUnlockedSlots } from "~/utils/fantasy-film-helpers";
@@ -19,15 +19,6 @@ import ResponsiveDialog from "~/components/ResponsiveDialog";
 import SortChips from "~/components/SortChips";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
 import { DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
@@ -157,9 +148,7 @@ export default function AvailableFilms({
 
   const myFilmsPopularity = myStudio?.films.map((e) => e.tmdb!.popularity);
   const maxPopularity =
-    sessionFilms && myFilmsPopularity
-      ? Math.min(Math.max(...sessionFilms.data.map((e) => e.popularity), ...myFilmsPopularity), 100)
-      : 0;
+    films && myFilmsPopularity ? Math.min(Math.max(...films.map((e) => e.popularity), ...myFilmsPopularity), 100) : 0;
 
   useEffect(() => {
     if (sessionFilms?.data) {

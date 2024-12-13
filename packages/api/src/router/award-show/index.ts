@@ -5,7 +5,10 @@ import { draftEvent, socketEvent } from "../../wss";
 
 const get = protectedProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShowYear.findMany({
-    include: { awardShow: { select: { name: true } }, categories: { include: { nominees: true } } },
+    include: {
+      awardShow: { select: { name: true } },
+      categories: { include: { nominees: { orderBy: { name: "asc" } } } },
+    },
     orderBy: { available: "desc" },
   });
 });
@@ -16,7 +19,10 @@ const getShows = protectedProcedure.query(async ({ ctx }) => {
 
 const getActive = publicProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShowYear.findMany({
-    include: { awardShow: { select: { name: true, slug: true } }, categories: { include: { nominees: true } } },
+    include: {
+      awardShow: { select: { name: true, slug: true } },
+      categories: { include: { nominees: { orderBy: { name: "asc" } } } },
+    },
     where: { available: { lte: new Date() } },
     orderBy: { available: "desc" },
   });

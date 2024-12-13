@@ -32,6 +32,8 @@ export default function AwardShowPage() {
   );
   const { mutate: makePick, isLoading: submitting } = api.awardShowGroup.pick.useMutation();
 
+  const isLocked = awardShowGroup ? awardShowGroup.awardShowYear.locked <= new Date() : false;
+
   useEffect(() => {
     if (myPicks) picks.set(myPicks);
   }, [myPicks]);
@@ -55,6 +57,8 @@ export default function AwardShowPage() {
   }, [awardShowGroup]);
 
   function handlePick(categoryId: string, nomineeId: string) {
+    if (isLocked) return;
+
     const picked = picks.array.findIndex((e) => e.categoryId === categoryId);
     if (picked >= 0) picks.removeAt(picked);
     picks.add({ categoryId, nomineeId });
@@ -102,7 +106,8 @@ export default function AwardShowPage() {
                   <Card
                     key={i + "-" + j}
                     className={cn(
-                      "hover:border-primary mx-2 hover:cursor-pointer",
+                      "mx-2",
+                      !isLocked && "hover:border-primary hover:cursor-pointer",
                       picked && "text-primary border-primary",
                       winnerId === nominee.id &&
                         "border-green-600 text-green-600 hover:cursor-default hover:border-green-600",

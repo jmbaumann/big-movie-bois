@@ -101,8 +101,10 @@ function AwardShowFormSheet({
   });
 
   const { isLoading: creatingYear, mutate: createAwardShowYear } = api.awardShow.addYear.useMutation();
+  const { isLoading: updatingYear, mutate: updateAwardShowYear } = api.awardShow.updateYear.useMutation();
 
   const formSchema = z.object({
+    id: z.string().optional(),
     awardShowId: z.string(),
     year: z.string(),
     available: z.date().optional(),
@@ -112,6 +114,7 @@ function AwardShowFormSheet({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      id: undefined,
       awardShowId: "",
       year: String(new Date().getFullYear()),
       available: undefined,
@@ -121,22 +124,40 @@ function AwardShowFormSheet({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (values.awardShowId)
-      createAwardShowYear(values, {
-        onSuccess: () => {
-          toast({
-            title: "Award Show Created",
-          });
-          setOpen(false);
-          refetch();
-        },
-        onError: (error) => {
-          toast({ title: error.message, variant: "destructive" });
-        },
-      });
+      if (values.id)
+        updateAwardShowYear(
+          { ...values, id: values.id! },
+          {
+            onSuccess: () => {
+              toast({
+                title: "Award Show Updated",
+              });
+              setOpen(false);
+              refetch();
+            },
+            onError: (error) => {
+              toast({ title: error.message, variant: "destructive" });
+            },
+          },
+        );
+      else
+        createAwardShowYear(values, {
+          onSuccess: () => {
+            toast({
+              title: "Award Show Created",
+            });
+            setOpen(false);
+            refetch();
+          },
+          onError: (error) => {
+            toast({ title: error.message, variant: "destructive" });
+          },
+        });
   }
 
   useEffect(() => {
     if (selectedShow) {
+      form.setValue("id", selectedShow.id ?? undefined);
       form.setValue("awardShowId", selectedShow.awardShowId);
       form.setValue("year", selectedShow.year);
       form.setValue("available", selectedShow.available ?? undefined);
@@ -257,7 +278,7 @@ function AwardShowFormSheet({
                   )}
                 />
 
-                <Button type="submit" className="ml-auto w-fit" isLoading={creatingYear}>
+                <Button type="submit" className="ml-auto w-fit" isLoading={creatingYear || updatingYear}>
                   Save
                 </Button>
               </form>
@@ -379,6 +400,7 @@ function CategoryForm({
         z.object({
           id: z.string().optional(),
           name: z.string(),
+          subtext: z.string().optional(),
           image: z.string().optional(),
           tmdbId: z.coerce.number().optional(),
         }),
@@ -401,7 +423,6 @@ function CategoryForm({
   });
 
   useEffect(() => {
-    console.log(selectedCategory);
     if (selectedCategory) {
       form.reset({
         id: selectedCategory.id,
@@ -411,6 +432,7 @@ function CategoryForm({
         nominees: selectedCategory.nominees?.map((e) => ({
           id: e.id ?? undefined,
           name: e.name || "",
+          subtext: e.subtext || "",
           image: e.image || "",
           tmdbId: e.tmdbId || undefined,
         })) || [{ name: "", image: "", tmdbId: undefined }],
@@ -419,7 +441,7 @@ function CategoryForm({
       form.reset({
         awardShowYearId: selectedShow?.id,
         order: (selectedShow?.categories.length ?? 0) + 1,
-        nominees: [{ name: "", image: "", tmdbId: undefined }],
+        nominees: [{ name: "", subtext: "", image: "", tmdbId: undefined }],
       });
     }
   }, [selectedCategory, form]);
@@ -468,6 +490,18 @@ function CategoryForm({
                       render={({ field }) => (
                         <FormItem className="grow">
                           <FormLabel>Nominee #{index + 1} Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="grow text-black" autoComplete="off" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`nominees.${index}.subtext`}
+                      render={({ field }) => (
+                        <FormItem className="grow">
+                          <FormLabel>Subtext</FormLabel>
                           <FormControl>
                             <Input {...field} className="grow text-black" autoComplete="off" />
                           </FormControl>

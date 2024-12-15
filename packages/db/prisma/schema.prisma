@@ -298,6 +298,7 @@ model AwardShowNominee {
     categoryId String
     tmdbId     Int?
     name       String
+    subtext    String?
     image      String?
     order      Int?
     winner     Boolean @default(false)

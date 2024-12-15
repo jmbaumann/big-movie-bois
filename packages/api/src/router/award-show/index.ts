@@ -64,6 +64,20 @@ const addYear = adminProcedure
     return year;
   });
 
+const updateYear = adminProcedure
+  .input(
+    z.object({
+      id: z.string(),
+      awardShowId: z.string(),
+      year: z.string(),
+      available: z.date().optional(),
+      locked: z.date(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    return ctx.prisma.awardShowYear.update({ data: input, where: { id: input.id } });
+  });
+
 const saveCategories = adminProcedure
   .input(
     z.object({
@@ -76,6 +90,7 @@ const saveCategories = adminProcedure
           z.object({
             id: z.string().optional(),
             name: z.string(),
+            subtext: z.string().optional(),
             image: z.string().optional(),
             tmdbId: z.number().optional(),
             order: z.number().optional(),
@@ -131,6 +146,7 @@ export const awardShowRouter = createTRPCRouter({
   getActive,
   create,
   addYear,
+  updateYear,
   saveCategories,
   updateWinner,
   createGroup,

@@ -11,7 +11,7 @@ const config = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
   images: {
-    domains: ["image.tmdb.org", "media.themoviedb.org"],
+    domains: ["image.tmdb.org", "media.themoviedb.org", "goldenglobes.com"],
     formats: ["image/avif", "image/webp"],
   },
 };

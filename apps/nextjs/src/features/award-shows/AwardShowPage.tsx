@@ -108,7 +108,7 @@ export default function AwardShowPage() {
             <div key={i} className="">
               <p className="mb-1 text-lg text-white">{category.name}</p>
 
-              <div className="flex justify-between">
+              <div className="grid grid-cols-2 justify-between gap-y-2 lg:flex">
                 {category.nominees.map((nominee, j) => {
                   const picked = picks.array.find((e) => e.categoryId === category.id && e.nomineeId === nominee.id);
                   const winnerId = category.nominees.find((e) => e.winner)?.id;

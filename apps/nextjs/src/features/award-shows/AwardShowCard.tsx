@@ -12,6 +12,8 @@ type AwardShow = RouterOutputs["awardShow"]["getActive"][number];
 export default function AwardShowCard({ awardShow }: { awardShow: AwardShow }) {
   const router = useRouter();
 
+  const isLocked = awardShow.locked <= new Date();
+
   return (
     <Card>
       <CardHeader>
@@ -24,7 +26,7 @@ export default function AwardShowCard({ awardShow }: { awardShow: AwardShow }) {
       </CardHeader>
       <CardContent className="">
         <Button onClick={() => router.push(`/pick-em/${awardShow.awardShow.slug}/${awardShow.year}`)}>
-          Make Picks
+          {isLocked ? "View Results" : "Make Picks"}
         </Button>
 
         <div className="mt-4 flex gap-x-4">
@@ -33,7 +35,8 @@ export default function AwardShowCard({ awardShow }: { awardShow: AwardShow }) {
         </div>
       </CardContent>
       <CardFooter className="text-sm">
-        <Lock className="mr-2" size={20} /> Picks lock on {format(awardShow.locked, "PP @ p")}
+        <Lock className="mr-2" size={20} /> Picks{" "}
+        {isLocked ? "locked" : "lock on " + format(awardShow.locked, "PP @ p")}
       </CardFooter>
     </Card>
   );

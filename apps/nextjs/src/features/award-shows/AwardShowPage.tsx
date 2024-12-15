@@ -238,7 +238,7 @@ export default function AwardShowPage() {
                           onClick={() => handlePick(category.id, nominee.id)}
                         >
                           {nominee.image && (
-                            <CardContent className="flex items-center p-4 text-center">
+                            <CardContent className="flex items-center p-2 text-center">
                               <Image src={nominee.image} alt="" width={600} height={1200}></Image>
                             </CardContent>
                           )}

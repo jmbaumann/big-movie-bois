@@ -13,6 +13,12 @@ const get = protectedProcedure.query(async ({ ctx }) => {
   });
 });
 
+const getBySlugYear = protectedProcedure
+  .input(z.object({ slug: z.string(), year: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return ctx.prisma.awardShowYear.findFirst({ where: { awardShow: { slug: input.slug }, year: input.year } });
+  });
+
 const getShows = protectedProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShow.findMany();
 });
@@ -58,6 +64,7 @@ const addYear = adminProcedure
         ownerId: "cm0rtl1gz00046epy0thc8r0l",
         name: "Big Movie Bois",
         public: true,
+        default: true,
       },
     });
 
@@ -142,6 +149,7 @@ const createGroup = protectedProcedure
 
 export const awardShowRouter = createTRPCRouter({
   get,
+  getBySlugYear,
   getShows,
   getActive,
   create,

@@ -315,6 +315,7 @@ model AwardShowGroup {
     ownerId         String
     name            String
     public          Boolean @default(false)
+    default         Boolean @default(false)
 
     awardShowYear AwardShowYear   @relation(fields: [awardShowYearId], references: [id])
     owner         User            @relation(fields: [ownerId], references: [id])
@@ -470,11 +471,11 @@ model User {
     leaguesDeleted    League[]              @relation("LeagueDeleter")
     studiosUpdated    LeagueSessionStudio[] @relation("StudioUpdater")
     studiosDeleted    LeagueSessionStudio[] @relation("StudioDeleter")
+    awardShowGroups   AwardShowGroup[]
+    awardShowPicks    AwardShowPick[]
     pollResponses     PollResponse[]
     overlapResults    OverlapResult[]
     contactMessages   ContactMessage[]
-    AwardShowGroup    AwardShowGroup[]
-    AwardShowPick     AwardShowPick[]
 }
 
 model VerificationToken {

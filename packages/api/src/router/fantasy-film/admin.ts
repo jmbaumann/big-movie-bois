@@ -49,7 +49,7 @@ const processAllBids = protectedProcedure
   .mutation(async ({ ctx }) => {
     const activeSessions = await ctx.prisma.leagueSession.findMany({
       where: {
-        leagueId: { not: "cm18qkt8o00056e9iscpz7ym8" },
+        league: { owner: { id: { not: "cm0rtl1gz00046epy0thc8r0l" } } },
         AND: [{ startDate: { lte: new Date() } }, { endDate: { gte: new Date() } }],
       },
     });

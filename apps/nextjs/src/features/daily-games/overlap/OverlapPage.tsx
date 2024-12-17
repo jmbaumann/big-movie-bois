@@ -9,6 +9,7 @@ import { useSession } from "next-auth/react";
 import { AppRouter } from "@repo/api";
 
 import { api } from "~/utils/api";
+import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import useLocalStorage from "~/utils/hooks/use-local-storage";
 import { defaultOverlapGameState, findOverlap } from "~/utils/overlap-helpers";
 import { cn } from "~/utils/shadcn";
@@ -337,11 +338,12 @@ function MovieDetail({
   field: OverlapAnswerDetails | OverlapAnswerDetails[];
   textSize?: string;
 }) {
+  const breakpoint = useBreakpoint();
   const fields = Array.isArray(field) ? field : [field];
 
   const c =
     fields.length >= 2
-      ? fields.length <= 3
+      ? fields.length <= 3 || breakpoint.isMobile
         ? "grid w-full grid-cols-2 gap-x-2 gap-y-1"
         : "grid w-full grid-cols-4 gap-x-4 gap-y-1"
       : "w-full";
@@ -411,7 +413,13 @@ function CrewDetail({
   return (
     <div className={cn("flex flex-col items-start px-4", className)}>
       <Label className="float-left mb-1">{label}</Label>
-      <div className={fields.length >= 2 ? "w-full gap-y-2 lg:grid lg:grid-cols-2 lg:gap-x-4" : "w-full lg:w-1/2"}>
+      <div
+        className={
+          fields.length >= 2
+            ? "flex w-full flex-col gap-y-2 lg:grid lg:grid-cols-2 lg:gap-x-4"
+            : "flex w-full flex-col gap-y-2 lg:w-1/2"
+        }
+      >
         {fields.map((crew, i) => {
           if (crew.revealed)
             return (

@@ -162,9 +162,11 @@ export async function getByTMDBId(ctx: TRPCContext, id: number, options?: { noRe
   if (film) return film;
 
   const tmdb = await getMovieFromTMDB(id);
-  await ctx.prisma.tMDBDetails.create({ data: { ...tmdb.details, createdAt: new Date() } });
-  await ctx.prisma.tMDBCast.createMany({ data: tmdb.cast! });
-  await ctx.prisma.tMDBCrew.createMany({ data: tmdb.crew! });
+  await Promise.allSettled([
+    ctx.prisma.tMDBDetails.create({ data: { ...tmdb.details, createdAt: new Date() } }),
+    ctx.prisma.tMDBCast.createMany({ data: tmdb.cast! }),
+    ctx.prisma.tMDBCrew.createMany({ data: tmdb.crew! }),
+  ]);
 
   if (options?.noReturn) return;
 
@@ -257,7 +259,7 @@ export async function updateMasterFantasyFilmList(ctx: TRPCContext) {
 
   // create new entries
   const createPromises = [];
-  for (const id of toCreateIds) createPromises.push(await getByTMDBId(ctx, id, { noReturn: true }));
+  for (const id of toCreateIds) createPromises.push(getByTMDBId(ctx, id, { noReturn: true }));
   await Promise.allSettled(createPromises);
 
   // update existing
@@ -265,7 +267,7 @@ export async function updateMasterFantasyFilmList(ctx: TRPCContext) {
   for (const id of toUpdateIds) {
     updatePromises.push(
       (async () => {
-        const { details } = await getMovieFromTMDB(id);
+        const { details } = await getMovieFromTMDB(id, true);
         if (details) {
           const data = {
             id: details.id,

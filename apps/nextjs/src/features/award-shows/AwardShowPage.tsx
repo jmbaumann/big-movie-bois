@@ -125,7 +125,7 @@ export default function AwardShowPage() {
     <Layout showFooter>
       <div className="mb-6 flex gap-x-4">
         <div className="flex flex-col gap-y-4">
-          <Card className="p-0">
+          {/* <Card className="p-0">
             <CardHeader className="p-4">
               <CardTitle className="flex items-center justify-between gap-x-6">
                 Groups {awardShowYear && <GroupForm awardShowYearId={awardShowYear.id} />}
@@ -173,7 +173,7 @@ export default function AwardShowPage() {
                 </>
               )}
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card className="p-0">
             <CardHeader className="p-4">

@@ -126,6 +126,19 @@ const update = adminProcedure
     return ctx.prisma.tMDBDetails.update({ data: { openingWeekend: input.openingWeekend }, where: { id: input.id } });
   });
 
+const refresh = adminProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+  const tmdb = await getMovieFromTMDB(input.id);
+
+  await ctx.prisma.tMDBCast.deleteMany({ where: { tmdbId: input.id } });
+  await ctx.prisma.tMDBCrew.deleteMany({ where: { tmdbId: input.id } });
+
+  await ctx.prisma.tMDBDetails.update({ data: { ...tmdb.details, updatedAt: new Date() }, where: { id: input.id } });
+  await ctx.prisma.tMDBCast.createMany({ data: tmdb.cast! });
+  await ctx.prisma.tMDBCrew.createMany({ data: tmdb.crew! });
+
+  return await ctx.prisma.tMDBDetails.findFirst({ include: { cast: true, crew: true }, where: { id: input.id } });
+});
+
 const updateFantasyFilms = protectedProcedure.mutation(async ({ ctx }) => {
   await updateMasterFantasyFilmList(ctx);
 });
@@ -138,12 +151,13 @@ export const tmdbRouter = createTRPCRouter({
   getActive,
   getOpeningWeekend,
   update,
+  refresh,
   updateFantasyFilms,
 });
 
 ////////////////
 
-export async function getByTMDBId(ctx: TRPCContext, id: number, noReturn?: boolean) {
+export async function getByTMDBId(ctx: TRPCContext, id: number, options?: { noReturn?: boolean; refresh?: boolean }) {
   const film = await ctx.prisma.tMDBDetails.findFirst({ include: { cast: true, crew: true }, where: { id } });
   if (film) return film;
 
@@ -152,7 +166,7 @@ export async function getByTMDBId(ctx: TRPCContext, id: number, noReturn?: boole
   await ctx.prisma.tMDBCast.createMany({ data: tmdb.cast! });
   await ctx.prisma.tMDBCrew.createMany({ data: tmdb.crew! });
 
-  if (noReturn) return;
+  if (options?.noReturn) return;
 
   return await ctx.prisma.tMDBDetails.findFirst({ include: { cast: true, crew: true }, where: { id } });
 }
@@ -243,7 +257,7 @@ export async function updateMasterFantasyFilmList(ctx: TRPCContext) {
 
   // create new entries
   const createPromises = [];
-  for (const id of toCreateIds) createPromises.push(await getByTMDBId(ctx, id, true));
+  for (const id of toCreateIds) createPromises.push(await getByTMDBId(ctx, id, { noReturn: true }));
   await Promise.allSettled(createPromises);
 
   // update existing

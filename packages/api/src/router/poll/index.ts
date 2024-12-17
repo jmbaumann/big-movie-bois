@@ -34,7 +34,7 @@ const create = protectedProcedure
     }));
     const answers = await ctx.prisma.pollAnswer.createMany({ data });
 
-    if (input.tmdbId) await getByTMDBId(ctx, input.tmdbId, true);
+    if (input.tmdbId) await getByTMDBId(ctx, input.tmdbId, { noReturn: true });
 
     return { ...poll, answers };
   });

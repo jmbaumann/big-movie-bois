@@ -113,6 +113,7 @@ function OverlapFormSheet({
   refetch: () => void;
 }) {
   const { toast } = useToast();
+  const confirm = useConfirm();
 
   const [open, setOpen] = useState(false);
   const [searchResult, setSearchResult] = useState<
@@ -129,6 +130,7 @@ function OverlapFormSheet({
     { keyword: searchKeyword ?? "" },
     { enabled: !!searchKeyword },
   );
+  const { mutate: refreshMovie, isLoading: refreshing } = api.tmdb.refresh.useMutation();
 
   useEffect(() => {
     if (search) setSearchResult(search);
@@ -198,6 +200,20 @@ function OverlapFormSheet({
       form.setValue("tmdbId", selectedAnswer.tmdbId);
     }
   }, [selectedAnswer]);
+
+  async function handleRefresh(id: number) {
+    const ok = await confirm("Are you sure you want to refresh this movie's data?");
+    if (ok) {
+      refreshMovie(
+        { id },
+        {
+          onSuccess: () => {
+            toast({ title: "Movie refreshed" });
+          },
+        },
+      );
+    }
+  }
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -307,6 +323,14 @@ function OverlapFormSheet({
                 </Button>
               </form>
             </Form>
+
+            <Button isLoading={refreshing} onClick={() => handleRefresh(selectedAnswer!.tmdbId)}>
+              Refresh Movie
+            </Button>
+
+            <pre>
+              {JSON.stringify(selectedAnswer, (key, value) => (typeof value === "bigint" ? Number(value) : value), 2)}
+            </pre>
           </SheetDescription>
         </SheetHeader>
       </SheetContent>

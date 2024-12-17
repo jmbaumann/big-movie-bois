@@ -74,7 +74,7 @@ function restructure(movie: {
     Editing: new Set(["Editor"]),
     Production: new Set(["Executive Producer", "Producer"]),
     Sound: new Set(["Original Music Composer"]),
-    Writing: new Set(["Writer", "Writing"]),
+    Writing: new Set(["Writer", "Screenplay"]),
     Camera: new Set(["Director of Photography"]),
   };
 

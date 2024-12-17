@@ -15,6 +15,7 @@ import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
+import { useToast } from "~/components/ui/hooks/use-toast";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import Layout from "~/layouts/main/Layout";
@@ -53,6 +54,7 @@ export default function OverlapPage() {
   const { data: sessionData } = useSession();
   const trpc = api.useContext();
   const confirm = useConfirm();
+  const { toast } = useToast();
 
   const [gameData, setGameData] = useLocalStorage<OverlapGameData>("bmb-overlap", {
     guesses: [],
@@ -150,6 +152,11 @@ export default function OverlapPage() {
   }, [gameData.guesses, answer]);
 
   function handleMovieSelect(id: number) {
+    if (new Set(gameData.guesses.map((e) => e.id)).has(id)) {
+      toast({ title: "Already guessed" });
+      return;
+    }
+
     setGuessId(id);
     setSearchKeyword("");
   }

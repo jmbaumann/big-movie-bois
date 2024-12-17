@@ -135,9 +135,11 @@ function findClosest(
   for (const item of guesses) {
     const currentValue = typeof item === "string" && Number.isInteger(item) ? Number(item) : item;
 
+    console.log(currentValue, targetValue);
     if (
       (options.flag === "gt" && currentValue > targetValue) ||
-      (options.flag === "lt" && currentValue < targetValue)
+      (options.flag === "lt" && currentValue < targetValue) ||
+      options.checkEqual
     ) {
       const d1 =
         typeof currentValue === "string"
@@ -148,6 +150,8 @@ function findClosest(
           ? targetValue[0]!.toLowerCase().charCodeAt(0) - "a".charCodeAt(0) + 1
           : targetValue;
       const difference = Math.abs(Number(d1) - Number(d2));
+
+      console.log(d1, d2, difference);
 
       if (difference < closestDifference) {
         closestDifference = difference;
@@ -162,6 +166,7 @@ function findClosest(
 
   if (typeof closestValue === "bigint") closestValue = Number(closestValue);
 
+  console.log(closestDifference, closestValue);
   if (options.checkEqual) return closestDifference === 0 ? closestValue : undefined;
 
   return closestValue;

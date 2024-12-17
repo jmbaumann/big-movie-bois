@@ -322,7 +322,7 @@ export default function AvailableFilms({
                           height={300}
                         />
                       ) : (
-                        <div className="h-[190px] w-[130px] bg-slate-300"> no poster </div>
+                        <div className="h-full w-full bg-slate-300"> </div>
                       )}
                     </div>
                     {buyNow && (

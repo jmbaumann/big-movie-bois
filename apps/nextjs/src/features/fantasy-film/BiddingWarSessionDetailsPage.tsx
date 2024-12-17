@@ -298,6 +298,7 @@ function StudioDetails({ session, studio, refetch }: { session: Session; studio:
               film={film}
               showScore={film ? locked : false}
               locked={locked}
+              bidWar
               refreshStudio={refetch}
             />
           );

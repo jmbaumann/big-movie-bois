@@ -20,13 +20,13 @@ app.get("/test", (req, res) => {
   res.send("CONNECTED");
 });
 
-app.post("/ws", (req) => {
+app.post("/ws", checkToken, (req) => {
   io.emit(req.body.eventName, req.body.eventData);
 });
 
-app.post("/draft", async (req) => {
+app.post("/draft", checkToken, async (req) => {
   const data = req.body.eventData;
-  console.log("/draft", data);
+  // console.log("/draft", data);
   io.emit(req.body.eventName, data);
 
   // setTimeout(
@@ -58,3 +58,13 @@ io.on("connect", (socket) => {
 server.listen(8080, () => {
   console.log("listening on *:8080");
 });
+
+function checkToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) return res.status(401).json({ message: "Token missing" });
+  if (token !== env.WEBSOCKET_TOKEN) return res.status(403).json({ message: "Invalid token" });
+
+  next();
+}

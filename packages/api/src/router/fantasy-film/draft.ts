@@ -3,7 +3,7 @@ import { z } from "zod";
 import { StudioFilm } from "@repo/db";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
-import { draftEvent } from "../../wss";
+import { draftEvent } from "../../websocket";
 import { getByTMDBId, getFilmsBySessionId } from "../tmdb";
 import { getSessionById } from "./session";
 import { makePickObj } from "./zod";

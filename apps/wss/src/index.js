@@ -1,10 +1,11 @@
 import { createServer } from "http";
-import axios from "axios";
 import bodyParser from "body-parser";
 import express from "express";
+import cron from "node-cron";
 import { Server } from "socket.io";
 
 import { env } from "./env.mjs";
+import { processBids, updateFilmList } from "./jobs.js";
 
 const app = express();
 const server = createServer(app);
@@ -15,6 +16,8 @@ const io = new Server(server, {
     origin: env.BMB_URL,
   },
 });
+
+// API ENDPOINTS
 
 app.get("/test", (req, res) => {
   res.send("CONNECTED");
@@ -47,6 +50,8 @@ app.post("/draft", checkToken, async (req) => {
   // );
 });
 
+// WEBSOCKET
+
 io.on("connect", (socket) => {
   console.log("connected");
 
@@ -54,6 +59,35 @@ io.on("connect", (socket) => {
     console.log("user disconnected");
   });
 });
+
+// CRON JOBS
+
+cron.schedule(
+  "0 3 * * *",
+  async () => {
+    console.log("Update Films job triggered");
+    await updateFilmList();
+    console.log("Update Films job completed");
+  },
+  {
+    timezone: "America/New_York",
+  },
+);
+
+cron.schedule(
+  "0 12 * * 2",
+  async () => {
+    console.log("Process Bids job triggered");
+    await processBids();
+    console.log("Process Bids job completed");
+  },
+  {
+    timezone: "America/New_York",
+    // timezone: "America/Denver",
+  },
+);
+
+// SERVER / MIDDLEWARE
 
 server.listen(8080, () => {
   console.log("listening on *:8080");

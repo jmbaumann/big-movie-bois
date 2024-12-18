@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { SESSION_ACTIVITY_TYPES } from "../../enums";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, cronProcedure, protectedProcedure } from "../../trpc";
+import { updateMasterFantasyFilmList } from "../tmdb";
 import { logSessionActivity, processSessionBids } from "./session";
 
 const addStudioFilm = protectedProcedure
@@ -44,33 +45,31 @@ const processBids = protectedProcedure
     return processSessionBids(ctx, input.sessionId, new Date());
   });
 
-const processAllBids = protectedProcedure
-  .meta({ openapi: { method: "POST", path: "/process-bids" } })
-  .mutation(async ({ ctx }) => {
-    const activeSessions = await ctx.prisma.leagueSession.findMany({
-      where: {
-        league: { owner: { id: { not: "cm0rtl1gz00046epy0thc8r0l" } } },
-        AND: [{ startDate: { lte: new Date() } }, { endDate: { gte: new Date() } }],
-      },
-    });
-
-    const promises = [];
-    for (const session of activeSessions) {
-      promises.push(
-        (() => {
-          logSessionActivity(ctx, {
-            sessionId: session.id,
-            type: SESSION_ACTIVITY_TYPES.AUTOMATED,
-            message: "Active bids processed",
-          });
-
-          processSessionBids(ctx, session.id, new Date());
-        })(),
-      );
-    }
-
-    await Promise.allSettled(promises);
+const processAllBids = protectedProcedure.mutation(async ({ ctx }) => {
+  const activeSessions = await ctx.prisma.leagueSession.findMany({
+    where: {
+      league: { owner: { id: { not: "cm0rtl1gz00046epy0thc8r0l" } } },
+      AND: [{ startDate: { lte: new Date() } }, { endDate: { gte: new Date() } }],
+    },
   });
+
+  const promises = [];
+  for (const session of activeSessions) {
+    promises.push(
+      (() => {
+        logSessionActivity(ctx, {
+          sessionId: session.id,
+          type: SESSION_ACTIVITY_TYPES.AUTOMATED,
+          message: "Active bids processed",
+        });
+
+        processSessionBids(ctx, session.id, new Date());
+      })(),
+    );
+  }
+
+  await Promise.allSettled(promises);
+});
 
 export const adminRouter = createTRPCRouter({
   addStudioFilm,

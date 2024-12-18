@@ -18,6 +18,8 @@ import type { Session } from "@repo/auth";
 import type { Prisma, PrismaClient } from "@repo/db";
 import { prisma } from "@repo/db";
 
+import { env } from "../env.mjs";
+
 /**
  * 1. CONTEXT
  *
@@ -162,11 +164,9 @@ export const adminProcedure = t.procedure.use(enforceUserIsAdmin);
 
 // CRON JOB PROCEDURE
 const enforceCronToken = t.middleware(({ ctx, next }) => {
-  console.log("headers", ctx.req.headers.authorization);
-  // if (ctx.req.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
-  //   throw new TRPCError({ code: "UNAUTHORIZED" });
-  // }
-  return next();
+  if (ctx.req.headers.authorization !== `Bearer ${env.WEBSOCKET_TOKEN}`) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+  return next({ ctx });
 });
 
 export const cronProcedure = t.procedure.use(enforceCronToken);

@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { z } from "zod";
 
 import { SESSION_ACTIVITY_TYPES } from "../../enums";
@@ -8,12 +7,17 @@ import { updateMasterFantasyFilmList } from "../tmdb";
 
 const updateFilmList = cronProcedure
   .meta({ openapi: { method: "POST", path: "/update-films" } })
+  .input(z.object({}).optional())
+  .output(z.boolean())
   .mutation(async ({ ctx }) => {
     await updateMasterFantasyFilmList(ctx);
+    return true;
   });
 
 const processAllBids = cronProcedure
   .meta({ openapi: { method: "POST", path: "/process-bids" } })
+  .input(z.object({}).optional())
+  .output(z.boolean())
   .mutation(async ({ ctx }) => {
     const activeSessions = await ctx.prisma.leagueSession.findMany({
       where: {
@@ -38,6 +42,8 @@ const processAllBids = cronProcedure
     }
 
     await Promise.allSettled(promises);
+
+    return true;
   });
 
 export const cronRouter = createTRPCRouter({

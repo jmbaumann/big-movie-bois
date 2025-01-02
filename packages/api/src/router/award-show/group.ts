@@ -24,25 +24,39 @@ const get = protectedProcedure
     if (!group) throw new TRPCError({ message: "No group", code: "NOT_FOUND" });
 
     const leaderboard = await ctx.prisma.awardShowPick.groupBy({
-      by: ["userId"], // Group by userId
+      by: ["userId"],
       where: {
-        groupId: group?.id, // Filter by groupId
+        groupId: group.id,
         nominee: {
-          winner: true, // Include only picks where the associated nominee is a winner
+          winner: true,
         },
       },
       _count: {
-        _all: true, // Count the total number of picks per userId
+        id: true,
       },
       orderBy: {
         _count: {
-          userId: "desc",
+          id: "desc",
         },
       },
-      take: 20, // Limit to the top 20 users
+      take: 20,
     });
 
-    return { ...group, leaderboard };
+    const leaderboardWithUsers = await Promise.all(
+      leaderboard.map(async (entry) => {
+        const user = await ctx.prisma.user.findUnique({
+          where: { id: entry.userId },
+          select: { username: true },
+        });
+        return {
+          userId: entry.userId,
+          userName: user?.username || "",
+          correctPicks: entry._count.id,
+        };
+      }),
+    );
+
+    return { ...group, leaderboard: leaderboardWithUsers };
   });
 
 const getPublic = publicProcedure.input(z.object({ awardShowYearId: z.string() })).query(async ({ ctx, input }) => {

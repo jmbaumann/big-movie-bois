@@ -20,6 +20,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "~/components/ui/form";
 import { toast, useToast } from "~/components/ui/hooks/use-toast";
 import { Input } from "~/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { env } from "~/env.mjs";
 import Layout from "~/layouts/main/Layout";
 import Loading from "~/layouts/main/Loading";
@@ -142,7 +143,11 @@ export default function AwardShowPage() {
   return (
     <Layout
       className="lg:w-11/12"
-      title={`${awardShowGroup?.awardShowYear.awardShow.name} ${awardShowGroup?.awardShowYear.year} Pick 'Em`}
+      title={
+        (awardShowGroup
+          ? `${awardShowGroup.awardShowYear.awardShow.name} ${awardShowGroup?.awardShowYear.year}`
+          : "Award Show") + ` Pick 'Em`
+      }
       showFooter
     >
       <div className="mb-6 flex gap-x-4">
@@ -225,7 +230,35 @@ export default function AwardShowPage() {
               <CardTitle>Leaderboard</CardTitle>
             </CardHeader>
 
-            <CardContent className="px-4"></CardContent>
+            <CardContent className="px-4">
+              {!awardShowGroup?.leaderboard.length ? (
+                <p className="text-xs italic">No scores yet</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead></TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead># Correct</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {awardShowGroup?.leaderboard.map((player, i) => {
+                      const sameScoreIndex = awardShowGroup.leaderboard.findIndex(
+                        (e) => e.correctPicks === player.correctPicks,
+                      );
+                      return (
+                        <TableRow key={i}>
+                          <TableCell>{sameScoreIndex + 1}.</TableCell>
+                          <TableCell>{player.userName}</TableCell>
+                          <TableCell>{player.correctPicks}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
           </Card>
         </div>
 
@@ -233,7 +266,7 @@ export default function AwardShowPage() {
           <Loader2 size={48} className="mx-auto my-2 animate-spin" />
         ) : (
           <div className="flex flex-col">
-            <div className="mb-2 flex">
+            <div className="mb-2 flex items-center justify-between">
               {isLocked ? (
                 <div className="flex items-center">
                   <Lock size={20} className="mr-1" />
@@ -244,6 +277,10 @@ export default function AwardShowPage() {
                   Save Picks
                 </Button>
               )}
+
+              <p>
+                {picks.array.length} / {awardShowGroup.awardShowYear.categories.length}
+              </p>
             </div>
 
             <PickList awardShowGroup={awardShowGroup} picks={picks} handlePick={handlePick} isLocked={isLocked} />
@@ -306,10 +343,10 @@ function PickList({
                   <CardFooter className="flex flex-col p-2 text-center">
                     <p className="text-lg">
                       {winnerId === nominee.id && picked?.nomineeId === winnerId && (
-                        <CheckCircle2 className="mr-1 text-green-600" size={20} />
+                        <CheckCircle2 className="mr-1 inline-block text-green-600" size={20} />
                       )}
                       {!!winnerId && winnerId !== nominee.id && picked?.nomineeId === nominee.id && (
-                        <XCircle className="mr-1 text-red-600" size={20} />
+                        <XCircle className="mr-1 inline-block text-red-600" size={20} />
                       )}
                       {nominee.name}
                     </p>
@@ -490,7 +527,37 @@ function Mobile({
           </div>
         )}
 
-        {tab === "leaderboard" && <></>}
+        {tab === "leaderboard" && (
+          <div className="px-4">
+            {!awardShowGroup?.leaderboard.length ? (
+              <p className="text-sm italic">No scores yet</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead></TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead># Correct</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {awardShowGroup?.leaderboard.map((player, i) => {
+                    const sameScoreIndex = awardShowGroup.leaderboard.findIndex(
+                      (e) => e.correctPicks === player.correctPicks,
+                    );
+                    return (
+                      <TableRow key={i}>
+                        <TableCell>{sameScoreIndex + 1}.</TableCell>
+                        <TableCell>{player.userName}</TableCell>
+                        <TableCell>{player.correctPicks}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   );

@@ -9,8 +9,9 @@ import { useForm } from "react-hook-form";
 import { io } from "socket.io-client";
 import { z } from "zod";
 
-import { api } from "~/utils/api";
-import { useArray } from "~/utils/hooks/use-array";
+import { api, RouterOutputs } from "~/utils/api";
+import { useArray, type UseArray } from "~/utils/hooks/use-array";
+import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import { cn } from "~/utils/shadcn";
 import ResponsiveDialog from "~/components/ResponsiveDialog";
 import { Button } from "~/components/ui/button";
@@ -25,9 +26,11 @@ import Loading from "~/layouts/main/Loading";
 import { ONE_DAY_IN_SECONDS } from "~/utils";
 
 type Pick = { id?: string; categoryId: string; nomineeId: string };
+type AwardShowGroup = RouterOutputs["awardShowGroup"]["get"];
 
 export default function AwardShowPage() {
   const { data: sessionData } = useSession();
+  const breakpoint = useBreakpoint();
   const router = useRouter();
   const slug = router.query.slug as string;
   const year = router.query.year as string;
@@ -122,8 +125,26 @@ export default function AwardShowPage() {
 
   if (!awardShowYear) return <Loading />;
 
+  if (breakpoint.isMobile)
+    return awardShowGroup ? (
+      <Mobile
+        awardShowGroup={awardShowGroup}
+        picks={picks}
+        handlePick={handlePick}
+        submitting={submitting}
+        submitPicks={submitPicks}
+        isLocked={isLocked}
+      />
+    ) : (
+      <Loading />
+    );
+
   return (
-    <Layout className="lg:w-11/12" showFooter>
+    <Layout
+      className="lg:w-11/12"
+      title={`${awardShowGroup?.awardShowYear.awardShow.name} ${awardShowGroup?.awardShowYear.year} Pick 'Em`}
+      showFooter
+    >
       <div className="mb-6 flex gap-x-4">
         <div className="flex min-w-[25%] max-w-[25%] grow flex-col gap-y-4">
           {/* <Card className="p-0">
@@ -225,68 +246,82 @@ export default function AwardShowPage() {
               )}
             </div>
 
-            <div className="flex flex-col gap-y-6">
-              {awardShowGroup.awardShowYear.categories.map((category, i) => (
-                <div key={i} className="">
-                  <p className="mb-1 text-lg text-white">{category.name}</p>
-
-                  <div className="grid grid-cols-2 gap-y-2 lg:grid-cols-6">
-                    {category.nominees.map((nominee, j) => {
-                      const picked = picks.array.find(
-                        (e) => e.categoryId === category.id && e.nomineeId === nominee.id,
-                      );
-                      const winnerId = category.nominees.find((e) => e.winner)?.id;
-                      return (
-                        <Card
-                          key={i + "-" + j}
-                          className={cn(
-                            "mx-2",
-                            !isLocked && "hover:border-primary hover:cursor-pointer",
-                            picked && "text-primary border-primary",
-                            winnerId === nominee.id &&
-                              "border-green-600 text-green-600 hover:cursor-default hover:border-green-600",
-                            !!winnerId &&
-                              winnerId !== nominee.id &&
-                              picked?.nomineeId === nominee.id &&
-                              "border-red-600 text-red-600 hover:cursor-default hover:border-red-600",
-                          )}
-                          onClick={() => handlePick(category.id, nominee.id)}
-                        >
-                          {nominee.image && (
-                            <CardContent className="flex items-center p-2 text-center">
-                              <Image
-                                className="h-52 object-cover object-center"
-                                src={nominee.image}
-                                alt=""
-                                width={600}
-                                height={800}
-                              ></Image>
-                            </CardContent>
-                          )}
-
-                          <CardFooter className="flex flex-col p-2 text-center">
-                            <p className="text-lg">
-                              {winnerId === nominee.id && picked?.nomineeId === winnerId && (
-                                <CheckCircle2 className="mr-1 text-green-600" size={20} />
-                              )}
-                              {!!winnerId && winnerId !== nominee.id && picked?.nomineeId === nominee.id && (
-                                <XCircle className="mr-1 text-red-600" size={20} />
-                              )}
-                              {nominee.name}
-                            </p>
-                            <p className="text-sm text-slate-400">{nominee.subtext}</p>
-                          </CardFooter>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <PickList awardShowGroup={awardShowGroup} picks={picks} handlePick={handlePick} isLocked={isLocked} />
           </div>
         )}
       </div>
     </Layout>
+  );
+}
+
+function PickList({
+  awardShowGroup,
+  picks,
+  handlePick,
+  isLocked,
+}: {
+  awardShowGroup: AwardShowGroup;
+  picks: UseArray<Pick>;
+  handlePick: (categoryId: string, nomineeId: string) => void;
+  isLocked: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-y-6">
+      {awardShowGroup.awardShowYear.categories.map((category, i) => (
+        <div key={i} className="">
+          <p className="mb-1 text-lg text-white">{category.name}</p>
+
+          <div className="grid grid-cols-2 gap-y-2 lg:grid-cols-6">
+            {category.nominees.map((nominee, j) => {
+              const picked = picks.array.find((e) => e.categoryId === category.id && e.nomineeId === nominee.id);
+              const winnerId = category.nominees.find((e) => e.winner)?.id;
+              return (
+                <Card
+                  key={i + "-" + j}
+                  className={cn(
+                    "mx-2",
+                    !isLocked && "hover:border-primary hover:cursor-pointer",
+                    picked && "text-primary border-primary",
+                    winnerId === nominee.id &&
+                      "border-green-600 text-green-600 hover:cursor-default hover:border-green-600",
+                    !!winnerId &&
+                      winnerId !== nominee.id &&
+                      picked?.nomineeId === nominee.id &&
+                      "border-red-600 text-red-600 hover:cursor-default hover:border-red-600",
+                  )}
+                  onClick={() => handlePick(category.id, nominee.id)}
+                >
+                  {nominee.image && (
+                    <CardContent className="flex items-center p-2 text-center">
+                      <Image
+                        className="h-52 object-cover object-center"
+                        src={nominee.image}
+                        alt=""
+                        width={600}
+                        height={800}
+                      ></Image>
+                    </CardContent>
+                  )}
+
+                  <CardFooter className="flex flex-col p-2 text-center">
+                    <p className="text-lg">
+                      {winnerId === nominee.id && picked?.nomineeId === winnerId && (
+                        <CheckCircle2 className="mr-1 text-green-600" size={20} />
+                      )}
+                      {!!winnerId && winnerId !== nominee.id && picked?.nomineeId === nominee.id && (
+                        <XCircle className="mr-1 text-red-600" size={20} />
+                      )}
+                      {nominee.name}
+                    </p>
+                    <p className="text-sm text-slate-400">{nominee.subtext}</p>
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -377,5 +412,86 @@ function GroupForm({ awardShowYearId }: { awardShowYearId: string }) {
         </ResponsiveDialog.Header>
       </ResponsiveDialog.Content>
     </ResponsiveDialog>
+  );
+}
+
+function Mobile({
+  awardShowGroup,
+  picks,
+  handlePick,
+  submitting,
+  submitPicks,
+  isLocked,
+}: {
+  awardShowGroup: AwardShowGroup;
+  picks: UseArray<Pick>;
+  handlePick: (categoryId: string, nomineeId: string) => void;
+  submitting: boolean;
+  submitPicks: () => void;
+  isLocked: boolean;
+}) {
+  const { data: sessionData } = useSession();
+
+  const [tab, setTab] = useState<"picks" | "leaderboard">("picks");
+
+  return (
+    <Layout title="Fantasy Film">
+      <div className="flex flex-col">
+        <div className="mb-4 flex justify-around border-b-[1px] border-zinc-50">
+          <Button
+            className={cn("text-lg", tab === "picks" && "text-primary font-bold")}
+            variant="ghost"
+            onClick={() => setTab("picks")}
+          >
+            Picks
+          </Button>
+          <Button
+            className={cn("text-lg", tab === "leaderboard" && "text-primary font-bold")}
+            variant="ghost"
+            onClick={() => setTab("leaderboard")}
+          >
+            Leaderboard
+          </Button>
+        </div>
+
+        {tab === "picks" && (
+          <div className="">
+            {!isLocked && (
+              <div className="mb-2 flex items-center justify-center">
+                <Lock className="mr-2" size={20} /> Picks lock on{" "}
+                {format(awardShowGroup.awardShowYear.locked, "PP @ p")}
+              </div>
+            )}
+
+            <PickList
+              awardShowGroup={awardShowGroup}
+              picks={picks}
+              handlePick={handlePick}
+              isLocked={isLocked}
+            ></PickList>
+            <div className="fixed bottom-0 w-full bg-neutral-900 bg-opacity-95 px-4 py-2">
+              <div className="flex items-center justify-between">
+                <p>
+                  {picks.array.length} / {awardShowGroup.awardShowYear.categories.length}
+                </p>
+
+                {isLocked ? (
+                  <div className="flex items-center">
+                    <Lock size={20} className="mr-1" />
+                    Picks Locked
+                  </div>
+                ) : (
+                  <Button isLoading={submitting} onClick={() => submitPicks()}>
+                    Save Picks
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === "leaderboard" && <></>}
+      </div>
+    </Layout>
   );
 }

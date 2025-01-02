@@ -317,14 +317,14 @@ function PickList({
                   key={i + "-" + j}
                   className={cn(
                     "mx-2",
-                    !isLocked && "hover:border-primary hover:cursor-pointer",
+                    !isLocked && "lg:hover:border-primary hover:cursor-pointer",
                     picked && "text-primary border-primary",
                     winnerId === nominee.id &&
-                      "border-green-600 text-green-600 hover:cursor-default hover:border-green-600",
+                      "border-green-600 text-green-600 hover:cursor-default lg:hover:border-green-600",
                     !!winnerId &&
                       winnerId !== nominee.id &&
                       picked?.nomineeId === nominee.id &&
-                      "border-red-600 text-red-600 hover:cursor-default hover:border-red-600",
+                      "border-red-600 text-red-600 hover:cursor-default lg:hover:border-red-600",
                   )}
                   onClick={() => handlePick(category.id, nominee.id)}
                 >

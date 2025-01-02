@@ -5,11 +5,13 @@ import TopBar from "./TopBar";
 
 function Layout({
   children,
+  className,
   title,
   fullWidth,
   showFooter,
 }: {
   children: React.ReactNode;
+  className?: string;
   title?: string;
   fullWidth?: boolean;
   showFooter?: boolean;
@@ -20,7 +22,13 @@ function Layout({
       <TopBar />
 
       <main className="flex-grow">
-        <div className={cn("mx-auto flex flex-col px-2 lg:w-[80%]", fullWidth ? "mb-0 mt-0 lg:mt-0 lg:w-full" : "")}>
+        <div
+          className={cn(
+            "mx-auto flex flex-col px-2 lg:w-[80%]",
+            fullWidth ? "mb-0 mt-0 lg:mt-0 lg:w-full" : "",
+            className,
+          )}
+        >
           {children}
         </div>
       </main>

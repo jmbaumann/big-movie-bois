@@ -1,13 +1,14 @@
+import { sub } from "date-fns";
 import { z } from "zod";
 
 import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
-import { draftEvent, socketEvent } from "../../wss";
+import { draftEvent, socketEvent } from "../../websocket";
 
 const get = protectedProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShowYear.findMany({
     include: {
       awardShow: { select: { name: true } },
-      categories: { include: { nominees: { orderBy: { name: "asc" } } } },
+      categories: { include: { nominees: { orderBy: { name: "asc" } } }, orderBy: { order: "asc" } },
     },
     orderBy: { available: "desc" },
   });
@@ -24,14 +25,27 @@ const getShows = protectedProcedure.query(async ({ ctx }) => {
 });
 
 const getActive = publicProcedure.query(async ({ ctx }) => {
-  return ctx.prisma.awardShowYear.findMany({
+  const actives = await ctx.prisma.awardShowYear.findMany({
     include: {
       awardShow: { select: { name: true, slug: true } },
       categories: { include: { nominees: { orderBy: { name: "asc" } } } },
     },
-    where: { available: { lte: new Date() } },
+    where: { available: { lte: new Date() }, locked: { gte: sub(new Date(), { weeks: 2 }) } },
     orderBy: { available: "desc" },
   });
+
+  const r = [];
+  for (const active of actives) {
+    const entries = await ctx.prisma.awardShowPick.groupBy({
+      by: ["userId", "groupId"],
+      where: {
+        group: { awardShowYearId: active.id },
+      },
+    });
+    r.push({ ...active, entries: entries.length });
+  }
+
+  return r;
 });
 
 const create = adminProcedure

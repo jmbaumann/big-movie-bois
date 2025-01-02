@@ -25,13 +25,13 @@ export default function AwardShowCard({ awardShow }: { awardShow: AwardShow }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="">
-        <Button onClick={() => router.push(`/pick-em/${awardShow.awardShow.slug}/${awardShow.year}`)}>
-          {isLocked ? "View Results" : "Make Picks"}
-        </Button>
+        <div className="flex items-center justify-between">
+          {/* <p>Groups: 3</p> */}
+          <p>Total Entries: {awardShow.entries}</p>
 
-        <div className="mt-4 flex gap-x-4">
-          <p>Groups: 3</p>
-          <p>Entries: 8</p>
+          <Button onClick={() => router.push(`/pick-em/${awardShow.awardShow.slug}/${awardShow.year}`)}>
+            {isLocked ? "View Results" : "Make Picks"}
+          </Button>
         </div>
       </CardContent>
       <CardFooter className="text-sm">

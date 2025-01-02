@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
@@ -10,12 +11,17 @@ const get = protectedProcedure
     const group = await ctx.prisma.awardShowGroup.findFirst({
       include: {
         awardShowYear: {
-          include: { awardShow: true, categories: { include: { nominees: { orderBy: { name: "asc" } } } } },
+          include: {
+            awardShow: true,
+            categories: { include: { nominees: { orderBy: { name: "asc" } } }, orderBy: { order: "asc" } },
+          },
         },
         owner: { include: {} },
       },
       where,
     });
+
+    if (!group) throw new TRPCError({ message: "No group", code: "NOT_FOUND" });
 
     const leaderboard = await ctx.prisma.awardShowPick.groupBy({
       by: ["userId"], // Group by userId
@@ -29,10 +35,14 @@ const get = protectedProcedure
         _all: true, // Count the total number of picks per userId
       },
       orderBy: {
-        _count: {},
+        _count: {
+          userId: "desc",
+        },
       },
       take: 20, // Limit to the top 20 users
     });
+
+    return { ...group, leaderboard };
   });
 
 const getPublic = publicProcedure.input(z.object({ awardShowYearId: z.string() })).query(async ({ ctx, input }) => {

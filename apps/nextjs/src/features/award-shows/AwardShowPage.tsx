@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
 import { CheckCircle2, Loader2, Lock, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
@@ -104,11 +105,11 @@ export default function AwardShowPage() {
   }
 
   function submitPicks() {
-    if (sessionData?.user && activeGroupId) {
+    if (sessionData?.user) {
       const data = picks.array.map((e) => ({
         ...e,
         userId: sessionData?.user.id,
-        groupId: activeGroupId,
+        groupId: activeGroupId ?? awardShowGroup!.id,
       }));
       makePick(data, {
         onSuccess: () => {
@@ -122,9 +123,9 @@ export default function AwardShowPage() {
   if (!awardShowYear) return <Loading />;
 
   return (
-    <Layout showFooter>
+    <Layout className="lg:w-11/12" showFooter>
       <div className="mb-6 flex gap-x-4">
-        <div className="flex flex-col gap-y-4">
+        <div className="flex min-w-[25%] max-w-[25%] grow flex-col gap-y-4">
           {/* <Card className="p-0">
             <CardHeader className="p-4">
               <CardTitle className="flex items-center justify-between gap-x-6">
@@ -175,11 +176,32 @@ export default function AwardShowPage() {
             </CardContent>
           </Card> */}
 
+          {awardShowGroup && (
+            <Card className="p-0">
+              <CardHeader className="p-4">
+                <CardTitle className="flex flex-col">
+                  <div className="text-2xl text-white">
+                    {awardShowGroup.awardShowYear.awardShow.name} {awardShowGroup.awardShowYear.year}
+                  </div>
+                  <div className="text-sm">
+                    {awardShowGroup.name}{" "}
+                    {!awardShowGroup.default && <small className="text-xs">- {awardShowGroup.owner.username}</small>}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="px-4"></CardContent>
+
+              <CardFooter className="text-sm">
+                <Lock className="mr-2" size={20} /> Picks{" "}
+                {isLocked ? "locked" : "lock on " + format(awardShowGroup.awardShowYear.locked, "PP @ p")}
+              </CardFooter>
+            </Card>
+          )}
+
           <Card className="p-0">
             <CardHeader className="p-4">
-              <CardTitle>
-                Leaderboard <small className="block text-xs">{awardShowGroup?.name}</small>
-              </CardTitle>
+              <CardTitle>Leaderboard</CardTitle>
             </CardHeader>
 
             <CardContent className="px-4"></CardContent>
@@ -190,14 +212,7 @@ export default function AwardShowPage() {
           <Loader2 size={48} className="mx-auto my-2 animate-spin" />
         ) : (
           <div className="flex flex-col">
-            <div className="mb-4 flex justify-between">
-              <div className="flex flex-col">
-                <p className="text-2xl text-white">
-                  {awardShowGroup.name} - {awardShowGroup.awardShowYear.awardShow.name}{" "}
-                  {awardShowGroup.awardShowYear.year}
-                </p>
-                {!awardShowGroup.default && <p className="text-sm">Group Owner: {awardShowGroup.owner.username}</p>}
-              </div>
+            <div className="mb-2 flex">
               {isLocked ? (
                 <div className="flex items-center">
                   <Lock size={20} className="mr-1" />
@@ -215,7 +230,7 @@ export default function AwardShowPage() {
                 <div key={i} className="">
                   <p className="mb-1 text-lg text-white">{category.name}</p>
 
-                  <div className="grid grid-cols-2 justify-between gap-y-2 lg:flex">
+                  <div className="grid grid-cols-2 gap-y-2 lg:grid-cols-6">
                     {category.nominees.map((nominee, j) => {
                       const picked = picks.array.find(
                         (e) => e.categoryId === category.id && e.nomineeId === nominee.id,
@@ -239,7 +254,13 @@ export default function AwardShowPage() {
                         >
                           {nominee.image && (
                             <CardContent className="flex items-center p-2 text-center">
-                              <Image src={nominee.image} alt="" width={600} height={1200}></Image>
+                              <Image
+                                className="h-52 object-cover object-center"
+                                src={nominee.image}
+                                alt=""
+                                width={600}
+                                height={800}
+                              ></Image>
                             </CardContent>
                           )}
 

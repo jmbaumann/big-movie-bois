@@ -3,7 +3,7 @@ import { GetServerSideProps } from "next";
 export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
     redirect: {
-      destination: "/pick-em/the-game-awards/2024",
+      destination: "/pick-em/golden-globes/2025",
       permanent: false, // Set to true if it's a permanent redirect (308)
     },
   };

@@ -249,7 +249,7 @@ export default function AwardShowPage() {
                       );
                       return (
                         <TableRow key={i}>
-                          <TableCell>{sameScoreIndex + 1}.</TableCell>
+                          <TableCell>{i === sameScoreIndex ? `${sameScoreIndex + 1}.` : ""}</TableCell>
                           <TableCell>{player.userName}</TableCell>
                           <TableCell>{player.correctPicks}</TableCell>
                         </TableRow>

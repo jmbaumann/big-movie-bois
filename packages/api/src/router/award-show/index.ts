@@ -4,7 +4,7 @@ import { z } from "zod";
 import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
 import { draftEvent, socketEvent } from "../../websocket";
 
-const get = protectedProcedure.query(async ({ ctx }) => {
+const get = publicProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShowYear.findMany({
     include: {
       awardShow: { select: { name: true } },
@@ -14,7 +14,7 @@ const get = protectedProcedure.query(async ({ ctx }) => {
   });
 });
 
-const getBySlugYear = protectedProcedure
+const getBySlugYear = publicProcedure
   .input(z.object({ slug: z.string(), year: z.string() }))
   .query(async ({ ctx, input }) => {
     return ctx.prisma.awardShowYear.findFirst({ where: { awardShow: { slug: input.slug }, year: input.year } });

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
 
-const get = protectedProcedure
+const get = publicProcedure
   .input(z.object({ id: z.string().optional(), awardShowYearId: z.string().optional() }))
   .query(async ({ ctx, input }) => {
     const where = input.id ? { id: input.id } : { awardShowYearId: input.awardShowYearId, default: true };
@@ -119,6 +119,9 @@ const pick = protectedProcedure
     const groupId = input[0]?.groupId;
 
     if (userId && groupId) {
+      // const group = await ctx.prisma.awardShowGroup.findFirst({where: {id: groupId}})
+      // if (locked) return;
+
       await ctx.prisma.awardShowPick.deleteMany({
         where: { AND: [{ userId }, { groupId }] },
       });

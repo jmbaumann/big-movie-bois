@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { add, format, max, nextTuesday, sub } from "date-fns";
 import { z } from "zod";
 
@@ -97,6 +98,26 @@ const getActive = protectedProcedure.input(z.object({ page: z.number().min(1) })
   };
 });
 
+const getAvailable = protectedProcedure.input(z.object({ page: z.number().min(1) })).query(async ({ ctx, input }) => {
+  const from = format(add(new Date(), { days: 7 }), "yyyy-MM-dd");
+  const to = format(add(new Date(), { days: 400 }), "yyyy-MM-dd");
+  const where = { AND: [{ releaseDate: { gte: from } }, { releaseDate: { lte: to } }] };
+
+  const total = await ctx.prisma.tMDBDetails.count({ where });
+  const list = await ctx.prisma.tMDBDetails.findMany({
+    include: { cast: true, crew: true },
+    where,
+    skip: (input.page - 1) * 20,
+    take: 20,
+    orderBy: { releaseDate: "asc" },
+  });
+
+  return {
+    data: list,
+    total,
+  };
+});
+
 const getOpeningWeekend = protectedProcedure.query(async ({ ctx }) => {
   const from = format(sub(new Date(), { days: 15 }), "yyyy-MM-dd");
   const to = format(new Date(), "yyyy-MM-dd");
@@ -128,6 +149,7 @@ const update = adminProcedure
 
 const refresh = adminProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
   const tmdb = await getMovieFromTMDB(input.id);
+  if (!tmdb) throw new TRPCError({ message: "Failed to get movie details from TMDB", code: "NOT_FOUND" });
 
   await ctx.prisma.tMDBCast.deleteMany({ where: { tmdbId: input.id } });
   await ctx.prisma.tMDBCrew.deleteMany({ where: { tmdbId: input.id } });
@@ -149,6 +171,7 @@ export const tmdbRouter = createTRPCRouter({
   getById,
   getFilmsForSession,
   getActive,
+  getAvailable,
   getOpeningWeekend,
   update,
   refresh,
@@ -162,6 +185,8 @@ export async function getByTMDBId(ctx: TRPCContext, id: number, options?: { noRe
   if (film) return film;
 
   const tmdb = await getMovieFromTMDB(id);
+  if (!tmdb) throw new TRPCError({ message: "Failed to get movie details from TMDB", code: "NOT_FOUND" });
+
   await Promise.allSettled([
     ctx.prisma.tMDBDetails.create({ data: { ...tmdb.details, createdAt: new Date() } }),
     ctx.prisma.tMDBCast.createMany({ data: tmdb.cast! }),
@@ -267,20 +292,24 @@ export async function updateMasterFantasyFilmList(ctx: TRPCContext) {
   for (const id of toUpdateIds) {
     updatePromises.push(
       (async () => {
-        const { details } = await getMovieFromTMDB(id, true);
-        if (details) {
-          const data = {
-            id: details.id,
-            title: details.title,
-            overview: details.overview,
-            poster: details.poster,
-            releaseDate: details.releaseDate,
-            popularity: details.popularity,
-            rating: details.rating,
-            revenue: details.revenue,
-            updatedAt: new Date(),
-          };
-          await ctx.prisma.tMDBDetails.update({ data, where: { id } });
+        try {
+          const tmdb = await getMovieFromTMDB(id, true);
+          if (tmdb) {
+            const data = {
+              id: tmdb.details.id,
+              title: tmdb.details.title,
+              overview: tmdb.details.overview,
+              poster: tmdb.details.poster,
+              releaseDate: tmdb.details.releaseDate,
+              popularity: tmdb.details.popularity,
+              rating: tmdb.details.rating,
+              revenue: tmdb.details.revenue,
+              updatedAt: new Date(),
+            };
+            await ctx.prisma.tMDBDetails.update({ data, where: { id } });
+          }
+        } catch (error) {
+          console.log("error", error);
         }
       })(),
     );

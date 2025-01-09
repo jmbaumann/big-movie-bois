@@ -7,7 +7,8 @@ import { Button } from "~/components/ui/button";
 import AwardShowsAdmin from "./award-show/AwardShowsAdmin";
 import LiveResultsAdmin from "./award-show/LiveResultsAdmin";
 import InboxAdmin from "./contact/InboxAdmin";
-import FilmDataAdmin from "./fantasy-film/FilmData";
+import ActiveFilmsAdmin from "./fantasy-film/ActiveFilms";
+import AvailableFilmsAdmin from "./fantasy-film/AvailableFilms";
 import MasterListAdmin from "./fantasy-film/MasterList";
 import OpeningWeekendAdmin from "./fantasy-film/OpeningWeekend";
 import PublicSessionsAdmin from "./fantasy-film/PublicSessions";
@@ -39,7 +40,8 @@ export default function AdminDashboard() {
     ],
     fantasy: [
       { label: "Master List", value: "master-list", component: <MasterListAdmin /> },
-      { label: "Active Films", value: "active-films", component: <FilmDataAdmin /> },
+      { label: "Active Films", value: "active-films", component: <ActiveFilmsAdmin /> },
+      { label: "Available Films", value: "available-films", component: <AvailableFilmsAdmin /> },
       { label: "Opening Weekend", value: "opening-weekend", component: <OpeningWeekendAdmin /> },
       { label: "Public Sessions", value: "public-sessions", component: <PublicSessionsAdmin /> },
     ],

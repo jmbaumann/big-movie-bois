@@ -9,14 +9,18 @@ import {
 } from "./types";
 
 export async function getMovieFromTMDB(id: number, simple?: boolean) {
-  const details = await getDetailsById(id);
-  const credits = simple ? null : await getCreditsById(id);
-  const releases = await getReleaseDatesById(id);
-  const keywords = simple ? null : await getKeywordsById(id);
+  try {
+    const details = await getDetailsById(id);
+    const credits = simple ? undefined : await getCreditsById(id);
+    const releases = await getReleaseDatesById(id);
+    const keywords = simple ? undefined : await getKeywordsById(id);
 
-  if (!details || !credits || !releases || !keywords) throw "Bad TMDB call";
+    if (!details || !releases || (simple ? false : !credits || !keywords)) throw "Bad TMDB call";
 
-  return restructure({ details, credits, releases, keywords });
+    return restructure({ details, credits, releases, keywords });
+  } catch (e) {
+    console.log("failed getMovieFromTMDB", e);
+  }
 }
 
 export async function getDetailsById(id: number): Promise<TMDBDetailsResponse | undefined> {

@@ -16,12 +16,12 @@ import { Pagination, PaginationContent, PaginationItem } from "~/components/ui/p
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { formatDate } from "~/utils";
 
-export default function FilmDataAdmin() {
+export default function AvailableFilmsAdmin() {
   const confirm = useConfirm();
 
   const [page, setPage] = useState(1);
 
-  const { data: films } = api.tmdb.getActive.useQuery({ page });
+  const { data: films } = api.tmdb.getAvailable.useQuery({ page });
   const { mutate: updateFilmList, isLoading: updating } = api.tmdb.updateFantasyFilms.useMutation();
   const { mutate: processAllBids, isLoading: processing } = api.ffAdmin.processAllBids.useMutation();
 

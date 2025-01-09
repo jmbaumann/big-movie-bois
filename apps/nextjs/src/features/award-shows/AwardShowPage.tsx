@@ -121,7 +121,7 @@ export default function AwardShowPage() {
           refetchMyPicks();
         },
       });
-    }
+    } else toast({ title: "You must be signed in to make picks" });
   }
 
   if (!awardShowYear) return <Loading />;

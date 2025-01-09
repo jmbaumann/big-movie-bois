@@ -32,7 +32,6 @@ export default function BiddingWarDialog({ className }: { className?: string }) 
               Films you've purchased can be dropped & you will recoup 80% of the amount of money you purchased the Film
               for.
             </p>
-            <p className="my-2">A new Bidding War session begins every quarter.</p>
           </div>
         </ResponsiveDialog.Header>
       </ResponsiveDialog.Content>

@@ -64,7 +64,9 @@ export default function TopBar() {
           {onFF && <HowToPlayDialog className="flex" />}
 
           {!sessionData?.user ? (
-            <Button onClick={() => signIn()}>Sign In</Button>
+            <Button className="mx-2" onClick={() => signIn()}>
+              Sign In
+            </Button>
           ) : (
             sessionData.user.username && (
               <DropdownMenu>

@@ -177,7 +177,7 @@ export default function AvailableFilms({
 
   useEffect(() => {
     if (buyNow && selectedFilm) {
-      setBidAmount(String(selectedFilm.price));
+      setBidAmount(String(getFilmCost(maxPopularity, selectedFilm.popularity)));
     }
   }, [selectedFilm]);
 

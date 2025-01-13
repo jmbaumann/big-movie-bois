@@ -2,14 +2,14 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { inferRouterOutputs } from "@trpc/server";
-import { format, sub } from "date-fns";
+import { format, isAfter, sub } from "date-fns";
 import { ExternalLink, EyeOff, Lock, Shuffle, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { AppRouter } from "@repo/api";
 
 import { api } from "~/utils/api";
-import { getUnlockedSlots } from "~/utils/fantasy-film-helpers";
+import { getFilmsReleased, getUnlockedSlots } from "~/utils/fantasy-film-helpers";
 import { cn } from "~/utils/shadcn";
 import AdminMenu from "~/components/AdminMenu";
 import ResponsiveDialog from "~/components/ResponsiveDialog";
@@ -65,6 +65,8 @@ export default function StudioSlot({
   const isAdmin = session?.league.ownerId === sessionData?.user.id;
   const isMyStudio = studio?.ownerId === sessionData?.user.id;
   const canEdit = isMyStudio && !locked;
+  const isReleased = film?.tmdb ? getFilmsReleased([film]) > 0 : false;
+  console.log(film);
 
   const unlockedSlots = studio && session ? getUnlockedSlots(session, studio) : [];
 
@@ -126,7 +128,7 @@ export default function StudioSlot({
           {slot}
         </p>
         <div className="flex aspect-[2/3] w-full flex-col justify-center p-2">
-          {!!film && (!bidWar || isMyStudio) ? (
+          {!!film && (!bidWar || isMyStudio || isReleased) ? (
             <ResponsiveDialog open={open} setOpen={setOpen}>
               <ResponsiveDialog.Trigger>
                 <div className="relative">

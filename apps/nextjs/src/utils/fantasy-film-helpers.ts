@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, sub } from "date-fns";
+import { differenceInCalendarDays, isAfter, isToday, sub } from "date-fns";
 
 import { RouterOutputs } from "@repo/api";
 import { TMDBDiscoverResult } from "@repo/api/src/router/tmdb/types";
@@ -57,7 +57,11 @@ export function isSlotLocked(film: StudioFilmTMDB | undefined) {
 
 export function getFilmsReleased(films: StudioFilmTMDB[]) {
   let total = 0;
-  for (const film of films) if (isSlotLocked(film)) total++;
+  for (const film of films) {
+    const today = new Date();
+    const isTodayOrAfter = film.tmdb ? isToday(film.tmdb.releaseDate) || isAfter(today, film.tmdb.releaseDate) : false;
+    if (isTodayOrAfter) total++;
+  }
   return total;
 }
 

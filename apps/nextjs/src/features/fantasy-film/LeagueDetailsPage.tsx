@@ -13,10 +13,12 @@ import { StudioFilm } from "@repo/db";
 
 import { api } from "~/utils/api";
 import { getDraftDate, getMostRecentAndUpcoming } from "~/utils/fantasy-film-helpers";
+import AdminMenu from "~/components/AdminMenu";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { Command, CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
+import { DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
@@ -33,6 +35,7 @@ type StudioFilmDetails = StudioFilm & { tmdb: TMDBMovie };
 
 export default function LeagueDetailsPage() {
   const { data: sessionData } = useSession();
+  const confirm = useConfirm();
   const router = useRouter();
   const leagueId = router.query.leagueId as string;
 
@@ -57,9 +60,29 @@ export default function LeagueDetailsPage() {
       enabled: !!leagueId,
     },
   );
+  const { mutate: deleteLeague } = api.ffLeague.delete.useMutation();
+
   const isOwner = sessionData?.user.id === league?.ownerId;
   const canAddSession =
     isOwner && league?.sessions.some((e) => add(new Date(), { days: 30 }).getTime() > e.endDate.getTime());
+
+  const handleDelete = async () => {
+    const ok = await confirm(
+      "Are you sure you want to delete this League? All Sessions & data will also be deleted. This action cannot be undone.",
+    );
+    if (ok) {
+      toast({ title: "Deleting..." });
+      deleteLeague(
+        { id: leagueId },
+        {
+          onSuccess: () => {
+            toast({ title: "League deleted" });
+            router.push("/fantasy-film");
+          },
+        },
+      );
+    }
+  };
 
   if (!league) return <Loading />;
 
@@ -71,6 +94,15 @@ export default function LeagueDetailsPage() {
             <ChevronLeft /> Leagues
           </Button>
         </Link>
+        {league.ownerId === sessionData?.user.id && (
+          <AdminMenu className="float-right">
+            <DropdownMenuContent side="bottom">
+              <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
+                Delete League
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </AdminMenu>
+        )}
         {league && isOwner && (
           <div className="flex">
             <h1 className="mb-2 text-2xl">{league.name}</h1>

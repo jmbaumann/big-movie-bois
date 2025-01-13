@@ -54,14 +54,7 @@ const update = protectedProcedure.input(updateLeagueSessionInputObj).mutation(as
 });
 
 const del = protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
-  await ctx.prisma.filmBid.deleteMany({ where: { studio: { sessionId: input.id } } });
-  await ctx.prisma.studioFavorite.deleteMany({ where: { studio: { sessionId: input.id } } });
-  await ctx.prisma.studioFilm.deleteMany({ where: { studio: { sessionId: input.id } } });
-  await ctx.prisma.leagueSessionActivity.deleteMany({ where: { studio: { sessionId: input.id } } });
-  await ctx.prisma.leagueSessionStudio.deleteMany({ where: { sessionId: input.id } });
-  return await ctx.prisma.leagueSession.delete({
-    where: { id: input.id },
-  });
+  return await deleteSessionById(ctx, input.id);
 });
 
 const getAcquiredFilms = protectedProcedure
@@ -211,6 +204,17 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
       });
     }
   }
+}
+
+export async function deleteSessionById(ctx: TRPCContext, id: string) {
+  await ctx.prisma.filmBid.deleteMany({ where: { studio: { sessionId: id } } });
+  await ctx.prisma.studioFavorite.deleteMany({ where: { studio: { sessionId: id } } });
+  await ctx.prisma.studioFilm.deleteMany({ where: { studio: { sessionId: id } } });
+  await ctx.prisma.leagueSessionActivity.deleteMany({ where: { sessionId: id } });
+  await ctx.prisma.leagueSessionStudio.deleteMany({ where: { sessionId: id } });
+  return await ctx.prisma.leagueSession.delete({
+    where: { id: id },
+  });
 }
 
 async function getWinnerAndLosers(ctx: TRPCContext, bids: FilmBid[]) {

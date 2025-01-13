@@ -9,6 +9,7 @@ import { LEAGUE_INVITE_STATUSES } from "../../enums";
 import type { TRPCContext } from "../../trpc";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
 import { tmdb } from "../tmdb/tmdb";
+import { deleteSessionById } from "./session";
 import { LeagueSessionSettings } from "./zod";
 
 const getSiteWideSessions = publicProcedure.query(async ({ ctx }) => {
@@ -162,6 +163,18 @@ const update = protectedProcedure
     return league;
   });
 
+const del = protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+  const sessions = await ctx.prisma.leagueSession.findMany({ where: { leagueId: input.id } });
+
+  const promises = [];
+  for (const session of sessions) promises.push(deleteSessionById(ctx, session.id));
+  await Promise.allSettled(promises);
+
+  await ctx.prisma.leagueInvitation.deleteMany({ where: { leagueId: input.id } });
+  await ctx.prisma.leagueMember.deleteMany({ where: { leagueId: input.id } });
+  return await ctx.prisma.league.delete({ where: { id: input.id } });
+});
+
 const getInvitesByUserId = protectedProcedure.input(z.object({ userId: z.string() })).query(async ({ ctx, input }) => {
   return await ctx.prisma.leagueInvitation.findMany({
     where: { userId: input.userId, status: LEAGUE_INVITE_STATUSES.PENDING },
@@ -239,6 +252,7 @@ export const leagueRouter = createTRPCRouter({
   getById,
   create,
   update,
+  delete: del,
   getInvitesByUserId,
   invite,
   updateInvite,

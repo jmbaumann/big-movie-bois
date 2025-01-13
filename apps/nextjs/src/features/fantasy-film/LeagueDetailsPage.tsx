@@ -152,7 +152,7 @@ function SessionCard({ session }: { session: LeagueSession }) {
             </div>
           )}
 
-          <div className="flex w-1/3">
+          <div className="flex w-1/3 gap-x-8">
             {mostRecent && (
               <div className="flex flex-col items-center">
                 <p className="text-lg">Most Recent</p>

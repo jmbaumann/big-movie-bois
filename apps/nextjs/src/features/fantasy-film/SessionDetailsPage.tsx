@@ -585,7 +585,9 @@ function Bids({ session }: { session: Session }) {
               <TableCell className="font-medium">{bid.studio.name}</TableCell>
               <TableCell>
                 {bid.studio.ownerId === sessionData?.user.id
-                  ? `${bid.tmdb.title} - $${bid.amount}`
+                  ? `${bid.tmdb.title} - ${session?.settings.teamStructure.find((e) => e.pos === bid.slot)?.type} - $${
+                      bid.amount
+                    }`
                   : `${bid.studio.name} placed a bid`}
               </TableCell>
               <TableCell>

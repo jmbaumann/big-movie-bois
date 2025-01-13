@@ -11,7 +11,7 @@ import { DraftState } from "@repo/api/src/router/fantasy-film/draft";
 import { TMDBDetails } from "@repo/db";
 
 import { api } from "~/utils/api";
-import { getFilmCost, getUnlockedSlots } from "~/utils/fantasy-film-helpers";
+import { getFilmCost, getUnlockedSlots, type Slot } from "~/utils/fantasy-film-helpers";
 import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import { cn } from "~/utils/shadcn";
 import AdminMenu from "~/components/AdminMenu";
@@ -129,12 +129,14 @@ export default function AvailableFilms({
   const slotsFilled = new Set(
     isDraft && drafting?.id !== myStudio?.id ? drafting?.films.map((e) => e.slot) : myStudio?.films.map((e) => e.slot),
   );
-  const availableSlots =
+  const availableSlots: Slot[] | undefined =
     myStudio && session
       ? buyNow || isDraft
         ? session.settings.teamStructure.filter((e) => !slotsFilled.has(e.pos))
         : getUnlockedSlots(session, myStudio)
       : [];
+  const filmInSelectedSlot = availableSlots?.find((e) => e.pos === Number(selectedSlot))?.currentFilm;
+
   const canPick =
     (isDraft ? drafting?.id === studioId || isAdmin : true) &&
     (isDraft || buyNow || !session?.settings.draft.conduct || session.settings.draft.complete) &&
@@ -288,6 +290,13 @@ export default function AvailableFilms({
           def={{ value: "popularity", desc: true }}
         ></SortChips>
 
+        <div className="flex flex-col">
+          <Label>Budget</Label>
+          <p className="flex items-center text-lg text-white">
+            <DollarSign size={18} />
+            {(myStudio?.budget ?? 0) - Number(bidAmount)}
+          </p>
+        </div>
         <Button className="text-lg" variant="ghost" onClick={() => setShowWatchlist((s) => !s)}>
           <Star className="mr-1" color="#fbbf24" fill={showWatchlist ? "#fbbf24" : ""} />
           Watchlist
@@ -416,6 +425,12 @@ export default function AvailableFilms({
                               </SelectContent>
                             </Select>
                           </div>
+
+                          {!!filmInSelectedSlot && (
+                            <p className="mt-1 text-xs italic">
+                              If you win this bid you will drop {filmInSelectedSlot?.tmdb?.title} from your Studio
+                            </p>
+                          )}
 
                           <div className="mb-2 mt-4 flex justify-end lg:mb-0 lg:justify-between">
                             {!isDraft && (

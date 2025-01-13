@@ -10,6 +10,11 @@ type Session = RouterOutputs["ffLeagueSession"]["getById"];
 type Studios = RouterOutputs["ffStudio"]["getStudios"];
 type Studio = Studios[number] | RouterOutputs["ffStudio"]["getMyStudio"];
 type StudioFilmTMDB = Studios[number]["films"][number] | (StudioFilm & { tmdb: TMDBDetails });
+export type Slot = {
+  type: string;
+  pos: number;
+  currentFilm?: StudioFilmTMDB | undefined;
+};
 
 export function isSessionStarted(session: Session | undefined) {
   if (!session) return false;
@@ -70,7 +75,14 @@ export function getUnlockedSlots(session: Session, studio: Studio) {
   for (const film of studio.films) dict[film.slot] = isSlotLocked(film);
 
   const slots = session?.settings.teamStructure.filter((e) => !dict[e.pos]);
-  return slots;
+  return slots?.map((e) => {
+    const film = studio.films.find((f) => f.slot === e.pos);
+    return {
+      type: e.type + (film ? ` - (${film?.tmdb?.title})` : ""),
+      pos: e.pos,
+      currentFilm: film,
+    };
+  });
 }
 
 export function getFilmCost(maxPopularity: number, filmPopularity: number) {

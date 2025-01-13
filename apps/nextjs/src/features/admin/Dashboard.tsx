@@ -9,6 +9,7 @@ import LiveResultsAdmin from "./award-show/LiveResultsAdmin";
 import InboxAdmin from "./contact/InboxAdmin";
 import ActiveFilmsAdmin from "./fantasy-film/ActiveFilms";
 import AvailableFilmsAdmin from "./fantasy-film/AvailableFilms";
+import LeaguesAdmin from "./fantasy-film/Leagues";
 import MasterListAdmin from "./fantasy-film/MasterList";
 import OpeningWeekendAdmin from "./fantasy-film/OpeningWeekend";
 import PublicSessionsAdmin from "./fantasy-film/PublicSessions";
@@ -44,6 +45,7 @@ export default function AdminDashboard() {
       { label: "Available Films", value: "available-films", component: <AvailableFilmsAdmin /> },
       { label: "Opening Weekend", value: "opening-weekend", component: <OpeningWeekendAdmin /> },
       { label: "Public Sessions", value: "public-sessions", component: <PublicSessionsAdmin /> },
+      { label: "Leagues", value: "leagues", component: <LeaguesAdmin /> },
     ],
     dailys: [{ label: "Overlap", value: "overlap", component: <OverlapAdmin /> }],
     awardShows: [

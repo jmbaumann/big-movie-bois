@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { SESSION_ACTIVITY_TYPES } from "../../enums";
-import { createTRPCRouter, cronProcedure, protectedProcedure } from "../../trpc";
+import { adminProcedure, createTRPCRouter, cronProcedure, protectedProcedure } from "../../trpc";
 import { updateMasterFantasyFilmList } from "../tmdb";
 import { logSessionActivity, processSessionBids } from "./session";
 
@@ -71,10 +71,15 @@ const processAllBids = protectedProcedure.mutation(async ({ ctx }) => {
   await Promise.allSettled(promises);
 });
 
+const getLeagues = adminProcedure.query(async ({ ctx, input }) => {
+  return ctx.prisma.league.findMany({ include: { owner: true, members: { include: { user: true } } } });
+});
+
 export const adminRouter = createTRPCRouter({
   addStudioFilm,
   processBids,
   processAllBids,
+  getLeagues,
 });
 
 ////////////////

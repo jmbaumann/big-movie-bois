@@ -104,6 +104,18 @@ const saveScore = protectedProcedure
     return ctx.prisma.overlapResult.create({ data: input });
   });
 
+const getResults = adminProcedure.input(z.object({ date: z.string() })).query(async ({ ctx, input }) => {
+  const todaysAnswer = await ctx.prisma.overlapAnswer.findFirst({
+    where: { date: input.date },
+  });
+  if (!todaysAnswer) return;
+
+  return ctx.prisma.overlapResult.findMany({
+    include: { user: { select: { username: true } } },
+    where: { answerId: todaysAnswer.id },
+  });
+});
+
 export const overlapRouter = createTRPCRouter({
   getAnswer,
   getStats,
@@ -113,4 +125,5 @@ export const overlapRouter = createTRPCRouter({
   deleteAnswer,
   getAnswers,
   saveScore,
+  getResults,
 });

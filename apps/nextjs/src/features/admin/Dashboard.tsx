@@ -7,13 +7,14 @@ import { Button } from "~/components/ui/button";
 import AwardShowsAdmin from "./award-show/AwardShowsAdmin";
 import LiveResultsAdmin from "./award-show/LiveResultsAdmin";
 import InboxAdmin from "./contact/InboxAdmin";
+import OverlapAdmin from "./daily-games/OverlapAdmin";
+import OverlapResultsAdmin from "./daily-games/OverlapResults";
 import ActiveFilmsAdmin from "./fantasy-film/ActiveFilms";
 import AvailableFilmsAdmin from "./fantasy-film/AvailableFilms";
 import LeaguesAdmin from "./fantasy-film/Leagues";
 import MasterListAdmin from "./fantasy-film/MasterList";
 import OpeningWeekendAdmin from "./fantasy-film/OpeningWeekend";
 import PublicSessionsAdmin from "./fantasy-film/PublicSessions";
-import OverlapAdmin from "./OverlapAdmin";
 import PollsAdmin from "./PollsAdmin";
 import UsersAdmin from "./UsersAdmin";
 
@@ -47,7 +48,10 @@ export default function AdminDashboard() {
       { label: "Public Sessions", value: "public-sessions", component: <PublicSessionsAdmin /> },
       { label: "Leagues", value: "leagues", component: <LeaguesAdmin /> },
     ],
-    dailys: [{ label: "Overlap", value: "overlap", component: <OverlapAdmin /> }],
+    dailys: [
+      { label: "Overlap", value: "overlap", component: <OverlapAdmin /> },
+      { label: "Overlap Results", value: "overlap-results", component: <OverlapResultsAdmin /> },
+    ],
     awardShows: [
       { label: "Award Shows", value: "award-shows", component: <AwardShowsAdmin /> },
       { label: "Live Results", value: "live-results", component: <LiveResultsAdmin /> },

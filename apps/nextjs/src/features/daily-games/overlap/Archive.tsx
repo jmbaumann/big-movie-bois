@@ -16,7 +16,10 @@ export default function Archive({
 }) {
   const router = useRouter();
 
-  const { data: archive } = api.overlap.getArchive.useQuery(undefined, { staleTime: ONE_DAY_IN_SECONDS });
+  const { data: archive } = api.overlap.getArchive.useQuery(
+    { date: format(new Date(), "yyyy-MM-dd") },
+    { staleTime: ONE_DAY_IN_SECONDS },
+  );
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

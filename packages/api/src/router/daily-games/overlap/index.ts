@@ -41,10 +41,22 @@ const getStats = protectedProcedure.input(z.object({ userId: z.string() })).quer
   };
 });
 
-const getArchive = publicProcedure.query(async ({ ctx }) => {
+const getMyResult = protectedProcedure.input(z.object({ date: z.string() })).query(async ({ ctx, input }) => {
+  const todaysAnswer = await ctx.prisma.overlapAnswer.findFirst({
+    where: { date: input.date },
+  });
+  if (!todaysAnswer) return;
+
+  return ctx.prisma.overlapResult.findFirst({
+    include: { user: { select: { username: true } } },
+    where: { answerId: todaysAnswer.id, userId: ctx.session.user.id },
+  });
+});
+
+const getArchive = publicProcedure.input(z.object({ date: z.string() })).query(async ({ ctx, input }) => {
   return ctx.prisma.overlapAnswer.findMany({
     select: { id: true, date: true },
-    where: { date: { lt: format(new Date(), "yyyy-MM-dd") } },
+    where: { date: { lt: input.date, gte: "2025-01-09" } },
     orderBy: { date: "desc" },
   });
 });
@@ -119,6 +131,7 @@ const getResults = adminProcedure.input(z.object({ date: z.string() })).query(as
 export const overlapRouter = createTRPCRouter({
   getAnswer,
   getStats,
+  getMyResult,
   getArchive,
   createAnswer,
   updateAnswer,

@@ -16,7 +16,7 @@ export function findOverlap(answerMovie: TMDBMovie, guessMovies: TMDBMovie[]) {
   const runtimesArray = guesses.map((e) => e.runtime);
   const certificationsArray = guesses.map((e) => e.certification!);
   const budgetsArray = guesses.map((e) => e.budget);
-  const revenuesArray = guesses.map((e) => e.revenue);
+  const revenuesArray = guesses.map((e) => Number(e.revenue));
 
   const guessedDirectors = new Set(guesses.map((e) => e.directors.map((d) => d.name)).flat());
   const guessedWriters = new Set(guesses.map((e) => e.writers.map((w) => w.name)).flat());
@@ -98,12 +98,12 @@ export function findOverlap(answerMovie: TMDBMovie, guessMovies: TMDBMovie[]) {
     },
     revenue: {
       value: toMoney(Number(answer.revenue)),
-      revealed: new Set(revenuesArray).has(answer.revenue),
-      gt: findClosest(revenuesArray, answer.revenue, {
+      revealed: new Set(revenuesArray).has(Number(answer.revenue)),
+      gt: findClosest(revenuesArray, Number(answer.revenue), {
         flag: "gt",
         firstChar: true,
       }),
-      lt: findClosest(revenuesArray, answer.revenue, {
+      lt: findClosest(revenuesArray, Number(answer.revenue), {
         flag: "lt",
         firstChar: true,
       }),

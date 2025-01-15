@@ -34,6 +34,7 @@ type OverlapGameData = {
   gameOver: boolean;
   lastCompleted: number;
   lastPlayed: number;
+  date: string;
 };
 type OverlapGameState = {
   title: OverlapAnswerDetails;
@@ -62,6 +63,7 @@ export default function OverlapPage() {
     gameOver: false,
     lastCompleted: 0,
     lastPlayed: 0,
+    date: archive ?? format(new Date(), "yyyy-MM-dd"),
   });
   const [gameState, setGameState] = useState<OverlapGameState | undefined>(defaultOverlapGameState);
   const [overlaps, setOverlaps] = useState({
@@ -84,6 +86,10 @@ export default function OverlapPage() {
     },
     { staleTime: ONE_DAY_IN_SECONDS },
   );
+  const { data: result, refetch: refreshResult } = api.overlap.getMyResult.useQuery(
+    { date: format(new Date(), "yyyy-MM-dd") },
+    { staleTime: ONE_DAY_IN_SECONDS },
+  );
   const { data: searchResult } = api.tmdb.search.useQuery(
     { keyword: searchKeyword ?? "" },
     { enabled: !!searchKeyword },
@@ -95,15 +101,31 @@ export default function OverlapPage() {
 
   const { mutate: saveScore, isLoading: savingScore } = api.overlap.saveScore.useMutation();
 
+  const revealAnswer = !!result && result.answerId === answer?.id;
+
   useEffect(() => {
     if (!isSameDay(new Date(), new Date(gameData.lastPlayed))) {
-      setGameData((s) => ({ ...s, guesses: [], gameOver: false, lastPlayed: new Date().getTime() }));
+      setGameData((s) => ({
+        ...s,
+        guesses: [],
+        gameOver: false,
+        lastPlayed: new Date().getTime(),
+        date: archive ?? format(new Date(), "yyyy-MM-dd"),
+      }));
     }
   }, [gameData]);
 
-  // useEffect(() => {
-  //   if (answer) reset();
-  // }, [answer]);
+  useEffect(() => {
+    if (answer && answer.date !== gameData.date) reset();
+    if (revealAnswer) {
+      setGameData((s) => ({
+        ...s,
+        guesses: [answer.tmdb],
+        date: answer.date,
+      }));
+    }
+    refreshResult();
+  }, [answer, result]);
 
   useEffect(() => {
     if (guessId) getGuessDetails();
@@ -115,6 +137,7 @@ export default function OverlapPage() {
         ...s,
         guesses: [...s.guesses, guessDetails],
         lastPlayed: new Date().getTime(),
+        date: archive ?? format(new Date(), "yyyy-MM-dd"),
       }));
       setGuessId(0);
     }
@@ -124,11 +147,11 @@ export default function OverlapPage() {
     if (answer) {
       const gameState = findOverlap(answer.tmdb, gameData.guesses);
       setGameState(gameState);
-      if (gameData.guesses.length) {
+      if (gameData.guesses.length && gameData.date === answer.date) {
         const latest = findOverlap(answer.tmdb, [gameData.guesses[gameData.guesses.length - 1]!]);
         if (latest.title.revealed) {
           setOverlaps({ details: 0, cast: 0, crew: 0 });
-          if (!gameData.gameOver && sessionData?.user)
+          if (!gameData.gameOver && sessionData?.user && !archive && !result)
             saveScore(
               { userId: sessionData.user.id, answerId: answer.id, numGuesses: forfeit ? 0 : gameData.guesses.length },
               { onSettled: () => trpc.overlap.getStats.invalidate({ userId: sessionData?.user.id }) },
@@ -174,6 +197,13 @@ export default function OverlapPage() {
     setOpenArchive(false);
     setOpenSettings(false);
     setOpenStatistics(false);
+    setGameData((s) => ({
+      ...s,
+      guesses: [],
+      gameOver: false,
+      lastPlayed: new Date().getTime(),
+      date: archive ?? format(new Date(), "yyyy-MM-dd"),
+    }));
   }
 
   async function handleForfeit() {
@@ -194,7 +224,7 @@ export default function OverlapPage() {
             <Logo />
           </Link>
           <div className="ml-auto flex items-center">
-            {/* <Archive open={openArchive} setOpen={setOpenArchive} /> */}
+            <Archive open={openArchive} setOpen={setOpenArchive} />
             <Statistics open={openStatistics} setOpen={setOpenStatistics} />
             <Settings open={openSettings} setOpen={setOpenSettings} />
           </div>
@@ -304,23 +334,27 @@ export default function OverlapPage() {
             </div>
           )}
 
-          {!!gameData.guesses.length && <p>Guesses</p>}
-          <div className="mb-4 mt-4 flex overflow-x-auto">
-            <div className="mx-auto flex gap-2">
-              {gameData.guesses.map((guess, i) => {
-                if (guess.poster)
-                  return (
-                    <Image
-                      key={i}
-                      src={`https://image.tmdb.org/t/p/w1280${guess.poster}`}
-                      width={100}
-                      height={150}
-                      alt={`Poster for ${guess.title}`}
-                    />
-                  );
-              })}
+          {!!gameData.guesses.length && !revealAnswer && <p>Guesses</p>}
+          {!revealAnswer ? (
+            <div className="mb-4 mt-4 flex overflow-x-auto">
+              <div className="mx-auto flex gap-2">
+                {gameData.guesses.map((guess, i) => {
+                  if (guess.poster)
+                    return (
+                      <Image
+                        key={i}
+                        src={`https://image.tmdb.org/t/p/w1280${guess.poster}`}
+                        width={100}
+                        height={150}
+                        alt={`Poster for ${guess.title}`}
+                      />
+                    );
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <p># Guesses: {result.numGuesses}</p>
+          )}
         </div>
       </main>
     </Layout>

@@ -265,7 +265,7 @@ export default function AwardShowPage() {
         {!awardShowGroup ? (
           <Loader2 size={48} className="mx-auto my-2 animate-spin" />
         ) : (
-          <div className="scrollbar-hidden flex max-h-[calc(100vh-72px)] flex-col overflow-y-scroll">
+          <div className="">
             <div className="mb-2 flex items-center justify-between">
               {isLocked ? (
                 <div className="flex items-center">
@@ -283,7 +283,9 @@ export default function AwardShowPage() {
               </p>
             </div>
 
-            <PickList awardShowGroup={awardShowGroup} picks={picks} handlePick={handlePick} isLocked={isLocked} />
+            <div className="scrollbar-hidden flex max-h-[calc(100vh-112px)] flex-col overflow-y-scroll">
+              <PickList awardShowGroup={awardShowGroup} picks={picks} handlePick={handlePick} isLocked={isLocked} />
+            </div>
           </div>
         )}
       </div>

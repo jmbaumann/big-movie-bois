@@ -109,7 +109,7 @@ const getAvailable = protectedProcedure.input(z.object({ page: z.number().min(1)
     where,
     skip: (input.page - 1) * 20,
     take: 20,
-    orderBy: { releaseDate: "asc" },
+    orderBy: { popularity: "desc" },
   });
 
   return {

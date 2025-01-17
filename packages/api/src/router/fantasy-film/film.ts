@@ -89,7 +89,7 @@ const drop = protectedProcedure
       await ctx.prisma.filmBid.delete({ where: { id: bid.id } });
     }
 
-    return dropStudioFilmById(ctx, input.id, recoup);
+    return dropStudioFilmById(ctx, input.id, { recoup });
   });
 
 const getBid = protectedProcedure
@@ -151,7 +151,11 @@ export function getFilmScores(film: FilmWithTMDB) {
   };
 }
 
-export async function dropStudioFilmById(ctx: TRPCContext, id: string, recoup?: number) {
+export async function dropStudioFilmById(
+  ctx: TRPCContext,
+  id: string,
+  options?: { recoup?: number; doNotLog?: boolean },
+) {
   const film = await ctx.prisma.studioFilm.findFirst({
     include: { studio: true },
     where: { id },
@@ -160,11 +164,12 @@ export async function dropStudioFilmById(ctx: TRPCContext, id: string, recoup?: 
 
   await ctx.prisma.studioFilm.delete({ where: { id } });
 
-  await logSessionActivity(ctx, {
-    sessionId: film.studio.sessionId,
-    studioId: film.studioId,
-    tmdbId: film.tmdbId,
-    type: SESSION_ACTIVITY_TYPES.FILM_DROP,
-    message: `{STUDIO} DROPPED {FILM}` + (recoup ? ` and recouped $${recoup}` : ""),
-  });
+  if (!options?.doNotLog)
+    await logSessionActivity(ctx, {
+      sessionId: film.studio.sessionId,
+      studioId: film.studioId,
+      tmdbId: film.tmdbId,
+      type: SESSION_ACTIVITY_TYPES.FILM_DROP,
+      message: `{STUDIO} DROPPED {FILM}` + (options?.recoup ? ` and recouped $${options?.recoup}` : ""),
+    });
 }

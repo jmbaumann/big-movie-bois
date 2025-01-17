@@ -83,6 +83,7 @@ const getBids = protectedProcedure.input(z.object({ sessionId: z.string() })).qu
       studio: { sessionId: input.sessionId },
       status: BID_STATUSES.PENDING,
     },
+    orderBy: [{ amount: "desc" }, { createdAt: "asc" }],
   });
 });
 
@@ -153,15 +154,26 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
     orderBy: [{ amount: "desc" }, { createdAt: "asc" }],
   });
 
+  console.log(bids);
+
   const byTMDBId: Record<number, typeof bids> = {};
   bids.forEach((e) => {
     if (!byTMDBId[e.tmdbId]) byTMDBId[e.tmdbId] = [];
     byTMDBId[e.tmdbId]?.push(e);
   });
 
+  const winners: Record<string, number[]> = {};
+
   for (const tmdbId in byTMDBId) {
-    const { winner, losers } = await getWinnerAndLosers(ctx, byTMDBId[tmdbId]!);
+    // remove bids if studio has already won bid for this slot
+    const bidsForFilm = byTMDBId[tmdbId]?.filter((e) => !winners[e.studioId]?.includes(e.slot));
+    const ignored = byTMDBId[tmdbId]?.filter((e) => winners[e.studioId]?.includes(e.slot));
+    if (!bidsForFilm?.length) continue;
+
+    const { winner, losers } = await getWinnerAndLosers(ctx, bidsForFilm);
     if (!winner) continue;
+    if (!winners[winner.studioId!]) winners[winner.studioId!] = [];
+    winners[winner.studioId!]?.push(winner.slot!);
 
     await ctx.prisma.filmBid.update({
       data: { status: BID_STATUSES.WON },
@@ -173,9 +185,10 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
     });
 
     const toDrop = await ctx.prisma.studioFilm.findFirst({
+      include: { tmdb: true },
       where: { studioId: winner.studioId, slot: winner.slot },
     });
-    if (toDrop) await dropStudioFilmById(ctx, toDrop.id);
+    if (toDrop) await dropStudioFilmById(ctx, toDrop.id, { doNotLog: true });
 
     const film = await ctx.prisma.studioFilm.create({
       data: {
@@ -194,15 +207,21 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
       studioId: winner.studioId,
       tmdbId: film.tmdbId,
       type: SESSION_ACTIVITY_TYPES.BID_WON,
-      message: `{STUDIO} ADDED {FILM} in their ${slot?.type} slot for $${winner.amount}`,
+      message: `{STUDIO} ADDED {FILM} in their ${slot?.type} slot for $${winner.amount}${
+        toDrop && ` (DROPPED ${toDrop.tmdb.title})`
+      }`,
     });
 
-    if (losers?.length) {
+    if (losers?.length)
       await ctx.prisma.filmBid.updateMany({
         data: { status: BID_STATUSES.LOST },
         where: { id: { in: losers?.map((e) => e.id) } },
       });
-    }
+
+    if (ignored?.length)
+      await ctx.prisma.filmBid.deleteMany({
+        where: { id: { in: ignored?.map((e) => e.id) } },
+      });
   }
 }
 

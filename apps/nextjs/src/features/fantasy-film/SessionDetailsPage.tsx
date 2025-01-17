@@ -65,6 +65,7 @@ import Layout from "~/layouts/main/Layout";
 import Loading from "~/layouts/main/Loading";
 import { ONE_DAY_IN_SECONDS } from "~/utils";
 import AvailableFilms from "./AvailableFilms";
+import BiddingDialog from "./BiddingDialog";
 import DraftCountdown from "./DraftCountdown";
 import SessionForm from "./forms/Session";
 import StudioIcon from "./StudioIcon";
@@ -208,7 +209,7 @@ export default function SessionDetailsPage() {
               <Films session={session} />
             </TabsContent>
             <TabsContent value="bids">
-              <Bids session={session} />
+              <Bids session={session} studio={myStudio} />
             </TabsContent>
             <TabsContent value="activity">
               <Activity session={session} />
@@ -500,8 +501,9 @@ function Films({ session }: { session: Session }) {
   return <AvailableFilms session={session} studioId={myStudio.id} gridCols={breakpoint.isMobile ? 2 : undefined} />;
 }
 
-function Bids({ session }: { session: Session }) {
+function Bids({ session, studio }: { session: Session; studio: Studio | undefined }) {
   const { data: sessionData } = useSession();
+  const trpc = api.useContext();
   const confirm = useConfirm();
 
   const { data: bids, refetch: refreshBids } = api.ffLeagueSession.getBids.useQuery(
@@ -545,6 +547,7 @@ function Bids({ session }: { session: Session }) {
             onSuccess: () => {
               refreshBids();
               toast({ title: "Bids processed" });
+              trpc.ffStudio.getStudios.invalidate({ sessionId: session!.id });
             },
           },
         );
@@ -564,9 +567,12 @@ function Bids({ session }: { session: Session }) {
         </AdminMenu>
       )}
 
-      <div className="my-4 flex items-center justify-center">
+      <div className="my-4 flex items-center">
         <Info className="mr-2" />
-        <p>Current bids will be processed on {format(nextTuesday(new Date()), "LLL d, yyyy")} at 12:00pm ET</p>
+        <div>
+          Current bids will be processed on {format(nextTuesday(new Date()), "LLL d, yyyy")} at 12:00pm ET |{" "}
+          <BiddingDialog />
+        </div>
       </div>
 
       <Table>
@@ -579,36 +585,44 @@ function Bids({ session }: { session: Session }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {bids?.map((bid, i) => (
-            <TableRow key={i}>
-              <TableCell className="font-medium">{format(bid.createdAt, "E LLL dd h:mm aaa")}</TableCell>
-              <TableCell className="font-medium">{bid.studio.name}</TableCell>
-              <TableCell>
-                {bid.studio.ownerId === sessionData?.user.id
-                  ? `${bid.tmdb.title} - ${session?.settings.teamStructure.find((e) => e.pos === bid.slot)?.type} - $${
-                      bid.amount
-                    }`
-                  : `${bid.studio.name} placed a bid`}
-              </TableCell>
-              <TableCell>
-                {bid.studio.ownerId === sessionData?.user.id && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="flex items-center rounded-lg hover:text-white">
-                      <MoreVertical />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="bottom">
-                      {/* <DropdownMenuItem>
+          {bids?.map((bid, i) => {
+            const filmCurrentlyInSlot = studio?.films.find((e) => e.slot === bid.slot);
+
+            return (
+              <TableRow key={i}>
+                <TableCell className="font-medium">{format(bid.createdAt, "E LLL dd h:mm aaa")}</TableCell>
+                <TableCell className="font-medium">{bid.studio.name}</TableCell>
+                <TableCell>
+                  {bid.studio.ownerId === sessionData?.user.id
+                    ? `${bid.tmdb.title} - ${session?.settings.teamStructure.find((e) => e.pos === bid.slot)
+                        ?.type} - $${bid.amount}`
+                    : `${bid.studio.name} placed a bid`}
+                  {filmCurrentlyInSlot && (
+                    <p className="text-xs italic">
+                      If this bid wins, <strong>{filmCurrentlyInSlot.tmdb?.title}</strong> will be dropped
+                    </p>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {bid.studio.ownerId === sessionData?.user.id && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="flex items-center rounded-lg hover:text-white">
+                        <MoreVertical />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent side="bottom">
+                        {/* <DropdownMenuItem>
                         <Pencil size={20} className="mr-2" /> Edit
                       </DropdownMenuItem> */}
-                      <DropdownMenuItem onClick={() => handleDeleteBid(bid.id)}>
-                        <Trash size={20} className="mr-2 text-red-600" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+                        <DropdownMenuItem onClick={() => handleDeleteBid(bid.id)}>
+                          <Trash size={20} className="mr-2 text-red-600" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </>

@@ -30,6 +30,7 @@ export const BID_STATUSES = {
   PENDING: "pending",
   WON: "won",
   LOST: "lost",
+  IGNORED: "ignored",
   INVALID: "invalid",
   PURCHASE: "purchase",
 } as const;

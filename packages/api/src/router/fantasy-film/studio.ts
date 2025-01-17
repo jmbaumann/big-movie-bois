@@ -162,6 +162,7 @@ const removeFavorite = protectedProcedure
 const getBids = protectedProcedure.input(z.object({ studioId: z.string() })).query(async ({ ctx, input }) => {
   return await ctx.prisma.filmBid.findMany({
     where: { studioId: input.studioId, status: BID_STATUSES.PENDING },
+    orderBy: [{ amount: "desc" }, { createdAt: "asc" }],
   });
 });
 

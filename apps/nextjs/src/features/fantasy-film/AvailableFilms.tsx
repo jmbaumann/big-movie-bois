@@ -230,6 +230,7 @@ export default function AvailableFilms({
             refreshMyStudio();
             refreshFilms();
             setAcquiredFilms((s) => [...s, selectedFilm.id]);
+            setBidAmount("0");
             trpc.ffStudio.getStudios.invalidate({ sessionId: session!.id });
             trpc.ffLeagueSession.getBids.invalidate({ sessionId: session!.id });
           },

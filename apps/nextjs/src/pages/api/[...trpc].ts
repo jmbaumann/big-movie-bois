@@ -5,7 +5,6 @@ import { createOpenApiNextHandler, OpenApiRouter } from "trpc-openapi";
 import { appRouter, createTRPCContext } from "@repo/api";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  console.log(req.body);
   // Setup CORS
   // await cors(req, res);
 

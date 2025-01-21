@@ -154,7 +154,7 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
     orderBy: [{ amount: "desc" }, { createdAt: "asc" }],
   });
 
-  console.log(bids);
+  const tmdbIds = new Set(bids.map((e) => e.tmdbId));
 
   const byTMDBId: Record<number, typeof bids> = {};
   bids.forEach((e) => {
@@ -162,12 +162,15 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
     byTMDBId[e.tmdbId]?.push(e);
   });
 
+  const completed: number[] = [];
   const winners: Record<string, number[]> = {};
 
-  for (const tmdbId in byTMDBId) {
-    // remove bids if studio has already won bid for this slot
-    const bidsForFilm = byTMDBId[tmdbId]?.filter((e) => !winners[e.studioId]?.includes(e.slot));
-    const ignored = byTMDBId[tmdbId]?.filter((e) => winners[e.studioId]?.includes(e.slot));
+  for (let i = 0; i < tmdbIds.size; i++) {
+    const { filmId, bidsForFilm, ignored } = getFilmBids(bids, winners, completed);
+    if (ignored?.length)
+      await ctx.prisma.filmBid.deleteMany({
+        where: { id: { in: ignored?.map((e) => e.id) } },
+      });
     if (!bidsForFilm?.length) continue;
 
     const { winner, losers } = await getWinnerAndLosers(ctx, bidsForFilm);
@@ -208,7 +211,7 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
       tmdbId: film.tmdbId,
       type: SESSION_ACTIVITY_TYPES.BID_WON,
       message: `{STUDIO} ADDED {FILM} in their ${slot?.type} slot for $${winner.amount}${
-        toDrop && ` (DROPPED ${toDrop.tmdb.title})`
+        toDrop ? ` (DROPPED ${toDrop.tmdb.title})` : ""
       }`,
     });
 
@@ -218,11 +221,30 @@ export async function processSessionBids(ctx: TRPCContext, sessionId: string, ti
         where: { id: { in: losers?.map((e) => e.id) } },
       });
 
-    if (ignored?.length)
-      await ctx.prisma.filmBid.deleteMany({
-        where: { id: { in: ignored?.map((e) => e.id) } },
-      });
+    completed.push(filmId);
   }
+}
+
+function getFilmBids(bids: FilmBid[], winners: Record<string, number[]>, completed: number[]) {
+  // filter out bids for already processed films
+  const remainingBids = bids.filter((bid) => !completed.includes(bid.tmdbId));
+
+  // filter out bids if studio has already won bid in that slot
+  const activeBids = remainingBids.filter((bid) => !winners[bid.studioId]?.includes(bid.slot));
+  const ignored = remainingBids.filter((bid) => winners[bid.studioId]?.includes(bid.slot));
+
+  // sort remaining bids by amount (desc) and createdAt (asc)
+  const sortedBids = activeBids.sort((a, b) => {
+    if (b.amount !== a.amount) return b.amount - a.amount;
+    return a.createdAt.getTime() - b.createdAt.getTime();
+  });
+
+  if (!sortedBids.length) return { bidsForFilm: [], filmId: -1, ignored };
+
+  const filmId = sortedBids[0]!.tmdbId;
+  const bidsForFilm = sortedBids.filter((bid) => bid.tmdbId === filmId);
+
+  return { bidsForFilm, filmId, ignored };
 }
 
 export async function deleteSessionById(ctx: TRPCContext, id: string) {

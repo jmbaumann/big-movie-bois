@@ -131,13 +131,14 @@ async function makePick(ctx: TRPCContext, input: z.infer<typeof makePickObj>) {
     complete,
   };
 
-  await draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
+  draftEvent<DraftState>(`draft:${input.sessionId}:draft-update`, draftState);
 
   if (complete && session)
     await ctx.prisma.leagueSession.update({
       data: { settings: JSON.stringify({ ...session.settings, draft: { ...session.settings.draft, complete } }) },
       where: { id: session.id },
     });
+
   return input.sessionId;
 }
 

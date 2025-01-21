@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { io } from "socket.io-client";
 
 import { RouterOutputs } from "@repo/api";
+import { BID_STATUSES } from "@repo/api/src/enums";
 import { DraftState } from "@repo/api/src/router/fantasy-film/draft";
 import { TMDBDetails } from "@repo/db";
 
@@ -61,6 +62,7 @@ export default function AvailableFilms({
   const [selectedFilm, setSelectedFilm] = useState<Film>();
   const [selectedSlot, setSelectedSlot] = useState<string>();
   const [bidAmount, setBidAmount] = useState("0");
+  const [picking, setPicking] = useState(false);
 
   const isAdmin = session?.league.ownerId === sessionData?.user.id;
   const sortOptions = [
@@ -122,7 +124,7 @@ export default function AvailableFilms({
   const { mutate: addFavorite } = api.ffStudio.addFavorite.useMutation();
   const { mutate: removeFavorite } = api.ffStudio.removeFavorite.useMutation();
   const { mutate: makeBid, isLoading: bidding } = api.ffStudio.bid.useMutation();
-  const { mutate: makePick, isLoading: picking } = api.ffDraft.pick.useMutation();
+  const { mutate: makePick } = api.ffDraft.pick.useMutation();
 
   const { mutate: adminAdd } = api.ffAdmin.addStudioFilm.useMutation();
 
@@ -146,7 +148,8 @@ export default function AvailableFilms({
 
   const isFavorite = selectedFilm ? favorites?.map((e) => e.id).includes(selectedFilm.id) : false;
   const bidPlaced = selectedFilm ? bids?.map((e) => e.tmdbId).includes(selectedFilm.id) : false;
-  const insufficientFunds = selectedFilm && myStudio ? (selectedFilm.price ?? 0) > myStudio?.budget : false;
+  const insufficientFunds =
+    selectedFilm && myStudio ? ((buyNow ? selectedFilm.price : Number(bidAmount)) ?? 0) > myStudio?.budget : false;
 
   const myFilmsPopularity = myStudio?.films.map((e) => e.tmdb!.popularity);
   const maxPopularity =
@@ -229,10 +232,11 @@ export default function AvailableFilms({
             setOpen(false);
             refreshMyStudio();
             refreshFilms();
-            setAcquiredFilms((s) => [...s, selectedFilm.id]);
+            if (buyNow) setAcquiredFilms((s) => [...s, selectedFilm.id]);
             setBidAmount("0");
             trpc.ffStudio.getStudios.invalidate({ sessionId: session!.id });
             trpc.ffLeagueSession.getBids.invalidate({ sessionId: session!.id });
+            refreshBids();
           },
           onError: (e) => {
             // toast({ title: e.message, variant: "destructive" });
@@ -261,6 +265,7 @@ export default function AvailableFilms({
 
   function handleDraft() {
     if (session && selectedFilm && myStudio && selectedSlot) {
+      setPicking(true);
       const studioId = isAdmin && drafting && drafting?.id !== myStudio.id ? drafting.id : myStudio.id;
       makePick(
         {
@@ -277,6 +282,7 @@ export default function AvailableFilms({
         },
       );
       setOpen(false);
+      setPicking(false);
     }
   }
 
@@ -295,7 +301,7 @@ export default function AvailableFilms({
           <Label>Budget</Label>
           <p className="flex items-center text-lg text-white">
             <DollarSign size={18} />
-            {(myStudio?.budget ?? 0) - Number(bidAmount)}
+            {myStudio?.budget ?? 0}
           </p>
         </div>
         <Button className="text-lg" variant="ghost" onClick={() => setShowWatchlist((s) => !s)}>
@@ -459,12 +465,20 @@ export default function AvailableFilms({
                                 )}
                               </div>
                             )}
-                            {buyNow && !insufficientFunds && (
+                            {buyNow && !insufficientFunds ? (
                               <div className="flex flex-col">
                                 <Label>Remaining Budget</Label>
                                 <p className="flex items-center text-2xl text-white">
                                   <DollarSign />
                                   {(myStudio?.budget ?? 0) - Number(bidAmount)}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col">
+                                <Label>Budget</Label>
+                                <p className="flex items-center text-2xl text-white">
+                                  <DollarSign />
+                                  {myStudio?.budget ?? 0}
                                 </p>
                               </div>
                             )}
@@ -525,10 +539,10 @@ export default function AvailableFilms({
                       Draft {isAdmin && drafting?.id !== studioId && `for ${drafting?.name}`}
                     </Button>
                   )}
-                  {!isDraft && canPick && !insufficientFunds && (
+                  {!isDraft && canPick && !bidPlaced && (
                     <Button
                       isLoading={bidding}
-                      disabled={!selectedFilm || !canPick || !selectedSlot || bidPlaced}
+                      disabled={!selectedFilm || !canPick || !selectedSlot || bidPlaced || insufficientFunds}
                       onClick={handleBid}
                     >
                       {buyNow ? "Buy" : "Place Bid"}

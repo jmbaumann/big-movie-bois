@@ -586,12 +586,13 @@ function Bids({ session, studio }: { session: Session; studio: Studio | undefine
         </TableHeader>
         <TableBody>
           {bids?.map((bid, i) => {
-            const filmCurrentlyInSlot = studio?.films.find((e) => e.slot === bid.slot);
+            const filmCurrentlyInSlot = studio?.id === bid.studioId && studio?.films.find((e) => e.slot === bid.slot);
+            const myStudio = studio?.id === bid.studioId;
 
             return (
               <TableRow key={i}>
                 <TableCell className="font-medium">{format(bid.createdAt, "E LLL dd h:mm aaa")}</TableCell>
-                <TableCell className="font-medium">{bid.studio.name}</TableCell>
+                <TableCell className={cn("font-medium", myStudio && "text-primary")}>{bid.studio.name}</TableCell>
                 <TableCell>
                   {bid.studio.ownerId === sessionData?.user.id
                     ? `${bid.tmdb.title} - ${session?.settings.teamStructure.find((e) => e.pos === bid.slot)

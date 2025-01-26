@@ -29,9 +29,36 @@ const getActive = publicProcedure.query(async ({ ctx }) => {
     include: {
       awardShow: { select: { name: true, slug: true } },
       categories: { include: { nominees: { orderBy: { name: "asc" } } } },
+      groups: { where: { default: true } },
     },
     where: { available: { lte: new Date() }, locked: { gte: sub(new Date(), { weeks: 2 }) } },
     orderBy: { available: "desc" },
+  });
+
+  const r = [];
+  for (const active of actives) {
+    const entries = await ctx.prisma.awardShowPick.groupBy({
+      by: ["userId", "groupId"],
+      where: {
+        group: { awardShowYearId: active.id },
+      },
+    });
+    r.push({ ...active, entries: entries.length });
+  }
+
+  return r;
+});
+
+const getPast = publicProcedure.query(async ({ ctx }) => {
+  const actives = await ctx.prisma.awardShowYear.findMany({
+    include: {
+      awardShow: { select: { name: true, slug: true } },
+      categories: { include: { nominees: { orderBy: { name: "asc" } } } },
+      groups: { where: { default: true } },
+    },
+    where: { locked: { lte: sub(new Date(), { days: 2 }) }, available: { not: null } },
+    orderBy: { available: "desc" },
+    take: 5,
   });
 
   const r = [];
@@ -166,6 +193,7 @@ export const awardShowRouter = createTRPCRouter({
   getBySlugYear,
   getShows,
   getActive,
+  getPast,
   create,
   addYear,
   updateYear,

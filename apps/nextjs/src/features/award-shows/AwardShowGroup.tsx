@@ -307,7 +307,7 @@ function PickList({
                   {nominee.image && (
                     <CardContent className="flex items-center p-2 text-center">
                       <Image
-                        className="h-52 object-cover object-center"
+                        className="object-cover object-center"
                         src={nominee.image}
                         alt=""
                         width={600}

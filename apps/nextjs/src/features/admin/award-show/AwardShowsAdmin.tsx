@@ -7,9 +7,9 @@ import { z } from "zod";
 
 import { api, RouterOutputs } from "~/utils/api";
 import { cn } from "~/utils/shadcn";
+import { TMDBImageInput } from "~/components/TMDBImageInput";
 import { Button } from "~/components/ui/button";
 import { Calendar } from "~/components/ui/calendar";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form";
 import { useConfirm } from "~/components/ui/hooks/use-confirm";
@@ -447,7 +447,6 @@ function CategoryForm({
   }, [selectedCategory, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("SAVE", values);
     saveCategories(values, {
       onSuccess: () => {
         toast({
@@ -515,7 +514,7 @@ function CategoryForm({
                         <FormItem className="grow">
                           <FormLabel>Image</FormLabel>
                           <FormControl>
-                            <Input {...field} className="grow text-black" autoComplete="off" />
+                            <TMDBImageInput {...field} className="grow text-black" autoComplete="off" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -598,7 +597,6 @@ function AwardShowFormDialog() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("HERE");
     createAwardShow(values, {
       onSuccess: () => {
         toast({

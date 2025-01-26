@@ -3,46 +3,15 @@ import { add, format, max, nextTuesday, sub } from "date-fns";
 import { z } from "zod";
 
 import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
-import { getByDateRange, getDetailsById, getMovieFromTMDB } from "./tmdb";
-import { TMDBSearchResponse } from "./types";
+import { getByDateRange, getDetailsById, getMovieFromTMDB, searchMovie, searchPerson } from "./tmdb";
 import { getFilmsForSessionObj } from "./zod";
 
-const POPULARITY_THRESHOLD = 10;
-
-const search = publicProcedure.input(z.object({ keyword: z.string() })).query(async ({ ctx, input }) => {
-  const url = `https://api.themoviedb.org/3/search/movie?query=${input.keyword}&include_adult=false&language=en-US&with_release_type=3&sort_by=popularity.desc&page=1`;
-  const options = {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: `Bearer ${process.env.TMDB_READ_ACCESS_TOKEN}`,
-    },
-  };
-
-  try {
-    const res = await fetch(url, options);
-    const data: TMDBSearchResponse = await res.json();
-
-    let list = data.results
-      .filter((e) => e.popularity >= POPULARITY_THRESHOLD)
-      .sort((a, b) => b.popularity - a.popularity)
-      .map((e) => ({ id: e.id, title: e.title, year: e.release_date ? format(e.release_date, "yyyy") : "" }));
-
-    const titleCount: Record<string, number> = {};
-    list.forEach((movie) => {
-      titleCount[movie.title] = (titleCount[movie.title] || 0) + 1;
-    });
-
-    const movies = list.map((movie) => {
-      if ((titleCount[movie.title] ?? 0) > 1) return { ...movie, title: `${movie.title} (${movie.year})` };
-      return movie;
-    });
-
-    return movies;
-  } catch (error) {
-    console.error(error);
-  }
-});
+const search = publicProcedure
+  .input(z.object({ type: z.string().optional(), keyword: z.string() }))
+  .query(async ({ input }) => {
+    if (input.type === "person") return await searchPerson(input.keyword);
+    return await searchMovie(input.keyword);
+  });
 
 const getMasterFFList = protectedProcedure
   .input(z.object({ page: z.number().min(1) }))

@@ -2,11 +2,31 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "../../trpc";
+import { randomString } from "../../utils";
+
+const search = protectedProcedure
+  .input(z.object({ keyword: z.string(), awardShowYearId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    return ctx.prisma.awardShowGroup.findMany({
+      select: { id: true, name: true, slug: true },
+      where: {
+        awardShowYearId: input.awardShowYearId,
+        public: true,
+        default: false,
+        OR: [
+          { name: { contains: input.keyword, mode: "insensitive" } },
+          { owner: { username: { contains: input.keyword, mode: "insensitive" } } },
+        ],
+      },
+    });
+  });
 
 const get = publicProcedure
   .input(z.object({ id: z.string().optional(), awardShowYearId: z.string().optional() }))
   .query(async ({ ctx, input }) => {
-    const where = input.id ? { id: input.id } : { awardShowYearId: input.awardShowYearId, default: true };
+    const where = input.id
+      ? { OR: [{ id: input.id }, { slug: input.id }] }
+      : { awardShowYearId: input.awardShowYearId, default: true };
 
     const group = await ctx.prisma.awardShowGroup.findFirst({
       include: {
@@ -109,7 +129,8 @@ const myPicks = protectedProcedure
 const create = protectedProcedure
   .input(z.object({ awardShowYearId: z.string(), name: z.string(), ownerId: z.string(), public: z.boolean() }))
   .mutation(async ({ ctx, input }) => {
-    return ctx.prisma.awardShowGroup.create({ data: input });
+    const slug = randomString(6);
+    return ctx.prisma.awardShowGroup.create({ data: { ...input, slug } });
   });
 
 const pick = protectedProcedure
@@ -130,6 +151,7 @@ const pick = protectedProcedure
   });
 
 export const awardShowGroupRouter = createTRPCRouter({
+  search,
   get,
   getPublic,
   getMy,

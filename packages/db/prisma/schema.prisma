@@ -311,6 +311,7 @@ model AwardShowNominee {
 
 model AwardShowGroup {
     id              String  @id @default(cuid())
+    slug            String?
     awardShowYearId String
     ownerId         String
     name            String

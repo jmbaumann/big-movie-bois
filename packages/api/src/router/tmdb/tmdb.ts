@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { format, parseISO } from "date-fns";
 
 import {
@@ -5,8 +6,45 @@ import {
   TMDBDetailsResponse,
   TMDBDiscoverResponse,
   TMDBKeywordsResponse,
+  TMDBMovieSearchResponse,
+  TMDBPersonSearchResponse,
   TMDBReleaseDatesResponse,
 } from "./types";
+
+const POPULARITY_THRESHOLD = 10;
+
+export async function searchMovie(keyword: string) {
+  const url = `https://api.themoviedb.org/3/search/movie?query=${keyword}&include_adult=false&language=en-US&with_release_type=3&sort_by=popularity.desc&page=1`;
+
+  try {
+    const data = await tmdb<TMDBMovieSearchResponse>(url);
+    if (!data) throw new TRPCError({ message: "No results", code: "NOT_FOUND" });
+
+    let list = data.results
+      .filter((e) => e.popularity >= POPULARITY_THRESHOLD)
+      .sort((a, b) => b.popularity - a.popularity)
+      .map((e) => ({
+        id: e.id,
+        title: e.title,
+        year: e.release_date ? format(e.release_date, "yyyy") : "",
+        poster: e.poster_path,
+      }));
+
+    const titleCount: Record<string, number> = {};
+    list.forEach((movie) => {
+      titleCount[movie.title] = (titleCount[movie.title] || 0) + 1;
+    });
+
+    const movies = list.map((movie) => {
+      if ((titleCount[movie.title] ?? 0) > 1) return { ...movie, title: `${movie.title} (${movie.year})` };
+      return movie;
+    });
+
+    return movies;
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 export async function getMovieFromTMDB(id: number, simple?: boolean) {
   try {
@@ -48,6 +86,22 @@ export async function getByDateRange(
     `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&region=US&page=${page}&primary_release_date.gte=${fromDate}&primary_release_date.lte=${toDate}&release_date.gte=${fromDate}&release_date.lte=${toDate}&sort_by=popularity.desc&with_release_type=3`,
   );
 }
+
+export async function searchPerson(keyword: string) {
+  const query = encodeURI(keyword);
+  const url = `https://api.themoviedb.org/3/search/person?query=${query}&include_adult=false&language=en-US&page=1`; // "mikey%20madison"
+
+  try {
+    const data = await tmdb<TMDBPersonSearchResponse>(url);
+    if (!data) throw new TRPCError({ message: "No results", code: "NOT_FOUND" });
+
+    return data.results.sort((a, b) => b.popularity - a.popularity).filter((e) => e.popularity > 1);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+//////////
 
 export async function tmdb<T>(url: string, method?: "GET" | "POST") {
   const options = {

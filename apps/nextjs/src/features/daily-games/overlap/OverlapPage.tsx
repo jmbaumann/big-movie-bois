@@ -318,7 +318,7 @@ export default function OverlapPage() {
                         {!!searchKeyword && <CommandEmpty>No results found.</CommandEmpty>}
                         {searchResult?.map((result, i) => (
                           <CommandItem key={i} onSelect={() => handleMovieSelect(result.id)}>
-                            {result.title}
+                            {"title" in result ? result.title : ""}
                           </CommandItem>
                         ))}
                       </CommandList>

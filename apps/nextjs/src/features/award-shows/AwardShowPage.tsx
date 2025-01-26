@@ -26,7 +26,7 @@ export default function AwardShowPage() {
 
   return (
     <Layout showFooter>
-      <p className="mb-2 text-xl">Active Award Shows</p>
+      {!!activeShows?.length && <p className="mb-2 text-xl">Active Award Shows</p>}
       <div className="grid lg:grid-cols-2">
         {activeShows?.map((show, i) => <AwardShowCard key={i} awardShow={show} />)}
       </div>

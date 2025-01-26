@@ -71,7 +71,7 @@ function TMDBImageDialog({ children, setImageURL }: { children: React.ReactNode;
   const handleResultSelect = (image?: string) => {
     const path = type === "movie" ? "w1280" : "w600_and_h900_bestv2";
     if (image) {
-      setImageURL(`https://image.tmdb.org/t/p/${path}/${image}`);
+      setImageURL(`https://image.tmdb.org/t/p/${path}${image}`);
       setOpen(false);
     }
   };

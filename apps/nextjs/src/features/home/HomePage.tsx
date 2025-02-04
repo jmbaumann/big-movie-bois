@@ -193,9 +193,9 @@ export default function HomePage() {
             <Link className="hover:text-primary" href={"https://youtube.com/@bigmoviebois"} target="_blank">
               <Youtube size={28} />
             </Link>
-            {/*<Link className="hover:text-primary" href={"https://twitch.tv/bigmoviebois"} target="_blank">
+            <Link className="hover:text-primary" href={"https://twitch.tv/bigmoviebois"} target="_blank">
               <Twitch size={28} />
-            </Link> */}
+            </Link>
             <Link className="hover:text-primary" href={"https://twitter.com/bigmoviebois"} target="_blank">
               <Twitter size={28} />
             </Link>

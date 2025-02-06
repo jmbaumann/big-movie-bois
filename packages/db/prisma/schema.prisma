@@ -256,6 +256,55 @@ model FilmTradeProposal {
     @@index([receivingFilmId])
 }
 
+model Tournament {
+    id          String @id @default(cuid())
+    name        String
+    description String
+
+    rounds  TournamentRound[]
+    entries TournamentEntry[]
+}
+
+model TournamentRound {
+    id           String   @id @default(cuid())
+    tournamentId String
+    startDate    DateTime
+    endDate      DateTime
+
+    tournament Tournament @relation(fields: [tournamentId], references: [id])
+
+    @@index([tournamentId])
+}
+
+model TournamentEntry {
+    id           String  @id @default(cuid())
+    tournamentId String
+    // conferenceId
+    seed         Int
+    name         String
+    description  String?
+    image        String?
+
+    tournament Tournament       @relation(fields: [tournamentId], references: [id])
+    votes      TournamentVote[]
+
+    @@index([tournamentId])
+}
+
+model TournamentVote {
+    id        String   @id @default(cuid())
+    entryId   String
+    round     Int
+    userId    String
+    timestamp DateTime
+
+    entry TournamentEntry @relation(fields: [entryId], references: [id])
+    user  User            @relation(fields: [userId], references: [id])
+
+    @@index([entryId])
+    @@index([userId])
+}
+
 model AwardShow {
     id      String  @id @default(cuid())
     slug    String
@@ -477,6 +526,7 @@ model User {
     pollResponses     PollResponse[]
     overlapResults    OverlapResult[]
     contactMessages   ContactMessage[]
+    tournamentVotes   TournamentVote[]
 }
 
 model VerificationToken {

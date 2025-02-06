@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { CalendarDays, Home, Mail, Shield, Trophy, User } from "lucide-react";
+import { Brackets, CalendarDays, Home, Mail, Shield, Trophy, User } from "lucide-react";
 
 import { cn } from "~/utils/shadcn";
 import { Button } from "~/components/ui/button";
@@ -16,6 +16,7 @@ import MasterListAdmin from "./fantasy-film/MasterList";
 import OpeningWeekendAdmin from "./fantasy-film/OpeningWeekend";
 import PublicSessionsAdmin from "./fantasy-film/PublicSessions";
 import PollsAdmin from "./PollsAdmin";
+import TournamentAdmin from "./tournament/TournamentAdmin";
 import UsersAdmin from "./UsersAdmin";
 
 export default function AdminDashboard() {
@@ -26,6 +27,7 @@ export default function AdminDashboard() {
     { icon: <User />, value: "users" },
     { icon: <Shield />, value: "fantasy" },
     { icon: <CalendarDays />, value: "dailys" },
+    { icon: <Brackets />, value: "tournaments" },
     { icon: <Trophy />, value: "awardShows" },
     { icon: <Mail />, value: "messages" },
   ];
@@ -52,6 +54,7 @@ export default function AdminDashboard() {
       { label: "Overlap", value: "overlap", component: <OverlapAdmin /> },
       { label: "Overlap Results", value: "overlap-results", component: <OverlapResultsAdmin /> },
     ],
+    tournaments: [{ label: "Tournaments", value: "tournaments", component: <TournamentAdmin /> }],
     awardShows: [
       { label: "Award Shows", value: "award-shows", component: <AwardShowsAdmin /> },
       { label: "Live Results", value: "live-results", component: <LiveResultsAdmin /> },

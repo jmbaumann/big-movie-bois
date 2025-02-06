@@ -13,6 +13,7 @@ import {
 } from "./router/fantasy-film";
 import { pollRouter } from "./router/poll";
 import { tmdbRouter } from "./router/tmdb";
+import { tournamentRouter } from "./router/tournament";
 import { userRouter } from "./router/user";
 import { createTRPCRouter } from "./trpc";
 
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
   ffStudio: ffStudioRouter,
   ffFilm: ffFilmRouter,
   ffDraft: ffDraftRouter,
+  tournament: tournamentRouter,
   awardShow: awardShowRouter,
   awardShowGroup: awardShowGroupRouter,
   overlap: overlapRouter,

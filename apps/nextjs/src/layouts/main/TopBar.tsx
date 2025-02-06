@@ -23,6 +23,7 @@ const links = [
   { href: "/fantasy-film", label: "Fantasy Film" },
   { href: "/daily-games", label: "Daily Games" },
   { href: "/pick-em", label: "Award Show Pick 'Em" },
+  { href: "/tournament", label: "Tournaments" },
   // { href: '/forums', label: 'Forums'},
   // { href: '/podcast', label: 'Podcast'},
   // { href: '/support', label: 'Suppport'},

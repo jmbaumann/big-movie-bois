@@ -1,3 +1,5 @@
+import seedrandom from "seedrandom";
+
 export function toZodEnum<T extends Record<string, string>>(e: T) {
   return Object.values(e) as unknown as readonly [string, ...string[]];
 }
@@ -12,4 +14,9 @@ export function randomString(length: number) {
     counter += 1;
   }
   return result;
+}
+
+export function coinflip(seed?: string) {
+  const random = seedrandom(seed ?? "");
+  return Math.floor(random() * 2);
 }

@@ -1,11 +1,85 @@
+import { TRPCError } from "@trpc/server";
 import { sub } from "date-fns";
 import { z } from "zod";
 
 import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
+import { coinflip } from "../../utils";
 import { TournamentInput, tournamentInputObject } from "./zod";
 
+type TournamentEntry = {
+  id: string;
+  tournamentId: string;
+  seed: number;
+  name: string;
+  description: string | null;
+  image: string | null;
+  totalVotes: number;
+  votedFor: boolean;
+  winner?: boolean;
+};
+type Matchup = {
+  entry1: TournamentEntry;
+  entry2: TournamentEntry;
+};
+type TournamentRound = {
+  id: string;
+  tournamentId: string;
+  startDate: Date;
+  endDate: Date;
+  entries: TournamentEntry[];
+  matchups?: Matchup[];
+};
+
 const get = publicProcedure.query(async ({ ctx }) => {
-  return ctx.prisma.tournament.findMany({ include: { rounds: true, entries: true } });
+  return ctx.prisma.tournament.findMany({
+    include: { rounds: { orderBy: { startDate: "asc" } }, entries: { orderBy: { seed: "asc" } } },
+  });
+});
+
+const getById = publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+  const tournament = await ctx.prisma.tournament.findFirst({
+    include: {
+      rounds: { orderBy: { startDate: "asc" } },
+    },
+    where: { id: input.id },
+  });
+
+  // if (!tournament) return new TRPCError({ message: "No tournament found", code: "NOT_FOUND" });
+  if (!tournament) return undefined;
+
+  const rounds: TournamentRound[] = [];
+  const entries = await ctx.prisma.tournamentEntry.findMany({
+    where: { tournamentId: tournament.id },
+    orderBy: { seed: "asc" },
+    // include: { _count: { select: { votes: true } }, votes: { where: { userId: ctx.session?.user.id } } },
+    include: { votes: true },
+  });
+
+  for (let i = 0; i < tournament.rounds.length; i++) {
+    const round = tournament.rounds[i]!;
+    const roundEntries = entries.map((e) => ({
+      id: e.id,
+      tournamentId: e.tournamentId,
+      seed: e.seed,
+      name: e.name,
+      description: e.description,
+      image: e.image,
+      totalVotes: e.votes.filter((e) => e.round === i + 1).length,
+      votedFor: !!e.votes.filter((e) => e.round === i + 1 && e.userId === ctx.session?.user.id).length,
+    }));
+
+    rounds.push({
+      ...round,
+      entries: orderEntries(roundEntries),
+    });
+  }
+
+  getMatchups(rounds);
+
+  const winner =
+    rounds[rounds.length - 1]!.endDate <= new Date() ? findWinners(rounds[rounds.length - 1]!.matchups!)[0] : undefined;
+
+  return { ...tournament, rounds, winner };
 });
 
 const create = adminProcedure.input(tournamentInputObject).mutation(async ({ ctx, input }) => {
@@ -54,11 +128,33 @@ const saveEntries = adminProcedure
         await ctx.prisma.tournamentEntry.update({ data: entry, where: { id: entry.id } });
   });
 
+const vote = adminProcedure
+  .input(
+    z.object({
+      entryId: z.string(),
+      round: z.number(),
+      userId: z.string(),
+      activeVote: z.string().optional(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    if (input.activeVote)
+      await ctx.prisma.tournamentVote.deleteMany({
+        where: { userId: input.userId, entryId: input.activeVote, round: input.round },
+      });
+
+    return ctx.prisma.tournamentVote.create({
+      data: { entryId: input.entryId, round: input.round, userId: input.userId, timestamp: new Date() },
+    });
+  });
+
 export const tournamentRouter = createTRPCRouter({
   get,
+  getById,
   create,
   update,
   saveEntries,
+  vote,
 });
 
 //////////
@@ -75,4 +171,62 @@ async function updateTournamentRounds(ctx: TRPCContext, rounds: TournamentInput[
   if (roundsToUpdate?.length)
     for (const round of roundsToUpdate)
       await ctx.prisma.tournamentRound.update({ data: round, where: { id: round.id } });
+}
+
+export function getMatchups(rounds: TournamentRound[]) {
+  for (let i = 0; i < rounds.length; i++) {
+    const round = rounds[i];
+    if (!round) return;
+
+    const entries = round.entries;
+
+    if (i > 0) {
+      if (round.startDate > new Date()) return;
+
+      const winners = new Set(findWinners(rounds[i - 1]!.matchups!).map((e) => e.id));
+      round.matchups = createMatchupsFromEntries(entries.filter((e) => winners.has(e.id)));
+    } else round.matchups = createMatchupsFromEntries(entries);
+  }
+}
+
+function createMatchupsFromEntries(entries: TournamentEntry[]) {
+  const matchups: Matchup[] = [];
+
+  for (let i = 0; i < entries.length / 2; i++) matchups.push({ entry1: entries[i * 2]!, entry2: entries[i * 2 + 1]! });
+
+  return matchups;
+}
+
+function findWinners(matchups: Matchup[]) {
+  const winners: TournamentEntry[] = [];
+
+  for (const matchup of matchups)
+    if (matchup.entry1.totalVotes > matchup.entry2.totalVotes) {
+      matchup.entry1.winner = true;
+      winners.push(matchup.entry1);
+    } else if (matchup.entry2.totalVotes > matchup.entry1.totalVotes) {
+      matchup.entry2.winner = true;
+      winners.push(matchup.entry2);
+    } else {
+      if (coinflip(matchup.entry1.name)) {
+        matchup.entry1.winner = true;
+        winners.push(matchup.entry1);
+      } else {
+        matchup.entry2.winner = true;
+        winners.push(matchup.entry2);
+      }
+    }
+
+  return winners;
+}
+
+export function orderEntries(entries: TournamentEntry[]) {
+  const ordered: TournamentEntry[] = [];
+
+  for (let i = 0; i < entries.length / 2; i++) {
+    ordered.push(entries[i]!);
+    ordered.push(entries[entries.length - (i + 1)]!);
+  }
+
+  return ordered;
 }

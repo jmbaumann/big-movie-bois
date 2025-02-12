@@ -161,7 +161,7 @@ function TournamentFormSheet({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger className={className}>{children}</SheetTrigger>
-      <SheetContent className="w-2/3">
+      <SheetContent className="w-5/6">
         <SheetHeader>
           <SheetTitle>{selectedTournament ? "Edit" : "New"} Tournament</SheetTitle>
           <SheetDescription>

@@ -48,3 +48,8 @@ export function randomNumber(n: number): number {
 
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+export function scrollToElement(elementId: string) {
+  const element = document.getElementById(elementId);
+  if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
+}

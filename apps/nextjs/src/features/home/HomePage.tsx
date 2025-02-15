@@ -15,6 +15,7 @@ import LeagueInvitesDialog from "~/features/fantasy-film/LeagueInvitesDialog";
 import StudioIcon from "~/features/fantasy-film/StudioIcon";
 import Poll from "~/features/polls/Poll";
 import AwardShowCard from "../award-shows/AwardShowCard";
+import TournamentCard from "../tournament/TournamentCard";
 
 export default function HomePage() {
   const { data: sessionData } = useSession();
@@ -28,12 +29,16 @@ export default function HomePage() {
 
   const { data: polls, refetch: refreshPolls } = api.poll.get.useQuery({ active: true });
 
+  const { data: tournaments, refetch: refreshTournaments } = api.tournament.get.useQuery();
+
   const { data: awardShows, refetch: refreshAwardShows } = api.awardShow.getActive.useQuery();
 
   const activeSessions = leagues
     ?.map((e) => e.sessions)
     .flat()
     .filter((e) => e);
+
+  const activeTournaments = tournaments?.filter((e) => e.endDate && e.endDate > new Date());
 
   function handleJoin(sessionId: string) {
     if (sessionData)
@@ -214,10 +219,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* <p className="text-2xl text-white">Pick 'Ems</p> */}
         {awardShows?.map((show, i) => <AwardShowCard key={i} awardShow={show} />)}
 
-        {/* <p className="text-2xl text-white">Polls</p> */}
+        {activeTournaments?.map((tournament, i) => <TournamentCard key={i} tournament={tournament} />)}
+
         {polls?.map((poll, i) => <Poll key={i} poll={poll} refresh={refreshPolls} />)}
       </div>
     </div>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { format } from "date-fns";
-import { Lock } from "lucide-react";
+import { Lock, Trophy } from "lucide-react";
 
 import { RouterOutputs } from "~/utils/api";
 import { Button } from "~/components/ui/button";
@@ -17,11 +17,14 @@ export default function AwardShowCard({ awardShow }: { awardShow: AwardShow }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          <Link className="hover:text-primary" href={`/pick-em/${awardShow.awardShow.slug}/${awardShow.year}`}>
-            {awardShow.awardShow.name} {awardShow.year}
-          </Link>
-          <p className="text-sm">Pick 'Em</p>
+        <CardTitle className="flex items-center">
+          <Trophy className="text-primary mr-2" size={40} />
+          <div className="flex flex-col">
+            <Link className="hover:text-primary" href={`/pick-em/${awardShow.awardShow.slug}/${awardShow.year}`}>
+              {awardShow.awardShow.name} {awardShow.year}
+            </Link>
+            <p className="text-sm">Pick 'Em</p>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="">

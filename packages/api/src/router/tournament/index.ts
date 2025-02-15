@@ -31,9 +31,21 @@ type TournamentRound = {
 };
 
 const get = publicProcedure.query(async ({ ctx }) => {
-  return ctx.prisma.tournament.findMany({
+  const where = !ctx.session?.user.isAdmin ? { rounds: { some: { startDate: { lte: new Date() } } } } : {};
+
+  const list = await ctx.prisma.tournament.findMany({
     include: { rounds: { orderBy: { startDate: "asc" } }, entries: { orderBy: { seed: "asc" } } },
+    where,
   });
+
+  return list
+    .map((tournament, i) => {
+      const startDate = tournament.rounds[0]?.startDate;
+      const endDate = tournament.rounds[tournament.rounds.length - 1]?.endDate;
+
+      return { ...tournament, startDate, endDate };
+    })
+    .sort((a, b) => (b.startDate?.getTime() ?? 0) - (a.startDate?.getTime() ?? 0));
 });
 
 const getById = publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {

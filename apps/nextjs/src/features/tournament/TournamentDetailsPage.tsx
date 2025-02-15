@@ -171,78 +171,8 @@ export default function TouramentDetailsPage() {
                             if (isActiveRound) handleMatchupClick(matchup);
                           }}
                         >
-                          <div
-                            key={matchup.entry1.id}
-                            className={cn(
-                              "mb-1 flex items-center rounded-lg border-2 border-white p-2",
-                              isActiveRound && "cursor-pointer",
-                              matchup.entry1.votedFor && "border-primary",
-                            )}
-                          >
-                            {!!matchup.entry1.image && showImages ? (
-                              <Image
-                                className="mr-2 w-16 object-cover object-center"
-                                src={matchup.entry1.image}
-                                height={800}
-                                width={600}
-                                alt={matchup.entry1.name}
-                              />
-                            ) : (
-                              // <CheckCircle2
-                              //   className={cn(
-                              //     "mr-2 min-w-[20px] text-green-400",
-                              //     !matchup.entry1.votedFor && "invisible",
-                              //   )}
-                              //   size={20}
-                              // />
-                              <></>
-                            )}
-                            <p
-                              className={cn(
-                                isActiveRound && "text-white",
-                                matchup.entry1.winner && "font-bold text-white",
-                                !isActiveRound && !matchup.entry1.winner && "line-through",
-                              )}
-                            >
-                              {matchup.entry1.name}
-                            </p>
-                          </div>
-                          <div
-                            key={matchup.entry2.id}
-                            className={cn(
-                              "flex items-center rounded-lg border-2 border-white p-2",
-                              isActiveRound && "cursor-pointer",
-                              matchup.entry2.votedFor && "border-primary",
-                            )}
-                          >
-                            {!!matchup.entry2.image && showImages ? (
-                              <Image
-                                className="mr-2 w-16 object-cover object-center"
-                                src={matchup.entry2.image}
-                                height={800}
-                                width={600}
-                                alt={matchup.entry2.name}
-                              />
-                            ) : (
-                              // <CheckCircle2
-                              //   className={cn(
-                              //     "mr-2 min-w-[20px] text-green-400",
-                              //     !matchup.entry2.votedFor && "invisible",
-                              //   )}
-                              //   size={20}
-                              // />
-                              <></>
-                            )}
-                            <p
-                              className={cn(
-                                isActiveRound && "text-white",
-                                matchup.entry2.winner && "font-bold text-white",
-                                !isActiveRound && !matchup.entry2.winner && "line-through",
-                              )}
-                            >
-                              {matchup.entry2.name}
-                            </p>
-                          </div>
+                          <Entry entry={matchup.entry1} isActiveRound={isActiveRound} showImages={showImages} />
+                          <Entry entry={matchup.entry2} isActiveRound={isActiveRound} showImages={showImages} />
                         </div>
                       );
                     })}
@@ -253,6 +183,57 @@ export default function TouramentDetailsPage() {
         </div>
       )}
     </Layout>
+  );
+}
+
+function Entry({
+  entry,
+  isActiveRound,
+  showImages,
+}: {
+  entry: TournamentEntry;
+  isActiveRound: boolean;
+  showImages: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "mb-1 flex flex-col rounded-lg border-2 border-white",
+        isActiveRound && "cursor-pointer",
+        entry.votedFor && "border-primary",
+      )}
+    >
+      <div className="flex items-center p-2">
+        {!!entry.image && showImages ? (
+          <Image
+            className="mr-2 w-16 object-cover object-center"
+            src={entry.image}
+            height={800}
+            width={600}
+            alt={entry.name}
+          />
+        ) : (
+          // <CheckCircle2
+          //   className={cn(
+          //     "mr-2 min-w-[20px] text-green-400",
+          //     !entry.votedFor && "invisible",
+          //   )}
+          //   size={20}
+          // />
+          <></>
+        )}
+        <p
+          className={cn(
+            isActiveRound && "text-white",
+            entry.winner && "font-bold text-white",
+            !isActiveRound && !entry.winner && "line-through",
+          )}
+        >
+          {entry.name}
+        </p>
+      </div>
+      {!isActiveRound && <div className="px-2 text-right text-sm text-white">Votes: {entry.totalVotes}</div>}
+    </div>
   );
 }
 

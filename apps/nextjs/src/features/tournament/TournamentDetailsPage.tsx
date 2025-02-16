@@ -2,18 +2,19 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { format } from "date-fns";
-import { CheckCircle2, Crown, X } from "lucide-react";
+import { ArrowLeftCircle, ArrowRightCircle, ArrowUp, Crown, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { api, RouterOutputs } from "~/utils/api";
+import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import { cn } from "~/utils/shadcn";
-import { getMatchups, getNextMatchup, orderEntries } from "~/utils/tournament-helpers";
+import { getNextMatchup } from "~/utils/tournament-helpers";
 import { Button } from "~/components/ui/button";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import Layout from "~/layouts/main/Layout";
-import { scrollToElement } from "~/utils";
+import { ONE_DAY_IN_SECONDS, scrollToElement } from "~/utils";
 
 type TournamentEntry = NonNullable<RouterOutputs["tournament"]["getById"]>["rounds"][number]["entries"][number];
 type Matchup = {
@@ -25,8 +26,11 @@ export default function TouramentDetailsPage() {
   const router = useRouter();
   const tournamentId = router.query.id as string | undefined;
 
+  const breakpoint = useBreakpoint();
+
   const [activeMatchup, setActiveMatchup] = useState<Matchup | undefined>();
   const [showImages, setShowImages] = useState(true);
+  const [focusedRound, setFocusedRound] = useState(0);
 
   const activeVote = activeMatchup
     ? activeMatchup.entry1.votedFor
@@ -38,7 +42,7 @@ export default function TouramentDetailsPage() {
 
   const { data: tournament, isLoading } = api.tournament.getById.useQuery(
     { id: tournamentId ?? "" },
-    { enabled: !!tournamentId },
+    { enabled: !!tournamentId, staleTime: ONE_DAY_IN_SECONDS },
   );
 
   const activeRound = tournament
@@ -61,12 +65,35 @@ export default function TouramentDetailsPage() {
   return (
     <Layout fullWidth showFooter>
       {!!tournament && (
-        <div id="tournament-wrapper" className="px-4">
+        <div id="tournament-wrapper" className="px-4 pb-10">
           <p className="text-3xl text-white">{tournament.name}</p>
           <p className="text-lg text-white">{tournament.description}</p>
+          <p className="text-sm italic">All rounds start at 3:00pm ET / 12:00pm PT</p>
+
+          {!!activeMatchup && (
+            <div className="flex flex-col">
+              <div className="mx-auto flex max-w-xl gap-x-12">
+                <VoteOption
+                  entry={activeMatchup.entry1}
+                  tournamentId={tournament.id}
+                  activeRound={activeRound}
+                  activeVote={activeVote}
+                />
+                <VoteOption
+                  entry={activeMatchup.entry2}
+                  tournamentId={tournament.id}
+                  activeRound={activeRound}
+                  activeVote={activeVote}
+                />
+              </div>
+              <Button className="mx-auto mt-2 w-min" variant="ghost" onClick={() => setActiveMatchup(undefined)}>
+                <X /> Close
+              </Button>
+            </div>
+          )}
 
           {!!tournament.winner && (
-            <div className="mt-2 flex flex-col items-center">
+            <div className="my-2 flex flex-col items-center">
               <div className="relative mb-2 flex">
                 <Crown className="text-primary absolute -left-12 -rotate-12" size={40} />
                 <div className="my-1">
@@ -96,72 +123,79 @@ export default function TouramentDetailsPage() {
             </div>
           )}
 
-          <div
-            id="rounds-wrapper"
-            className={cn(
-              "sticky top-0 z-20 mt-2 grid grid-cols-4 gap-x-4 bg-neutral-900 py-2 shadow-md",
-              tournament.rounds.length === 5 && "grid-cols-5",
-              tournament.rounds.length === 6 && "grid-cols-6",
+          <div className="sticky top-0 z-30 mt-4 flex w-full flex-col bg-neutral-900 py-2 shadow-md">
+            <div
+              id="rounds-wrapper"
+              className={cn(
+                "grid grid-cols-4 gap-x-4 bg-neutral-900 py-2",
+                tournament.rounds.length === 5 && "grid-cols-5",
+                tournament.rounds.length === 6 && "grid-cols-6",
+              )}
+            >
+              {tournament.rounds.map((round, j) => {
+                if ((activeRound && activeRound >= j + 1) || !!tournament.winner)
+                  return (
+                    <div key={j} className={cn("z-20 flex flex-col bg-neutral-900")}>
+                      <div
+                        className={cn(
+                          "sticky z-30 flex flex-col bg-neutral-900 lg:top-10 lg:z-20",
+                          "mb-4 w-full border-2 py-2 text-center text-white lg:px-4",
+                          activeRound == j + 1 ? "border-primary" : "border-white",
+                        )}
+                      >
+                        {breakpoint.isMobile ? (
+                          <p className="text-2xl font-bold">R{j + 1}</p>
+                        ) : (
+                          <>
+                            <p className="text-2xl font-bold">Round #{j + 1}</p>
+                            <p>
+                              {format(round.startDate, "PP")} - {format(round.endDate, "PP")}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+              })}
+            </div>
+
+            {hasImages && (
+              <div className="flex items-center gap-x-2">
+                <Switch checked={showImages} onCheckedChange={setShowImages} className="" />
+                <Label>Show Images</Label>
+              </div>
             )}
-          >
-            {tournament.rounds.map((round, j) => (
-              <div
-                key={j}
-                className={cn(
-                  "w-full rounded-lg border-2 px-4 py-2 text-white",
-                  activeRound == j + 1 ? "border-primary" : "border-white",
-                )}
-              >
-                <p className="text-2xl font-bold">Round #{j + 1}</p>
-                <p>
-                  {format(round.startDate, "PP")} - {format(round.endDate, "PP")}
-                </p>
-              </div>
-            ))}
+            <div className="mt-2 flex items-center justify-center text-center text-xs lg:hidden">
+              <ArrowLeftCircle className="mr-2" />
+              Swipe to see other rounds
+              <ArrowRightCircle className="ml-2" />
+            </div>
           </div>
-          <p className="mb-4 mt-1 text-sm italic">All rounds start at 3:00pm ET / 12:00pm PT</p>
-
-          {!!activeMatchup && (
-            <div className="flex flex-col">
-              <div className="mx-auto flex max-w-xl gap-x-12">
-                <VoteOption
-                  entry={activeMatchup.entry1}
-                  tournamentId={tournament.id}
-                  activeRound={activeRound}
-                  activeVote={activeVote}
-                />
-                <VoteOption
-                  entry={activeMatchup.entry2}
-                  tournamentId={tournament.id}
-                  activeRound={activeRound}
-                  activeVote={activeVote}
-                />
-              </div>
-              <Button className="mx-auto mt-2 w-min" variant="ghost" onClick={() => setActiveMatchup(undefined)}>
-                <X /> Close
-              </Button>
-            </div>
-          )}
-
-          {hasImages && (
-            <div className="mb-2 flex items-center gap-x-2">
-              <Switch checked={showImages} onCheckedChange={setShowImages} className="" />
-              <Label>Show Images</Label>
-            </div>
-          )}
 
           <div
             className={cn(
               "mt-2 grid grid-cols-4 gap-x-4",
               tournament.rounds.length === 5 && "grid-cols-5",
               tournament.rounds.length === 6 && "grid-cols-6",
+              breakpoint.isMobile && "scrollbar-hidden flex snap-x snap-mandatory flex-nowrap overflow-x-auto",
             )}
           >
             {tournament.rounds.map((round, i) => {
               const isActiveRound = activeRound === i + 1;
               if ((activeRound && activeRound >= i + 1) || !!tournament.winner)
                 return (
-                  <div className="flex w-full flex-col justify-around">
+                  <div
+                    id="matchups"
+                    className={cn(
+                      "flex w-full flex-col lg:justify-around",
+                      breakpoint.isMobile && "mx-2 w-full flex-none snap-center snap-always",
+                    )}
+                  >
+                    {breakpoint.isMobile && (
+                      <p className="mb-2 text-center text-white">
+                        Round #{i + 1} | {format(round.startDate, "PP")} - {format(round.endDate, "PP")}
+                      </p>
+                    )}
                     {round.matchups?.map((matchup, k) => {
                       return (
                         <div
@@ -171,8 +205,7 @@ export default function TouramentDetailsPage() {
                             if (isActiveRound) handleMatchupClick(matchup);
                           }}
                         >
-                          <Entry entry={matchup.entry1} isActiveRound={isActiveRound} showImages={showImages} />
-                          <Entry entry={matchup.entry2} isActiveRound={isActiveRound} showImages={showImages} />
+                          <Matchup matchup={matchup} isActiveRound={isActiveRound} showImages={showImages} />
                         </div>
                       );
                     })}
@@ -180,9 +213,80 @@ export default function TouramentDetailsPage() {
                 );
             })}
           </div>
+
+          {breakpoint.isMobile && (
+            <div className="sticky bottom-4 flex w-full">
+              <Button className="ml-auto" onClick={() => scrollToElement("matchups", -160)}>
+                <ArrowUp className="mr-2" /> Top
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </Layout>
+  );
+}
+
+function Matchup({
+  matchup,
+  isActiveRound,
+  showImages,
+}: {
+  matchup: Matchup;
+  isActiveRound: boolean;
+  showImages: boolean;
+}) {
+  return (
+    <div className={cn("flex flex-col", isActiveRound && "cursor-pointer")}>
+      <div className={cn("rounded-t-xl border-2 border-white", matchup.entry1.votedFor && "border-primary")}>
+        <div className="flex items-center p-2">
+          {!!matchup.entry1.image && showImages && (
+            <Image
+              className="mr-2 w-16 object-cover object-center"
+              src={matchup.entry1.image}
+              height={800}
+              width={600}
+              alt={matchup.entry1.name}
+            />
+          )}
+          <p
+            className={cn(
+              isActiveRound && "text-white",
+              matchup.entry1.winner && "font-bold text-white",
+              !isActiveRound && !matchup.entry1.winner && "line-through",
+            )}
+          >
+            {matchup.entry1.name}
+          </p>
+        </div>
+        {!isActiveRound && <div className="px-2 text-right text-sm text-white">Votes: {matchup.entry1.totalVotes}</div>}
+      </div>
+      <div
+        className={cn("flex flex-col rounded-b-xl border-2 border-white", matchup.entry2.votedFor && "border-primary")}
+      >
+        {!isActiveRound && <div className="px-2 text-right text-sm text-white">Votes: {matchup.entry2.totalVotes}</div>}
+        <div className="flex items-center p-2">
+          {!!matchup.entry2.image && showImages && (
+            <Image
+              className="mr-2 w-16 object-cover object-center"
+              src={matchup.entry2.image}
+              height={800}
+              width={600}
+              alt={matchup.entry2.name}
+            />
+          )}
+          <p
+            className={cn(
+              isActiveRound && "text-white",
+              matchup.entry2.winner && "font-bold text-white",
+              !isActiveRound && !matchup.entry2.winner && "line-through",
+            )}
+          >
+            {matchup.entry2.name}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -259,7 +363,7 @@ function VoteOption({
         { entryId: entry.id, round: activeRound, userId: sessionData.user.id, activeVote },
         {
           onSuccess: () => {
-            toast({ title: "Vote counted" });
+            toast({ title: "Vote counted", dir: "" });
             trpc.tournament.getById.invalidate({ id: tournamentId });
           },
           onError: () => {

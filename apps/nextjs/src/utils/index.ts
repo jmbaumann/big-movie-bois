@@ -49,7 +49,8 @@ export function randomNumber(n: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function scrollToElement(elementId: string) {
+export function scrollToElement(elementId: string, offset?: number) {
   const element = document.getElementById(elementId);
-  if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
+  // if (element) element.scrollIntoView({ behavior: "smooth", block: "start", inline: "end" });
+  if (element) window.scroll({ top: element.offsetTop + (offset ?? 0), behavior: "smooth" });
 }

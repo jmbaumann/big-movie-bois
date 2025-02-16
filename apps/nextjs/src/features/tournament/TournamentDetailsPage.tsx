@@ -133,29 +133,28 @@ export default function TouramentDetailsPage() {
               )}
             >
               {tournament.rounds.map((round, j) => {
-                if ((activeRound && activeRound >= j + 1) || !!tournament.winner)
-                  return (
-                    <div key={j} className={cn("z-20 flex flex-col bg-neutral-900")}>
-                      <div
-                        className={cn(
-                          "sticky z-30 flex flex-col bg-neutral-900 lg:top-10 lg:z-20",
-                          "mb-4 w-full border-2 py-2 text-center text-white lg:px-4",
-                          activeRound == j + 1 ? "border-primary" : "border-white",
-                        )}
-                      >
-                        {breakpoint.isMobile ? (
-                          <p className="text-2xl font-bold">R{j + 1}</p>
-                        ) : (
-                          <>
-                            <p className="text-2xl font-bold">Round #{j + 1}</p>
-                            <p>
-                              {format(round.startDate, "PP")} - {format(round.endDate, "PP")}
-                            </p>
-                          </>
-                        )}
-                      </div>
+                return (
+                  <div key={j} className={cn("z-20 flex flex-col bg-neutral-900")}>
+                    <div
+                      className={cn(
+                        "sticky z-30 flex flex-col bg-neutral-900 lg:top-10 lg:z-20",
+                        "mb-4 w-full border-2 py-2 text-center text-white lg:px-4",
+                        activeRound == j + 1 ? "border-primary" : "border-white",
+                      )}
+                    >
+                      {breakpoint.isMobile ? (
+                        <p className="text-2xl font-bold">R{j + 1}</p>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-bold">Round #{j + 1}</p>
+                          <p>
+                            {format(round.startDate, "PP")} - {format(round.endDate, "PP")}
+                          </p>
+                        </>
+                      )}
                     </div>
-                  );
+                  </div>
+                );
               })}
             </div>
 

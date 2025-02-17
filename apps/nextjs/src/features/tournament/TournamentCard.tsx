@@ -37,7 +37,7 @@ export default function TournamentCard({ tournament }: { tournament: Tournament 
           <div className="w-full">
             <p>Current round: {activeRoundIndex! + 1}</p>
             <p>
-              {format(activeRound.startDate, "PP")} - {format(activeRound.endDate, "PP")}
+              {format(activeRound.startDate, "LLL d")} - {format(activeRound.endDate, "LLL d")}
             </p>
           </div>
         )}

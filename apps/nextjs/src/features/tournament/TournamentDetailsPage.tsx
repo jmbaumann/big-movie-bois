@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { format } from "date-fns";
@@ -9,6 +9,7 @@ import { api, RouterOutputs } from "~/utils/api";
 import useBreakpoint from "~/utils/hooks/use-breakpoint";
 import { cn } from "~/utils/shadcn";
 import { getNextMatchup } from "~/utils/tournament-helpers";
+import Countdown from "~/components/Countdown";
 import { Button } from "~/components/ui/button";
 import { toast } from "~/components/ui/hooks/use-toast";
 import { Label } from "~/components/ui/label";
@@ -30,7 +31,9 @@ export default function TouramentDetailsPage() {
 
   const [activeMatchup, setActiveMatchup] = useState<Matchup | undefined>();
   const [showImages, setShowImages] = useState(true);
-  const [focusedRound, setFocusedRound] = useState(0);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [visibleRound, setVisibleRound] = useState<number | null>(null);
 
   const activeVote = activeMatchup
     ? activeMatchup.entry1.votedFor
@@ -54,6 +57,40 @@ export default function TouramentDetailsPage() {
     if (tournament && activeRound !== undefined)
       setActiveMatchup(getNextMatchup(tournament.rounds[activeRound - 1]?.matchups));
   }, [tournament]);
+
+  useEffect(() => {
+    if (!scrollContainerRef.current || !activeRound) return;
+
+    const roundElements = Array.from(scrollContainerRef.current.children) as HTMLDivElement[];
+    const targetElement = roundElements[activeRound - 1];
+
+    if (targetElement) targetElement.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeRound]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const roundElements = Array.from(container.children) as HTMLDivElement[];
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const mostVisible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (mostVisible) {
+          const index = roundElements.indexOf(mostVisible.target as HTMLDivElement);
+          setVisibleRound(index + 1);
+        }
+      },
+      { root: container, threshold: 0.6 }, // 60% visibility to be considered active
+    );
+
+    roundElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [scrollContainerRef.current]);
 
   const handleMatchupClick = (matchup: Matchup) => {
     setActiveMatchup(matchup);
@@ -139,7 +176,9 @@ export default function TouramentDetailsPage() {
                       className={cn(
                         "sticky z-30 flex flex-col bg-neutral-900 lg:top-10 lg:z-20",
                         "mb-4 w-full border-2 py-2 text-center text-white lg:px-4",
-                        activeRound == j + 1 ? "border-primary" : "border-white",
+                        activeRound === j + 1 ? "border-primary" : "border-white",
+                        breakpoint.isMobile && visibleRound === j + 1 && "text-primary",
+                        !!activeRound && activeRound < j + 1 && !tournament.winner && "border-[#9ab] text-[#9ab]",
                       )}
                     >
                       {breakpoint.isMobile ? (
@@ -148,7 +187,7 @@ export default function TouramentDetailsPage() {
                         <>
                           <p className="text-2xl font-bold">Round #{j + 1}</p>
                           <p>
-                            {format(round.startDate, "PP")} - {format(round.endDate, "PP")}
+                            {format(round.startDate, "LLL d")} - {format(round.endDate, "LLL d")}
                           </p>
                         </>
                       )}
@@ -158,20 +197,29 @@ export default function TouramentDetailsPage() {
               })}
             </div>
 
-            {hasImages && (
-              <div className="flex items-center gap-x-2">
-                <Switch checked={showImages} onCheckedChange={setShowImages} className="" />
-                <Label>Show Images</Label>
-              </div>
-            )}
+            <div className="flex justify-between">
+              {hasImages && (
+                <div className="flex items-center gap-x-2">
+                  <Switch checked={showImages} onCheckedChange={setShowImages} className="" />
+                  <Label>Images</Label>
+                </div>
+              )}
+              {!!activeRound && !tournament.winner && (
+                <div className="flex text-white">
+                  Round {activeRound} ends in{" "}
+                  <Countdown classname="ml-1" target={tournament.rounds[activeRound - 1]?.endDate!} />
+                </div>
+              )}
+            </div>
             <div className="mt-2 flex items-center justify-center text-center text-xs lg:hidden">
-              <ArrowLeftCircle className="mr-2" />
+              <ArrowLeftCircle className="mr-2" size={18} />
               Swipe to see other rounds
-              <ArrowRightCircle className="ml-2" />
+              <ArrowRightCircle className="ml-2" size={18} />
             </div>
           </div>
 
           <div
+            ref={scrollContainerRef}
             className={cn(
               "mt-2 grid grid-cols-4 gap-x-4",
               tournament.rounds.length === 5 && "grid-cols-5",
@@ -184,6 +232,7 @@ export default function TouramentDetailsPage() {
               if ((activeRound && activeRound >= i + 1) || !!tournament.winner)
                 return (
                   <div
+                    key={i}
                     id="matchups"
                     className={cn(
                       "flex w-full flex-col lg:justify-around",
@@ -192,7 +241,7 @@ export default function TouramentDetailsPage() {
                   >
                     {breakpoint.isMobile && (
                       <p className="mb-2 text-center text-white">
-                        Round #{i + 1} | {format(round.startDate, "PP")} - {format(round.endDate, "PP")}
+                        Round #{i + 1} | {format(round.startDate, "LLL d")} - {format(round.endDate, "LLL d")}
                       </p>
                     )}
                     {round.matchups?.map((matchup, k) => {
@@ -236,7 +285,7 @@ function Matchup({
   showImages: boolean;
 }) {
   return (
-    <div className={cn("flex flex-col", isActiveRound && "cursor-pointer")}>
+    <div className={cn("flex flex-col px-1", isActiveRound && "cursor-pointer")}>
       <div className={cn("rounded-t-xl border-2 border-white", matchup.entry1.votedFor && "border-primary")}>
         <div className="flex items-center p-2">
           {!!matchup.entry1.image && showImages && (
@@ -285,57 +334,6 @@ function Matchup({
           </p>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Entry({
-  entry,
-  isActiveRound,
-  showImages,
-}: {
-  entry: TournamentEntry;
-  isActiveRound: boolean;
-  showImages: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "mb-1 flex flex-col rounded-lg border-2 border-white",
-        isActiveRound && "cursor-pointer",
-        entry.votedFor && "border-primary",
-      )}
-    >
-      <div className="flex items-center p-2">
-        {!!entry.image && showImages ? (
-          <Image
-            className="mr-2 w-16 object-cover object-center"
-            src={entry.image}
-            height={800}
-            width={600}
-            alt={entry.name}
-          />
-        ) : (
-          // <CheckCircle2
-          //   className={cn(
-          //     "mr-2 min-w-[20px] text-green-400",
-          //     !entry.votedFor && "invisible",
-          //   )}
-          //   size={20}
-          // />
-          <></>
-        )}
-        <p
-          className={cn(
-            isActiveRound && "text-white",
-            entry.winner && "font-bold text-white",
-            !isActiveRound && !entry.winner && "line-through",
-          )}
-        >
-          {entry.name}
-        </p>
-      </div>
-      {!isActiveRound && <div className="px-2 text-right text-sm text-white">Votes: {entry.totalVotes}</div>}
     </div>
   );
 }

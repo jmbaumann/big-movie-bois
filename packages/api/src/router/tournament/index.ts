@@ -99,7 +99,7 @@ const create = adminProcedure.input(tournamentInputObject).mutation(async ({ ctx
     data: { name: input.name, description: input.description },
   });
 
-  await updateTournamentRounds(ctx, input.rounds, tournament.id);
+  await saveTournamentRounds(ctx, input.rounds, tournament.id);
 
   return tournament;
 });
@@ -110,7 +110,7 @@ const update = adminProcedure.input(tournamentInputObject).mutation(async ({ ctx
     where: { id: input.id },
   });
 
-  await updateTournamentRounds(ctx, input.rounds, tournament.id);
+  await saveTournamentRounds(ctx, input.rounds, tournament.id);
 
   return tournament;
 });
@@ -171,7 +171,12 @@ export const tournamentRouter = createTRPCRouter({
 
 //////////
 
-async function updateTournamentRounds(ctx: TRPCContext, rounds: TournamentInput["rounds"], tournamentId: string) {
+async function saveTournamentRounds(ctx: TRPCContext, rounds: TournamentInput["rounds"], tournamentId: string) {
+  rounds?.forEach((e) => {
+    e.startDate.setUTCHours(20);
+    e.endDate.setUTCHours(20);
+  });
+
   const roundsToCreate = rounds?.filter((e) => !e.id);
   const roundsToUpdate = rounds?.filter((e) => e.id);
 

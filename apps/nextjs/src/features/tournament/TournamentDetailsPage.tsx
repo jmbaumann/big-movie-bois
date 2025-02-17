@@ -59,7 +59,7 @@ export default function TouramentDetailsPage() {
   }, [tournament]);
 
   useEffect(() => {
-    if (!scrollContainerRef.current || !activeRound || !breakpoint.isMobile) return;
+    if (!scrollContainerRef.current || !activeRound || !breakpoint.isMobile || !!activeMatchup) return;
 
     const roundElements = Array.from(scrollContainerRef.current.children) as HTMLDivElement[];
     const targetElement = roundElements[activeRound - 1];
@@ -352,7 +352,7 @@ function VoteOption({
   const { data: sessionData } = useSession();
   const trpc = api.useContext();
 
-  const { mutate: vote } = api.tournament.vote.useMutation();
+  const { mutate: vote, isLoading: voting } = api.tournament.vote.useMutation();
 
   const handleVote = () => {
     if (sessionData?.user && activeRound) {
@@ -382,7 +382,7 @@ function VoteOption({
       </div>
 
       {!!sessionData?.user ? (
-        <Button className={cn("items-end")} disabled={entry.votedFor} onClick={() => handleVote()}>
+        <Button className={cn("items-end")} disabled={entry.votedFor || voting} onClick={() => handleVote()}>
           Vote
         </Button>
       ) : (

@@ -140,7 +140,7 @@ const saveEntries = adminProcedure
         await ctx.prisma.tournamentEntry.update({ data: entry, where: { id: entry.id } });
   });
 
-const vote = adminProcedure
+const vote = protectedProcedure
   .input(
     z.object({
       entryId: z.string(),

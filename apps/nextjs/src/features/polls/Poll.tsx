@@ -87,15 +87,15 @@ export default function Poll({ poll, refresh }: { poll: Poll; refresh: () => voi
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between pb-2 pt-1">
-        {voting && (
+      {voting && (
+        <CardFooter className="flex justify-between pb-2 pt-1">
           <div className="flex text-slate-400">
             <Loader2 className="mr-1 animate-spin" /> Submitting vote...
           </div>
-        )}
 
-        <div className="ml-auto">Total Votes: {poll.answers.map((e) => e.responses).flat().length}</div>
-      </CardFooter>
+          {/* <div className="ml-auto">Total Votes: {poll.answers.map((e) => e.responses).flat().length}</div> */}
+        </CardFooter>
+      )}
     </Card>
   );
 }

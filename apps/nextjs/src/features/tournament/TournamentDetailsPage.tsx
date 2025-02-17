@@ -59,7 +59,7 @@ export default function TouramentDetailsPage() {
   }, [tournament]);
 
   useEffect(() => {
-    if (!scrollContainerRef.current || !activeRound) return;
+    if (!scrollContainerRef.current || !activeRound || !breakpoint.isMobile) return;
 
     const roundElements = Array.from(scrollContainerRef.current.children) as HTMLDivElement[];
     const targetElement = roundElements[activeRound - 1];
@@ -381,9 +381,13 @@ function VoteOption({
         <p className="text-center text-sm text-white">{entry.description}</p>
       </div>
 
-      <Button className={cn("items-end")} disabled={entry.votedFor} onClick={() => handleVote()}>
-        Vote
-      </Button>
+      {!!sessionData?.user ? (
+        <Button className={cn("items-end")} disabled={entry.votedFor} onClick={() => handleVote()}>
+          Vote
+        </Button>
+      ) : (
+        <p className="text-center">Sign in to vote</p>
+      )}
     </div>
   );
 }

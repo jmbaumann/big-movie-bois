@@ -66,9 +66,9 @@ export default function TournamentAdmin() {
                 </TournamentFormSheet>
               </TableCell>
               <TableCell>{tournament.name}</TableCell>
-              <TableCell>{5}</TableCell>
-              <TableCell>{3}</TableCell>
-              <TableCell>{8}</TableCell>
+              <TableCell>{tournament.entries.length}</TableCell>
+              <TableCell>{tournament.startDate ? format(tournament.startDate, "PPP") : ""}</TableCell>
+              <TableCell>{tournament.endDate ? format(tournament.endDate, "PPP") : ""}</TableCell>
             </TableRow>
           ))}
         </TableBody>

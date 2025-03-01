@@ -330,10 +330,11 @@ model AwardShowYear {
 }
 
 model AwardShowCategory {
-    id              String @id @default(cuid())
+    id              String    @id @default(cuid())
     awardShowYearId String
     name            String
     order           Int
+    announced       DateTime?
 
     awardShowYear AwardShowYear      @relation(fields: [awardShowYearId], references: [id])
     nominees      AwardShowNominee[]

@@ -8,7 +8,7 @@ const get = publicProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShowYear.findMany({
     include: {
       awardShow: { select: { name: true } },
-      categories: { include: { nominees: { orderBy: { name: "asc" } } }, orderBy: { order: "asc" } },
+      categories: { include: { nominees: { orderBy: { name: "asc" } } }, orderBy: { announced: "desc", order: "asc" } },
     },
     orderBy: { available: "desc" },
   });
@@ -28,7 +28,7 @@ const getActive = publicProcedure.query(async ({ ctx }) => {
   const actives = await ctx.prisma.awardShowYear.findMany({
     include: {
       awardShow: { select: { name: true, slug: true } },
-      categories: { include: { nominees: { orderBy: { name: "asc" } } } },
+      categories: { include: { nominees: { orderBy: { name: "asc" } } }, orderBy: { order: "asc" } },
       groups: { where: { default: true } },
     },
     where: { available: { lte: new Date() }, locked: { gte: sub(new Date(), { weeks: 2 }) } },
@@ -171,6 +171,16 @@ const saveCategories = adminProcedure
 const updateWinner = adminProcedure
   .input(z.object({ awardShowYearId: z.string(), nomineeId: z.string() }))
   .mutation(async ({ ctx, input }) => {
+    const category = await ctx.prisma.awardShowCategory.findFirst({
+      where: { nominees: { some: { id: input.nomineeId } } },
+    });
+
+    if (category)
+      await ctx.prisma.awardShowCategory.update({
+        data: { announced: new Date() },
+        where: { id: category.id },
+      });
+
     await ctx.prisma.awardShowNominee.update({ data: { winner: true }, where: { id: input.nomineeId } });
     return await socketEvent<{ done: boolean }>(`pick-em:${input.awardShowYearId}:winner-update`, { done: true });
   });

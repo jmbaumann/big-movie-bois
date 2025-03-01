@@ -33,7 +33,10 @@ const get = publicProcedure
         awardShowYear: {
           include: {
             awardShow: true,
-            categories: { include: { nominees: { orderBy: { name: "asc" } } }, orderBy: { order: "asc" } },
+            categories: {
+              include: { nominees: { orderBy: { name: "asc" } } },
+              orderBy: [{ announced: { sort: "desc", nulls: "last" } }, { order: "asc" }],
+            },
           },
         },
         owner: { include: {} },

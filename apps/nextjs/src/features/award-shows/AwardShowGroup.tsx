@@ -177,8 +177,8 @@ export default function AwardShowGroup() {
                 {otherEntries.map((group, i) => {
                   const link = group.default ? `/pick-em/${slug}/${year}` : `/pick-em/${slug}/${year}/${group.slug}`;
                   return (
-                    <div className="mb-1">
-                      <Link key={i} className="hover:text-primary hover:cursor-pointer" href={link}>
+                    <div key={i} className="mb-1">
+                      <Link className="hover:text-primary hover:cursor-pointer" href={link}>
                         {group.name}
                       </Link>
                       <p className="text-xs">Group entries: {group.entries}</p>

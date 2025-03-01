@@ -8,7 +8,10 @@ const get = publicProcedure.query(async ({ ctx }) => {
   return ctx.prisma.awardShowYear.findMany({
     include: {
       awardShow: { select: { name: true } },
-      categories: { include: { nominees: { orderBy: { name: "asc" } } }, orderBy: { announced: "desc", order: "asc" } },
+      categories: {
+        include: { nominees: { orderBy: { name: "asc" } } },
+        orderBy: [{ announced: "desc" }, { order: "asc" }],
+      },
     },
     orderBy: { available: "desc" },
   });

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { format } from "date-fns";
+import { format, sub } from "date-fns";
 import { Instagram, Mail, Twitch, Twitter, Youtube } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { FaLetterboxd, FaTiktok } from "react-icons/fa6";
@@ -38,7 +38,7 @@ export default function HomePage() {
     .flat()
     .filter((e) => e);
 
-  const activeTournaments = tournaments?.filter((e) => e.endDate && e.endDate > new Date());
+  const activeTournaments = tournaments?.filter((e) => e.endDate && sub(new Date(), { days: 4 }) <= e.endDate);
 
   function handleJoin(sessionId: string) {
     if (sessionData)

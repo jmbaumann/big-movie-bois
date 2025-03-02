@@ -195,7 +195,7 @@ export default function AwardShowGroup() {
             </CardHeader>
 
             <CardContent className="scrollbar-hidden max-h-[calc(100vh-100px)] overflow-y-scroll px-4">
-              {!awardShowGroup?.leaderboard.length ? (
+              {!isLocked ? (
                 <p className="text-xs italic">No scores yet</p>
               ) : (
                 <Table>

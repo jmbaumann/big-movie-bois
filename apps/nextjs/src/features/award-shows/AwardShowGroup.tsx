@@ -138,7 +138,7 @@ export default function AwardShowGroup() {
       showFooter
     >
       <div className="mb-6 flex gap-x-4">
-        <div className="static flex min-w-[25%] max-w-[25%] grow flex-col gap-y-4">
+        <div className="flex min-w-[25%] max-w-[25%] grow flex-col gap-y-4">
           {!!sessionData?.user && !isLocked && (
             <div className="flex justify-between">
               <GroupSearch awardShowYearId={awardShowYear.id} />
@@ -189,12 +189,12 @@ export default function AwardShowGroup() {
             </Card>
           )}
 
-          <Card className="p-0">
+          <Card className="sticky top-4 max-h-[calc(100vh-40px)] p-0">
             <CardHeader className="p-4">
               <CardTitle>Leaderboard</CardTitle>
             </CardHeader>
 
-            <CardContent className="px-4">
+            <CardContent className="scrollbar-hidden max-h-[calc(100vh-100px)] overflow-y-scroll px-4">
               {!awardShowGroup?.leaderboard.length ? (
                 <p className="text-xs italic">No scores yet</p>
               ) : (
@@ -211,11 +211,12 @@ export default function AwardShowGroup() {
                       const sameScoreIndex = awardShowGroup.leaderboard.findIndex(
                         (e) => e.correctPicks === player.correctPicks,
                       );
+                      const isMe = player.userId === sessionData?.user.id;
                       return (
                         <TableRow key={i}>
                           <TableCell>{i === sameScoreIndex ? `${sameScoreIndex + 1}.` : ""}</TableCell>
-                          <TableCell>{player.userName}</TableCell>
-                          <TableCell>{player.correctPicks}</TableCell>
+                          <TableCell className={cn(isMe && "text-primary")}>{player.userName}</TableCell>
+                          <TableCell className={cn(isMe && "text-primary")}>{player.correctPicks}</TableCell>
                         </TableRow>
                       );
                     })}
@@ -252,12 +253,19 @@ export default function AwardShowGroup() {
                 </div>
               )}
 
-              <p>
-                {picks.array.length} / {awardShowGroup.awardShowYear.categories.length}
-              </p>
+              {isLocked ? (
+                <p>
+                  Results: {awardShowGroup.awardShowYear.categories.filter((e) => !!e.announced).length} /{" "}
+                  {awardShowGroup.awardShowYear.categories.length}
+                </p>
+              ) : (
+                <p>
+                  {picks.array.length} / {awardShowGroup.awardShowYear.categories.length}
+                </p>
+              )}
             </div>
 
-            <div className="scrollbar-hidden flex max-h-[calc(100vh-112px)] flex-col overflow-y-scroll">
+            <div className="flex flex-col">
               <PickList awardShowGroup={awardShowGroup} picks={picks} handlePick={handlePick} isLocked={isLocked} />
             </div>
           </div>
@@ -317,6 +325,7 @@ function PickList({
                   )}
 
                   <CardFooter className="flex flex-col p-2 text-center">
+                    {isLocked && !!winnerId && <p className="mt-auto text-xs text-white">{nominee.percentage}%</p>}
                     <p className="text-lg">
                       {winnerId === nominee.id && picked?.nomineeId === winnerId && (
                         <CheckCircle2 className="mr-1 inline-block text-green-600" size={20} />
@@ -579,9 +588,16 @@ function Mobile({
               )}
 
               <div className="flex items-center justify-between">
-                <p>
-                  {picks.array.length} / {awardShowGroup.awardShowYear.categories.length}
-                </p>
+                {isLocked ? (
+                  <p>
+                    Results: {awardShowGroup.awardShowYear.categories.filter((e) => !!e.announced).length} /{" "}
+                    {awardShowGroup.awardShowYear.categories.length}
+                  </p>
+                ) : (
+                  <p>
+                    {picks.array.length} / {awardShowGroup.awardShowYear.categories.length}
+                  </p>
+                )}
 
                 {isLocked ? (
                   <div className="flex items-center">
@@ -659,11 +675,12 @@ function Mobile({
                     const sameScoreIndex = awardShowGroup.leaderboard.findIndex(
                       (e) => e.correctPicks === player.correctPicks,
                     );
+                    const isMe = player.userId === sessionData?.user.id;
                     return (
                       <TableRow key={i}>
-                        <TableCell>{sameScoreIndex + 1}.</TableCell>
-                        <TableCell>{player.userName}</TableCell>
-                        <TableCell>{player.correctPicks}</TableCell>
+                        <TableCell>{i === sameScoreIndex ? `${sameScoreIndex + 1}.` : ""}</TableCell>
+                        <TableCell className={cn(isMe && "text-primary")}>{player.userName}</TableCell>
+                        <TableCell className={cn(isMe && "text-primary")}>{player.correctPicks}</TableCell>
                       </TableRow>
                     );
                   })}

@@ -104,7 +104,7 @@ const get = publicProcedure
     const noPointsYet = await ctx.prisma.awardShowPick.groupBy({
       by: ["userId"],
       where: {
-        groupId: input.id,
+        groupId: group.id,
         userId: { notIn: leaderboardWithUsers.map((e) => e.userId) },
       },
     });

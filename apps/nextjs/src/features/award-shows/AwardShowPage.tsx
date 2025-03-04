@@ -27,12 +27,12 @@ export default function AwardShowPage() {
   return (
     <Layout showFooter>
       {!!activeShows?.length && <p className="mb-2 text-xl">Active Award Shows</p>}
-      <div className="grid lg:grid-cols-2">
+      <div className="grid lg:grid-cols-2 lg:gap-x-4">
         {activeShows?.map((show, i) => <AwardShowCard key={i} awardShow={show} />)}
       </div>
 
       <p className="mb-2 mt-4 text-xl">Past Award Shows</p>
-      <div className="grid lg:grid-cols-2">
+      <div className="grid lg:grid-cols-2 lg:gap-x-4">
         {pastShows?.map((show, i) => <AwardShowCard key={i} awardShow={show} />)}
       </div>
     </Layout>

@@ -69,11 +69,12 @@ const getById = publicProcedure.input(z.object({ id: z.string() })).query(async 
 
   for (let i = 0; i < tournament.rounds.length; i++) {
     const round = tournament.rounds[i]!;
-    const roundEntries = entries.map((e) => ({
+    const roundEntries = entries.map((e, j) => ({
       id: e.id,
       tournamentId: e.tournamentId,
       seed: e.seed,
       name: e.name,
+      // name: `${j + 1} - ${e.name}`,
       description: e.description,
       image: e.image,
       totalVotes: e.votes.filter((e) => e.round === i + 1).length,
@@ -201,12 +202,12 @@ export function getMatchups(rounds: TournamentRound[]) {
       if (round.startDate > new Date()) return;
 
       const winners = new Set(findWinners(rounds[i - 1]!.matchups!).map((e) => e.id));
-      round.matchups = createMatchupsFromEntries(entries.filter((e) => winners.has(e.id)));
-    } else round.matchups = createMatchupsFromEntries(entries);
+      round.matchups = getMatchupsFromEntries(entries.filter((e) => winners.has(e.id)));
+    } else round.matchups = getMatchupsFromEntries(entries);
   }
 }
 
-function createMatchupsFromEntries(entries: TournamentEntry[]) {
+function getMatchupsFromEntries(entries: TournamentEntry[]) {
   const matchups: Matchup[] = [];
 
   for (let i = 0; i < entries.length / 2; i++) matchups.push({ entry1: entries[i * 2]!, entry2: entries[i * 2 + 1]! });
@@ -238,12 +239,30 @@ function findWinners(matchups: Matchup[]) {
 }
 
 export function orderEntries(entries: TournamentEntry[]) {
-  const ordered: TournamentEntry[] = [];
+  const matchups: Matchup[] = [];
 
-  for (let i = 0; i < entries.length / 2; i++) {
-    ordered.push(entries[i]!);
-    ordered.push(entries[entries.length - (i + 1)]!);
+  const limit = Math.log2(entries.length) + 1;
+  branch(1, 1, limit, entries, matchups);
+
+  return matchups.map((e) => [e.entry1, e.entry2]).flat();
+}
+
+// https://stackoverflow.com/questions/37199059/generating-a-seeded-tournament-bracket
+function branch(seed: number, level: number, limit: number, entries: TournamentEntry[], matchups: Matchup[]) {
+  const levelSum = Math.pow(2, level) + 1;
+
+  if (limit === level + 1) {
+    const entry1 = entries[seed - 1];
+    const entry2 = entries[levelSum - seed - 1];
+    if (!!entry1 && !!entry2) matchups.push({ entry1, entry2 });
+    return matchups;
   }
 
-  return ordered;
+  if (seed % 2 === 1) {
+    branch(seed, level + 1, limit, entries, matchups);
+    branch(levelSum - seed, level + 1, limit, entries, matchups);
+  } else {
+    branch(levelSum - seed, level + 1, limit, entries, matchups);
+    branch(seed, level + 1, limit, entries, matchups);
+  }
 }

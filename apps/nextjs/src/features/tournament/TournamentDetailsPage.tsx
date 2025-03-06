@@ -104,7 +104,7 @@ export default function TouramentDetailsPage() {
       {!!tournament && (
         <div id="tournament-wrapper" className="px-4 pb-10">
           <p className="text-3xl text-white">{tournament.name}</p>
-          <p className="text-lg text-white">{tournament.description}</p>
+          <p className="text-lg text-white" dangerouslySetInnerHTML={{ __html: tournament.description }}></p>
           <p className="text-sm italic">All rounds start at 3:00pm ET / 12:00pm PT</p>
 
           {!!activeMatchup && (

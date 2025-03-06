@@ -28,7 +28,7 @@ export default function TournamentCard({ tournament }: { tournament: Tournament 
       </CardHeader>
       <CardContent className="flex flex-col">
         <div className="mb-2 w-full">
-          <p>{tournament.description}</p>
+          <p dangerouslySetInnerHTML={{ __html: tournament.description }}></p>
           <p>
             {tournament.rounds.length} rounds / {tournament.entries.length} entries
           </p>

@@ -74,7 +74,6 @@ const getById = publicProcedure.input(z.object({ id: z.string() })).query(async 
       tournamentId: e.tournamentId,
       seed: e.seed,
       name: e.name,
-      // name: `${j + 1} - ${e.name}`,
       description: e.description,
       image: e.image,
       totalVotes: e.votes.filter((e) => e.round === i + 1).length,

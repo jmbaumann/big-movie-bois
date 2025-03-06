@@ -284,10 +284,23 @@ function Matchup({
   isActiveRound: boolean;
   showImages: boolean;
 }) {
+  const totalVotes = Math.max(matchup.entry1.totalVotes + matchup.entry2.totalVotes, 1);
+  const entry1Percentage = Math.round((matchup.entry1.totalVotes / totalVotes) * 100 * 100) / 100;
+  const entry2Percentage = Math.round((matchup.entry2.totalVotes / totalVotes) * 100 * 100) / 100;
+
   return (
-    <div className={cn("flex flex-col px-1", isActiveRound && "cursor-pointer")}>
-      <div className={cn("rounded-t-xl border-2 border-white", matchup.entry1.votedFor && "border-primary")}>
-        <div className="flex items-center p-2">
+    <div className={cn("flex flex-col px-2", isActiveRound && "cursor-pointer")}>
+      <div className={cn("flex rounded-t-xl border-2 border-white", matchup.entry1.votedFor && "border-primary")}>
+        <div
+          className={cn(
+            "flex rotate-180 items-center justify-center rounded-br-lg bg-white text-black [writing-mode:vertical-lr]",
+            matchup.entry1.votedFor && "bg-primary text-white",
+            !isActiveRound && !matchup.entry1.winner && "text-[#9ac]",
+          )}
+        >
+          {matchup.entry1.seed}
+        </div>
+        <div className="flex grow items-center p-2">
           {!!matchup.entry1.image && showImages && (
             <Image
               className="mr-2 w-16 object-cover object-center"
@@ -307,13 +320,21 @@ function Matchup({
             {matchup.entry1.name}
           </p>
         </div>
-        {!isActiveRound && <div className="px-2 text-right text-sm text-white">Votes: {matchup.entry1.totalVotes}</div>}
+        {!isActiveRound && (
+          <div className="mt-auto min-w-fit px-2 text-right text-sm text-white">{entry1Percentage}%</div>
+        )}
       </div>
-      <div
-        className={cn("flex flex-col rounded-b-xl border-2 border-white", matchup.entry2.votedFor && "border-primary")}
-      >
-        {!isActiveRound && <div className="px-2 text-right text-sm text-white">Votes: {matchup.entry2.totalVotes}</div>}
-        <div className="flex items-center p-2">
+      <div className={cn("flex rounded-b-xl border-2 border-white", matchup.entry2.votedFor && "border-primary")}>
+        <div
+          className={cn(
+            "flex rotate-180 items-center justify-center rounded-tr-lg bg-white text-black [writing-mode:vertical-lr]",
+            matchup.entry2.votedFor && "bg-primary text-white",
+            !isActiveRound && !matchup.entry2.winner && "text-[#9ac]",
+          )}
+        >
+          {matchup.entry2.seed}
+        </div>
+        <div className="flex grow items-center p-2">
           {!!matchup.entry2.image && showImages && (
             <Image
               className="mr-2 w-16 object-cover object-center"
@@ -333,6 +354,7 @@ function Matchup({
             {matchup.entry2.name}
           </p>
         </div>
+        {!isActiveRound && <div className="min-w-fit px-2 text-right text-sm text-white">{entry2Percentage}%</div>}
       </div>
     </div>
   );

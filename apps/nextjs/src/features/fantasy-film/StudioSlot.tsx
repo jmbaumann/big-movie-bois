@@ -66,7 +66,6 @@ export default function StudioSlot({
   const isMyStudio = studio?.ownerId === sessionData?.user.id;
   const canEdit = isMyStudio && !locked;
   const isReleased = film?.tmdb ? getFilmsReleased([film]) > 0 : false;
-  console.log(film);
 
   const unlockedSlots = studio && session ? getUnlockedSlots(session, studio) : [];
 

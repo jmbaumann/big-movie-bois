@@ -12,6 +12,7 @@ import {
 } from "./types";
 
 const POPULARITY_THRESHOLD = 3;
+const POPULARITY_VOTE_THRESHOLD = 1000;
 
 export async function searchMovie(keyword: string) {
   const url = `https://api.themoviedb.org/3/search/movie?query=${keyword}&include_adult=false&language=en-US&with_release_type=3&sort_by=popularity.desc&page=1`;
@@ -21,7 +22,7 @@ export async function searchMovie(keyword: string) {
     if (!data) throw new TRPCError({ message: "No results", code: "NOT_FOUND" });
 
     let list = data.results
-      .filter((e) => e.popularity >= POPULARITY_THRESHOLD)
+      .filter((e) => e.popularity * e.vote_count >= POPULARITY_VOTE_THRESHOLD)
       .sort((a, b) => b.popularity * b.vote_count - a.popularity * a.vote_count)
       .map((e) => ({
         id: e.id,

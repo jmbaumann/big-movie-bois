@@ -116,29 +116,23 @@ function OverlapFormSheet({
   const confirm = useConfirm();
 
   const [open, setOpen] = useState(false);
-  const [searchResult, setSearchResult] = useState<
-    {
-      id: number;
-      title: string;
-    }[]
-  >([]);
   const [searchKeyword, setSearchKeyword] = useState<string>();
 
   const { isLoading: creating, mutate: createAnswer } = api.overlap.createAnswer.useMutation();
   const { isLoading: updating, mutate: updateAnswer } = api.overlap.updateAnswer.useMutation();
-  const { data: search, isLoading: searching } = api.tmdb.search.useQuery(
+  const { data: searchResult, isLoading: searching } = api.tmdb.search.useQuery(
     { keyword: searchKeyword ?? "" },
     { enabled: !!searchKeyword },
   );
   const { mutate: refreshMovie, isLoading: refreshing } = api.tmdb.refresh.useMutation();
 
-  useEffect(() => {
-    if (search) setSearchResult(search);
-  }, [search]);
-
   const isLoading = creating || updating;
   const resultsAndExisting = [
-    ...searchResult,
+    ...(searchResult
+      ? searchResult
+          .map((e) => ("title" in e ? { id: e.id, title: e.title } : undefined))
+          .filter((e): e is { id: number; title: string } => e !== undefined)
+      : []),
     ...(answers ? [...answers].map((e) => ({ id: e.tmdbId, title: e.tmdb.title })) : []),
   ];
 
@@ -281,7 +275,8 @@ function OverlapFormSheet({
                               )}
                             >
                               {field.value
-                                ? resultsAndExisting.find((result) => result.id === field.value)?.title
+                                ? resultsAndExisting.find((result) => result.id === field.value && "title" in result)
+                                    ?.title
                                 : "Select Movie"}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -305,7 +300,7 @@ function OverlapFormSheet({
                                       form.setValue("tmdbId", result.id);
                                     }}
                                   >
-                                    {result.title}
+                                    {"title" in result ? result.title : ""}
                                   </CommandItem>
                                 ))}
                               </CommandGroup>

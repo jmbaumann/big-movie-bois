@@ -99,10 +99,7 @@ const deleteAnswer = protectedProcedure
 const getAnswers = adminProcedure
   .input(z.object({ date: z.string(), archive: z.boolean().optional() }))
   .query(async ({ ctx, input }) => {
-    console.log(input.date);
-    console.log(format(sub(input.date, { days: 1 }), "yyyy-MM-dd"));
     const yesterday = format(sub(input.date, { days: 1 }), "yyyy-MM-dd");
-    console.log(yesterday);
     return ctx.prisma.overlapAnswer.findMany({
       include: { tmdb: { include: { cast: true, crew: true } } },
       where: { date: input.archive ? { lte: yesterday } : { gte: yesterday } },

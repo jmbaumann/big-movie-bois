@@ -307,7 +307,7 @@ export default function OverlapPage() {
                 <>
                   <p className="mr-2 lg:block">Average Guesses: {answer.averageGuesses}</p>
                   <div className="mx-auto mt-2 flex w-full items-center gap-x-2 lg:w-1/2">
-                    <Command className="">
+                    <Command className="" shouldFilter={false}>
                       <CommandInput
                         className="appearance-none px-4 py-2 text-base"
                         placeholder="Guess a movie"

@@ -11,7 +11,7 @@ import {
   TMDBReleaseDatesResponse,
 } from "./types";
 
-const POPULARITY_THRESHOLD = 3;
+const POPULARITY_THRESHOLD = 10;
 const POPULARITY_VOTE_THRESHOLD = 1000;
 
 export async function searchMovie(keyword: string) {
@@ -22,8 +22,12 @@ export async function searchMovie(keyword: string) {
     if (!data) throw new TRPCError({ message: "No results", code: "NOT_FOUND" });
 
     let list = data.results
-      .filter((e) => e.popularity * e.vote_count >= POPULARITY_VOTE_THRESHOLD)
-      .sort((a, b) => b.popularity * b.vote_count - a.popularity * a.vote_count)
+      .filter((e) => e.popularity >= POPULARITY_THRESHOLD || e.popularity * e.vote_count >= POPULARITY_VOTE_THRESHOLD)
+      .sort((a, b) =>
+        b.popularity >= POPULARITY_THRESHOLD || a.popularity >= POPULARITY_THRESHOLD
+          ? b.popularity - a.popularity
+          : b.popularity * b.vote_count - a.popularity * a.vote_count,
+      )
       .map((e) => ({
         id: e.id,
         title: e.title,

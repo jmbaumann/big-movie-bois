@@ -34,7 +34,7 @@ const getActive = publicProcedure.query(async ({ ctx }) => {
       categories: { include: { nominees: { orderBy: { name: "asc" } } }, orderBy: { order: "asc" } },
       groups: { where: { default: true } },
     },
-    where: { available: { lte: new Date() }, locked: { gte: sub(new Date(), { weeks: 2 }) } },
+    where: { available: { lte: new Date() }, locked: { gte: sub(new Date(), { weeks: 1 }) } },
     orderBy: { available: "desc" },
   });
 

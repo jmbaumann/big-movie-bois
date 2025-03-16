@@ -13,7 +13,7 @@ export async function updateFilmList() {
 
     await axios.post(`${url}/api/update-films`, {}, { headers });
   } catch (e) {
-    console.log("Cron error: ", e.status);
+    console.log("Cron error: ", e);
   }
 }
 
@@ -28,6 +28,6 @@ export async function processBids() {
 
     await axios.post(`${url}/api/process-bids`, {}, { headers });
   } catch (e) {
-    console.log("Cron error: ", e.status);
+    console.log("Cron error: ", e);
   }
 }

@@ -30,13 +30,13 @@ const processAllBids = cronProcedure
     for (const session of activeSessions) {
       promises.push(
         (() => {
-          logSessionActivity(ctx, {
+          void logSessionActivity(ctx, {
             sessionId: session.id,
             type: SESSION_ACTIVITY_TYPES.AUTOMATED,
             message: "Active bids processed",
           });
 
-          processSessionBids(ctx, session.id, new Date());
+          void processSessionBids(ctx, session.id, new Date());
         })(),
       );
     }

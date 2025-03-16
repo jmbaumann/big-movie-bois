@@ -1,8 +1,7 @@
 import { z } from "zod";
 
 import { SESSION_ACTIVITY_TYPES } from "../../enums";
-import { adminProcedure, createTRPCRouter, cronProcedure, protectedProcedure } from "../../trpc";
-import { updateMasterFantasyFilmList } from "../tmdb";
+import { adminProcedure, createTRPCRouter, protectedProcedure } from "../../trpc";
 import { logSessionActivity, processSessionBids } from "./session";
 
 const addStudioFilm = protectedProcedure
@@ -57,13 +56,13 @@ const processAllBids = protectedProcedure.mutation(async ({ ctx }) => {
   for (const session of activeSessions) {
     promises.push(
       (() => {
-        logSessionActivity(ctx, {
+        void logSessionActivity(ctx, {
           sessionId: session.id,
           type: SESSION_ACTIVITY_TYPES.AUTOMATED,
           message: "Active bids processed",
         });
 
-        processSessionBids(ctx, session.id, new Date());
+        void processSessionBids(ctx, session.id, new Date());
       })(),
     );
   }
@@ -71,7 +70,7 @@ const processAllBids = protectedProcedure.mutation(async ({ ctx }) => {
   await Promise.allSettled(promises);
 });
 
-const getLeagues = adminProcedure.query(async ({ ctx, input }) => {
+const getLeagues = adminProcedure.query(async ({ ctx }) => {
   return ctx.prisma.league.findMany({ include: { owner: true, members: { include: { user: true } } } });
 });
 

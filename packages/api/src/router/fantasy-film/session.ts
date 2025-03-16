@@ -1,13 +1,14 @@
-import { format } from "date-fns";
-import { string, z } from "zod";
+import { z } from "zod";
 
-import { FilmBid } from "@repo/db";
+import type { FilmBid } from "@repo/db";
 
 import { BID_STATUSES, FILM_ACQUISITION_TYPES, SESSION_ACTIVITY_TYPES } from "../../enums";
-import { createTRPCRouter, protectedProcedure, publicProcedure, TRPCContext } from "../../trpc";
+import type { TRPCContext } from "../../trpc";
+import { createTRPCRouter, protectedProcedure } from "../../trpc";
 import { dropStudioFilmById } from "./film";
 import { createManyStudios } from "./studio";
-import { createLeagueSessionInputObj, LeagueSessionSettings, logActivityObj, updateLeagueSessionInputObj } from "./zod";
+import type { LeagueSessionSettings, logActivityObj } from "./zod";
+import { createLeagueSessionInputObj, updateLeagueSessionInputObj } from "./zod";
 
 const getById = protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
   return await getSessionById(ctx, input.id);

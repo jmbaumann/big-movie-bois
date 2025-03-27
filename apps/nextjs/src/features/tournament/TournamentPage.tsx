@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 
@@ -69,7 +68,7 @@ export default function TouramentPage() {
                     </CardHeader>
                     <CardContent className="flex flex-col text-lg lg:flex-row">
                       <div className="mb-2 w-full lg:mb-0 lg:w-1/2">
-                        <p>{tournament.description}</p>
+                        <p dangerouslySetInnerHTML={{ __html: tournament.description }}></p>
                         <p>
                           {tournament.rounds.length} rounds / {tournament.entries.length} entries
                         </p>
